@@ -23,6 +23,10 @@ final class ServerLoggingConfig {
 	private ServerLoggingConfig() {
 	}
 
+	/**
+	 * ログの設定を行います。
+	 * コンソールとファイルの両方に出力を行います。
+	 */
 	static synchronized void initialize() {
 		if (initialized) return;
 
@@ -49,11 +53,11 @@ final class ServerLoggingConfig {
 
 			// ログの保存先
 			FileHandler fileHandler = new FileHandler(logFile.toString(), true);
-			fileHandler.setLevel(Level.INFO);
+			fileHandler.setLevel(Level.FINE);
 			fileHandler.setFormatter(formatter);
 
 			// ログの設定（ファイル出力とコンソール出力どちらも行う）
-			rootLogger.setLevel(Level.INFO);
+			rootLogger.setLevel(Level.FINE);
 			rootLogger.addHandler(consoleHandler);
 			rootLogger.addHandler(fileHandler);
 

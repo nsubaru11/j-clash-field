@@ -6,7 +6,6 @@ public class Player {
 	private String id;
 	private String name;
 	private boolean isReady; // ゲームロジックとしての状態
-	private double x, y;      // アクションゲーム用の座標
 	GameCharacter character;
 
 	public Player(String name) {
@@ -15,10 +14,6 @@ public class Player {
 
 	public boolean isReady() {
 		return isReady;
-	}
-
-	public void setX(double x) {
-
 	}
 
 	public String getPlayerName() {
