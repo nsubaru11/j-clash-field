@@ -46,12 +46,12 @@ final class ServerLoggingConfig {
 			// ログのフォーマット（日時、クラス名、メソッド名、ログレベル、メッセージの順に整形）
 			Formatter formatter = new SimpleFormatter();
 
-			// ログの出力先
+			// コンソール出力用の設定
 			ConsoleHandler consoleHandler = new ConsoleHandler();
 			consoleHandler.setLevel(Level.INFO);
 			consoleHandler.setFormatter(formatter);
 
-			// ログの保存先
+			// ファイル出力用の設定
 			FileHandler fileHandler = new FileHandler(logFile.toString(), true);
 			fileHandler.setLevel(Level.FINE);
 			fileHandler.setFormatter(formatter);
@@ -61,6 +61,7 @@ final class ServerLoggingConfig {
 			rootLogger.addHandler(consoleHandler);
 			rootLogger.addHandler(fileHandler);
 
+			// `server` パッケージ内はより詳細なログを表示
 			Logger serverLogger = Logger.getLogger("server");
 			serverLogger.setLevel(Level.FINE);
 
