@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 /**
  * 通信を管理するクラスです。
  */
 class NetworkController extends Thread implements Closeable {
+	private static final Logger logger = Logger.getLogger(NetworkController.class.getName());
 	private final String host;
 	private final int port;
 	private Socket socket;

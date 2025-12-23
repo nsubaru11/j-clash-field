@@ -2,7 +2,10 @@ package client.controller;
 
 import model.LoggingConfig;
 
+import java.util.logging.Logger;
+
 public final class GameClient {
+	private static final Logger logger = Logger.getLogger(GameClient.class.getName());
 	private static final String DEFAULT_HOST = "localhost";
 	private static final int DEFAULT_PORT = 10000;
 	// private static final String DEFAULT_HOST = "133.42.227.142";
