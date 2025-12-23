@@ -3,12 +3,16 @@ package model;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
-public final class Vector2D {
+public final class Vector2D implements Cloneable {
 	private double x, y;
 
 	public Vector2D(final double x, final double y) {
 		this.x = x;
 		this.y = y;
+	}
+
+	public Vector2D clone() {
+		return new Vector2D(x, y);
 	}
 
 	public boolean equals(final Object obj) {
@@ -39,6 +43,14 @@ public final class Vector2D {
 
 	public void setY(double y) {
 		this.y = y;
+	}
+
+	public void moveX(double dx) {
+		x += dx;
+	}
+
+	public void moveY(double dy) {
+		y += dy;
 	}
 
 	public double length() {

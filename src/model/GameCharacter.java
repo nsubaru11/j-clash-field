@@ -1,13 +1,29 @@
 package model;
 
 public  abstract class GameCharacter extends Entity {
+	protected int speedX, speedY;
 
-	public void normalAttack() {};
+	public abstract void normalAttack();
 
-	public void chargeAttack() {};
+	public abstract void chargeAttack();
 
-	public void specialAttack() {};
+	public abstract void specialAttack();
 
-	public void defend() {};
+	public abstract void defend();
 
+	public void movLeft() {
+		position.moveX(-speedX);
+	}
+
+	public void movRight() {
+		position.moveX(speedX);
+	}
+
+	public void movUp() {
+		position.moveY(speedY);
+	}
+
+	public void movDown() {
+		position.moveY(-speedY);
+	}
 }
