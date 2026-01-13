@@ -1,7 +1,8 @@
 package model;
 
 public  abstract class GameCharacter extends Entity {
-	protected int speedX, speedY;
+	protected double speedX, speedY;
+	protected double hp, attack, defend;
 
 	public abstract void normalAttack();
 

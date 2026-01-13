@@ -1,6 +1,8 @@
 package server;
 
+import model.CommandType;
 import model.LoggingConfig;
+import model.Protocol;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -87,9 +89,8 @@ public final class GameServer implements Runnable, Closeable {
 				Socket clientSocket = serverSocket.accept();
 				ClientHandler handler = new ClientHandler(clientSocket);
 				handler.start();
+				handler.setMessageListener(msg -> join(handler, msg));
 				logger.info(() -> "新しいクライアント(ID: " + handler.getConnectionId() + ")が接続しました。");
-
-				addWaitingHandler(handler);
 			} catch (final IOException e) {
 				if (isRunning) {
 					logger.log(Level.SEVERE, "クライアント接続処理で例外が発生しました。", e);
@@ -117,6 +118,35 @@ public final class GameServer implements Runnable, Closeable {
 	}
 
 	// -------------------- privateメソッド --------------------
+	/** プレイヤーがルームに参加するコマンドを受け取ったときの処理 */
+	private void join(ClientHandler handler, String msg) {
+		Command cmd = new Command(handler, msg);
+		if (cmd.getCommandType() != CommandType.JOIN) {
+			logger.warning(() -> "不正なコマンドが送信されました。");
+			return;
+		}
+		String roomId = cmd.getBody();
+		if (roomId.isEmpty()) {
+			addWaitingHandler(handler);
+		} else {
+			int id = Integer.parseInt(roomId);
+			for (GameRoom room : gameRooms) {
+				if (room.getRoomId() == id) {
+					if (room.join(handler)) {
+						handler.sendMessage(Protocol.joinSuccess(room.getRoomId()));
+						logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
+					} else {
+						logger.warning(() -> "ルーム(ID: " + room.getRoomId() + ")は既に満員です。");
+					}
+					logger.config(room::toString);
+					return;
+				}
+			}
+			logger.warning(() -> "ルーム(ID: " + id + ")は存在しません。");
+			handler.sendMessage(Protocol.joinFailed());
+		}
+	}
+
 	private synchronized void addWaitingHandler(final ClientHandler handler) {
 		if (!isRunning) return;
 		waitingPlayers.add(handler);

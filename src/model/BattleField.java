@@ -7,6 +7,10 @@ public final class BattleField {
 	private final List<Entity> entities = new ArrayList<>();
 	public int width, height;
 
+	public void addEntity(Entity entity) {
+		entities.add(entity);
+	}
+
 	private void updateCollision() {
 		for (Entity entity : entities) {
 			for (Entity other : entities) {

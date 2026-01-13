@@ -33,8 +33,12 @@ public final class Protocol {
 		return CommandType.OPPONENT_DISCONNECTED.getId() + "";
 	}
 
-	public static String joinRoom() {
-		return CommandType.JOIN_ROOM.getId() + "";
+	public static String joinSuccess(int roomId) {
+		return CommandType.JOIN_SUCCESS.getId() + ":" + roomId;
+	}
+
+	public static String joinFailed() {
+		return CommandType.JOIN_FAILED.getId() + "";
 	}
 
 	public static String joinOpponent(String opponentName) {
@@ -55,8 +59,13 @@ public final class Protocol {
 
 	// -------------------- クライアント -> サーバー --------------------
 
-	public static String connect(String playerName) {
-		return CommandType.CONNECT.getId() + ":" + playerName;
+	public static String connect() {
+		return CommandType.CONNECT.getId() + "";
+	}
+
+	public static String join(int roomId) {
+		if (roomId < 0) return CommandType.JOIN.getId() + "";
+		return CommandType.JOIN.getId() + ":" + roomId;
 	}
 
 	public static String moveLeft() {
@@ -73,6 +82,14 @@ public final class Protocol {
 
 	public static String moveDown() {
 		return CommandType.MOVE_DOWN.getId() + "";
+	}
+
+	public static String ready(GameCharacter character) {
+		return CommandType.READY.getId() + ":" + character.getClass().getName();
+	}
+
+	public static String unready() {
+		return CommandType.UNREADY.getId() + "";
 	}
 
 	public static String resign() {

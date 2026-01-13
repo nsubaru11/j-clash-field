@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,21 +24,32 @@ class NetworkController extends Thread implements Closeable {
 	private PrintWriter out;
 	private BufferedReader in;
 
+	private volatile Consumer<String> messageListener;
+
 	public NetworkController(String host, int port) {
 		this.host = host;
 		this.port = port;
 	}
 
-	public boolean connect(String playerName) {
+	public boolean connect() {
 		try {
 			socket = new Socket(host, port);
 			out = new PrintWriter(socket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			out.println(Protocol.connect(playerName));
 			return true;
 		} catch (IOException e) {
 			return false;
 		}
+	}
+
+	public boolean joinRoom(int roomId) {
+		out.println(Protocol.join(roomId));
+		return true;
+	}
+
+	public boolean joinRoom() {
+		out.println(Protocol.join(-1));
+		return true;
 	}
 
 	public void moveLeft() {
@@ -63,18 +77,34 @@ class NetworkController extends Thread implements Closeable {
 	}
 
 	public void run() {
-		while (true) {
-			try {
+		try {
+			// メッセージ受信ループ
+			while (true) {
 				String line = in.readLine();
 				if (line == null) break;
-			} catch (IOException e) {
-				break;
+				if (messageListener != null) {
+					logger.fine(() -> "サーバーから受信: " + line);
+					messageListener.accept(line);
+				}
 			}
+		} catch (final SocketTimeoutException e) {
+			logger.log(Level.WARNING, "サーバーからのタイムアウトにより切断", e);
+		} catch (final IOException e) {
+			// 意図的に閉じた(isConnected==false)場合はエラーログを出さない
+			logger.log(Level.WARNING, "サーバー接続エラー", e);
+		} finally {
+			logger.log(Level.WARNING, "切断リスナー実行中にエラー");
+			close();
 		}
 	}
 
 	@Override
 	public void close() {
-		disconnect();
+		try {
+			socket.close();
+			logger.fine(() -> "ソケットをクローズしました");
+		} catch (IOException e) {
+			logger.log(Level.WARNING, "プレイヤーソケットクローズに失敗", e);
+		}
 	}
 }

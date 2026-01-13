@@ -1,5 +1,6 @@
 package server;
 
+import model.BattleField;
 import model.Protocol;
 
 import java.io.Closeable;
@@ -30,6 +31,7 @@ class GameRoom extends Thread implements Closeable {
 	private volatile boolean isClosed;
 	private volatile boolean isGameOver;
 	private volatile int alivePlayers;
+	private volatile BattleField battleField;
 
 	public GameRoom() {
 		roomId = ID_GENERATOR.incrementAndGet();
@@ -48,7 +50,6 @@ class GameRoom extends Thread implements Closeable {
 				Command cmd = commandQueue.poll();
 				handleCommand(cmd);
 			}
-			broadcastState();
 			long waitNs = targetTime - System.nanoTime();
 			if (waitNs > 0) {
 				long waitMs = waitNs / 1_000_000;
@@ -82,6 +83,9 @@ class GameRoom extends Thread implements Closeable {
 		if (disconnectListener != null) disconnectListener.run();
 	}
 
+	/**
+	 * デバッグ用
+	 */
 	public synchronized String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("ルーム(ID: ").append(roomId).append("):\n");
@@ -92,11 +96,13 @@ class GameRoom extends Thread implements Closeable {
 		return sb.toString();
 	}
 
+	/** 一意識別用 */
 	public synchronized boolean equals(Object obj) {
 		if (!(obj instanceof GameRoom)) return false;
 		return ((GameRoom) obj).roomId == roomId;
 	}
 
+	/** 一意識別用 */
 	public synchronized int hashCode() {
 		return roomId;
 	}
@@ -126,18 +132,15 @@ class GameRoom extends Thread implements Closeable {
 		Player player = playerMap.get(sender);
 		if (player == null) return;
 		switch (command.getCommandType()) {
-			case CONNECT:
-				player.setPlayerName(command.getBody());
-				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")の名前を" + player.getPlayerName() + "にしました。");
-				break;
 			case READY:
-				player.setReady();
+				player.setReady(command.getBody());
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
 				startGame();
 				break;
 			case UNREADY:
 				player.setUnReady();
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備を解除しました。");
+				// TODO: 全体通知
 				break;
 			case MOVE_LEFT:
 				break;
@@ -162,7 +165,11 @@ class GameRoom extends Thread implements Closeable {
 		isGameOver = false;
 		alivePlayers = playerMap.size();
 		logger.info("ルーム(ID: " + roomId + ")でゲーム開始");
-		// TODO: ゲーム開始処理
+		battleField = new BattleField();
+		for (Player player : playerMap.values()) {
+			battleField.addEntity(player.getCharacter());
+		}
+		// TODO: 開始通知
 	}
 
 	private synchronized void endGame() {
