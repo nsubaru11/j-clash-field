@@ -74,7 +74,7 @@ public class MatchingPanel extends JPanel {
 		gbc.insets = new Insets(10, 10, 5, 20);
 		dialogPanel.add(userNameField, gbc);
 
-		// ユーザー名ラベル
+		// 部屋番号ラベル
 		JLabel roomNumberLabel = new JLabel("Room Number:");
 		roomNumberLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 		roomNumberLabel.setForeground(Color.WHITE);
@@ -85,7 +85,7 @@ public class MatchingPanel extends JPanel {
 		gbc.anchor = GridBagConstraints.WEST;
 		dialogPanel.add(roomNumberLabel, gbc);
 
-		// ユーザー名入力フィールド
+		// 部屋番号入力フィールド
 		roomNumberField = new JTextField(15);
 		roomNumberField.setFont(new Font("Arial", Font.PLAIN, 14));
 		roomNumberField.setPreferredSize(new Dimension(200, 30));
@@ -203,11 +203,23 @@ public class MatchingPanel extends JPanel {
 		return button;
 	}
 
+	public String getUserName() {
+		return userNameField.getText().trim();
+	}
+
+	public int getRoomNumber() {
+		try {
+			return Integer.parseInt(roomNumberField.getText().trim());
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+	}
+
 	/**
 	 * 開始ボタンクリック時の処理です。
 	 */
 	private boolean onStartClicked() {
-		userName = userNameField.getText().trim();
+		userName = getUserName();
 		if (userName.isEmpty()) {
 			JOptionPane.showMessageDialog(this,
 					"ユーザー名を入力してください。",
@@ -215,21 +227,12 @@ public class MatchingPanel extends JPanel {
 					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
-		try {
-			int roomNumber = Integer.parseInt(roomNumberField.getText().trim());
-			if (roomNumber <= 0) {
-				JOptionPane.showMessageDialog(this,
-						"ルーム番号を正の整数で入力してください。",
-						"入力エラー",
-						JOptionPane.WARNING_MESSAGE);
-				return false;
-			}
-		} catch (NumberFormatException e) {
+		int roomNumber = getRoomNumber();
+		if (roomNumber <= 0) {
 			JOptionPane.showMessageDialog(this,
 					"ルーム番号を正の整数で入力してください。",
 					"入力エラー",
-					JOptionPane.WARNING_MESSAGE
-			);
+					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		return true;

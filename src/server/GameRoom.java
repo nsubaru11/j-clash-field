@@ -23,7 +23,7 @@ class GameRoom extends Thread implements Closeable {
 
 	// -------------------- インスタンス定数 --------------------
 	private final int roomId;
-	private final ConcurrentLinkedQueue<Command> commandQueue;
+	private final ConcurrentLinkedQueue<ServerCommand> commandQueue;
 	private final ConcurrentHashMap<ClientHandler, Player> playerMap;
 
 	// -------------------- インスタンス変数 --------------------
@@ -48,7 +48,7 @@ class GameRoom extends Thread implements Closeable {
 		while (!isClosed) {
 			targetTime += FRAME_TIME;
 			while (!commandQueue.isEmpty()) {
-				Command cmd = commandQueue.poll();
+				ServerCommand cmd = commandQueue.poll();
 				handleCommand(cmd);
 			}
 			if (isStarted && battleField != null) {
@@ -117,7 +117,7 @@ class GameRoom extends Thread implements Closeable {
 
 	public synchronized boolean join(final ClientHandler handler) {
 		if (isClosed || isStarted || playerMap.size() >= MAX_PLAYERS) return false;
-		handler.setMessageListener(msg -> this.commandQueue.add(new Command(handler, msg)));
+		handler.setMessageListener(msg -> this.commandQueue.add(new ServerCommand(handler, msg)));
 		handler.setDisconnectListener(() -> handleDisconnect(handler));
 		Player newPlayer = new Player("NoName");
 		playerMap.put(handler, newPlayer);
@@ -130,7 +130,7 @@ class GameRoom extends Thread implements Closeable {
 		this.disconnectListener = listener;
 	}
 
-	private synchronized void handleCommand(Command command) {
+	private synchronized void handleCommand(ServerCommand command) {
 		// TODO: コマンド処理
 		ClientHandler sender = command.getSender();
 		Player player = playerMap.get(sender);

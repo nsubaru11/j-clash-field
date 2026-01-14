@@ -1,15 +1,11 @@
-package server;
+package model;
 
 
-import model.CommandType;
-
-class Command {
-	private final ClientHandler sender;
+public class Command {
 	private final CommandType commandType;
 	private final String commandBody;
 
-	public Command(final ClientHandler sender, final String message) {
-		this.sender = sender;
+	public Command(final String message) {
 		int index = message.indexOf(":");
 		CommandType type;
 		String body;
@@ -31,10 +27,6 @@ class Command {
 
 	public CommandType getCommandType() {
 		return commandType;
-	}
-
-	public ClientHandler getSender() {
-		return sender;
 	}
 
 	public String getBody() {

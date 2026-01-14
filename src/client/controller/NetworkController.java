@@ -31,6 +31,10 @@ class NetworkController extends Thread implements Closeable {
 		this.port = port;
 	}
 
+	public void setMessageListener(Consumer<String> messageListener) {
+		this.messageListener = messageListener;
+	}
+
 	public boolean connect() {
 		try {
 			socket = new Socket(host, port);
@@ -38,6 +42,7 @@ class NetworkController extends Thread implements Closeable {
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			return true;
 		} catch (IOException e) {
+			logger.log(Level.SEVERE, "接続に失敗しました。", e);
 			return false;
 		}
 	}

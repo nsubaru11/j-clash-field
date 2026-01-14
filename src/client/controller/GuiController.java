@@ -7,11 +7,15 @@ import client.view.HomePanel;
 import client.view.LoadPanel;
 import client.view.MatchingPanel;
 import client.view.ResultPanel;
+import model.Command;
+import model.LoggingConfig;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Logger;
 
 public final class GuiController {
+	private static final Logger logger = Logger.getLogger(GuiController.class.getName());
 	/** ロード画面の識別子 */
 	private static final String CARD_LOAD = "load";
 	/** ホーム画面の識別子 */
@@ -41,11 +45,13 @@ public final class GuiController {
 	private final GamePanel gamePanel;
 	/** 結果画面パネル */
 	private final ResultPanel resultPanel;
+	/** ネットワークコントローラー */
+	private final NetworkController network;
 
 	/** 現在の画面の Id */
 	private String currentCardId;
 
-	public GuiController() {
+	public GuiController(NetworkController network) {
 		cardLayout = new CardLayout();
 		cardPanel = new JPanel(cardLayout);
 
@@ -55,6 +61,7 @@ public final class GuiController {
 		gameRoomPanel = new GameRoomPanel();
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
+		this.network = network;
 
 		cardPanel.add(loadPanel, CARD_LOAD);
 		cardPanel.add(homePanel, CARD_HOME);
@@ -65,6 +72,18 @@ public final class GuiController {
 
 		GameGUI gui = new GameGUI(cardPanel);
 		gui.setVisible(true);
+	}
+
+	public void start() {
+		network.start();
+		network.setMessageListener(s -> handleMessage(new Command(s)));
+		Runtime.getRuntime().addShutdownHook(new Thread(network::close));
+		showLoad();
+		if (!network.connect()) {
+			logger.severe("接続に失敗しました。");
+			System.exit(1);
+		}
+		completeLoad();
 	}
 
 	public void showHome() {
@@ -117,6 +136,10 @@ public final class GuiController {
 
 	public void completeLoad() {
 		loadPanel.completeLoading();
+	}
+
+	public void handleMessage(Command message) {
+		logger.info("受信したメッセージ: " + message);
 	}
 
 }
