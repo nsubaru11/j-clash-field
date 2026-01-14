@@ -11,6 +11,14 @@ public final class BattleField {
 		entities.add(entity);
 	}
 
+	public void update() {
+		for (Entity entity : entities) {
+			 entity.update();
+			 entity.position.addLocal(entity.velocity);
+		}
+		updateCollision();
+	}
+
 	private void updateCollision() {
 		for (Entity entity : entities) {
 			for (Entity other : entities) {

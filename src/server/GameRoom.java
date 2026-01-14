@@ -1,6 +1,7 @@
 package server;
 
 import model.BattleField;
+import model.GameCharacter;
 import model.Protocol;
 
 import java.io.Closeable;
@@ -49,6 +50,9 @@ class GameRoom extends Thread implements Closeable {
 			while (!commandQueue.isEmpty()) {
 				Command cmd = commandQueue.poll();
 				handleCommand(cmd);
+			}
+			if (isStarted && battleField != null) {
+				battleField.update();
 			}
 			long waitNs = targetTime - System.nanoTime();
 			if (waitNs > 0) {
@@ -215,6 +219,15 @@ class GameRoom extends Thread implements Closeable {
 
 	private synchronized void broadcastState() {
 		// TODO: 状態を全員に通知する
+		if (!isStarted || battleField == null) return;
+
+		playerMap.forEach((handler, player) -> {
+			GameCharacter character = player.getCharacter();
+			if (character != null) {
+				String msg = Protocol.move(character.getId(), character.getPosition().getX(), character.getPosition().getY());
+				playerMap.keySet().forEach(h -> h.sendMessage(msg));
+			}
+		});
 	}
 
 }

@@ -119,7 +119,7 @@ public final class GameServer implements Runnable, Closeable {
 
 	// -------------------- privateメソッド --------------------
 	/** プレイヤーがルームに参加するコマンドを受け取ったときの処理 */
-	private void join(ClientHandler handler, String msg) {
+	private synchronized void join(ClientHandler handler, String msg) {
 		Command cmd = new Command(handler, msg);
 		if (cmd.getCommandType() != CommandType.JOIN) {
 			logger.warning(() -> "不正なコマンドが送信されました。");

@@ -13,8 +13,8 @@ public final class Protocol {
 		return CommandType.GAME_OVER.getId() + "";
 	}
 
-	public static String move(int i, int j) {
-		return CommandType.MOVE.getId() + ":" + i + " " + j;
+	public static String move(long id, double i, double j) {
+		return CommandType.MOVE.getId() + ":" + id + ":" + i + " " + j;
 	}
 
 	public static String damage(int hp) {

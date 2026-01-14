@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -20,6 +21,7 @@ class ClientHandler extends Thread implements Closeable {
 	private final Socket socket;
 	private final PrintWriter out;
 	private final BufferedReader in;
+	private final LinkedBlockingQueue<String> sendQueue;
 
 	private volatile Consumer<String> messageListener;
 	private volatile Runnable disconnectListener;
@@ -29,6 +31,7 @@ class ClientHandler extends Thread implements Closeable {
 	public ClientHandler(final Socket socket) {
 		this.connectionId = ID_GENERATOR.incrementAndGet();
 		this.socket = socket;
+		this.sendQueue = new LinkedBlockingQueue<>();
 		this.isConnected = true;
 		this.isClosed = false;
 		try {
@@ -49,12 +52,25 @@ class ClientHandler extends Thread implements Closeable {
 	}
 
 	public void sendMessage(final String message) {
-		logger.fine(() -> "プレイヤー(ID: " + connectionId + ")に送信: " + message);
-		out.println(message);
-		out.flush();
+		sendQueue.add(message);
 	}
 
 	public void run() {
+		new Thread(() -> {
+			while (isConnected) {
+				try {
+					String message = sendQueue.take();
+					out.println(message);
+					logger.fine(() -> "プレイヤー(ID: " + connectionId + ")に送信: " + message);
+					if (out.checkError()) {
+						logger.warning("メッセージ送信エラー: " + connectionId);
+						close();
+					}
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}).start();
 		try {
 			// メッセージ受信ループ
 			while (isConnected) {
