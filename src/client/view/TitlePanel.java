@@ -26,7 +26,7 @@ public class TitlePanel extends BaseBackgroundPanel {
 		setLayout(new GridBagLayout());
 
 		// 点滅エフェクト用タイマー
-		blinkTimer = new Timer(700, e -> {
+		blinkTimer = new Timer(500, e -> {
 			showText = !showText;
 			repaint();
 		});
