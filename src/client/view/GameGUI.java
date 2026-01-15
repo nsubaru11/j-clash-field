@@ -30,12 +30,14 @@ public class GameGUI extends JFrame {
 
 	// --------------- フィールド ---------------
 	/** 各画面パネルを保持する親パネル */
-	private final JPanel cardPanel;
+	private final JComponent rootPane;
 
 	/**
 	 * GameGUIを構築し、メインウィンドウを初期化します。
 	 */
-	public GameGUI(JPanel cardPanel) {
+	public GameGUI(JComponent rootPane) {
+		this.rootPane = rootPane;
+
 		// フレームの基本設定
 		setTitle("Game");
 		if (ICON_IMAGE != null) setIconImage(ICON_IMAGE);
@@ -43,6 +45,7 @@ public class GameGUI extends JFrame {
 
 		setUndecorated(true); // 枠を消す
 		setResizable(false);  // リサイズ禁止
+		getContentPane().setBackground(Color.BLACK);
 		setBackground(Color.BLACK);
 
 		// グラフィックスデバイスを取得してフルスクリーン化
@@ -58,8 +61,7 @@ public class GameGUI extends JFrame {
 		}
 
 		// レイアウトとパネルの初期化
-		this.cardPanel = cardPanel;
-		add(cardPanel);
+		add(rootPane);
 
 		// フルスクリーンの場合、フォーカスを確実に持たせる
 		requestFocus();

@@ -18,7 +18,6 @@ public final class GameClient {
 
 		NetworkController network = new NetworkController(host, port);
 		GuiController gui = new GuiController(network);
-		gui.start();
 		logger.info("ゲームが正常に開始されました。");
 	}
 }

@@ -7,6 +7,7 @@ import client.view.HomePanel;
 import client.view.LoadPanel;
 import client.view.MatchingPanel;
 import client.view.ResultPanel;
+import client.view.TitlePanel;
 import model.Command;
 
 import javax.swing.*;
@@ -16,6 +17,8 @@ import java.util.logging.Logger;
 
 public final class GuiController extends Thread {
 	private static final Logger logger = Logger.getLogger(GuiController.class.getName());
+	/** タイトル画面の識別子 */
+	private static final String CARD_TITLE = "title";
 	/** ロード画面の識別子 */
 	private static final String CARD_LOAD = "load";
 	/** ホーム画面の識別子 */
@@ -35,6 +38,8 @@ public final class GuiController extends Thread {
 	private final CardLayout cardLayout;
 	/** 各画面パネルを保持する親パネル */
 	private final JPanel cardPanel;
+	/** タイトル画面パネル */
+	private final TitlePanel titlePanel;
 	/** ロード画面パネル */
 	private final LoadPanel loadPanel;
 	/** ホーム画面パネル */
@@ -47,18 +52,20 @@ public final class GuiController extends Thread {
 	private final GamePanel gamePanel;
 	/** 結果画面パネル */
 	private final ResultPanel resultPanel;
+	private final JLayeredPane rootPane;
 	/** ネットワークコントローラー */
 	private final NetworkController network;
 	private final ConcurrentLinkedQueue<Command> commandQueue;
 
 	/** 現在の画面の Id */
-	private String currentCardId = "default";
+	private String currentCardId = CARD_TITLE;
 
 	public GuiController(NetworkController network) {
 		this.network = network;
 		cardLayout = new CardLayout();
 		cardPanel = new JPanel(cardLayout);
 
+		titlePanel = new TitlePanel(this::startConnection);
 		loadPanel = new LoadPanel();
 		homePanel = new HomePanel(e -> showMatching(), e -> System.exit(0));
 		matchingPanel = new MatchingPanel();
@@ -67,29 +74,24 @@ public final class GuiController extends Thread {
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
 
-		cardPanel.add(loadPanel, CARD_LOAD);
+		rootPane = new JLayeredPane();
+		rootPane.setLayout(new OverlayLayout(rootPane));
+		rootPane.add(loadPanel, JLayeredPane.PALETTE_LAYER);
+		rootPane.add(cardPanel, JLayeredPane.DEFAULT_LAYER);
+
+		cardPanel.add(titlePanel, CARD_TITLE);
 		cardPanel.add(homePanel, CARD_HOME);
 		cardPanel.add(matchingPanel, CARD_MATCHING);
 		cardPanel.add(gameRoomPanel, CARD_GAME_ROOM);
 		cardPanel.add(gamePanel, CARD_GAME);
 		cardPanel.add(resultPanel, CARD_RESULT);
 
-		GameGUI gui = new GameGUI(cardPanel);
+		GameGUI gui = new GameGUI(rootPane);
 		gui.setVisible(true);
 		commandQueue = new ConcurrentLinkedQueue<>();
 	}
 
 	public void run() {
-		network.setMessageListener(msg -> this.commandQueue.add(new Command(msg)));
-		Runtime.getRuntime().addShutdownHook(new Thread(network::close));
-		showLoad();
-		logger.info("接続を開始します...");
-		if (!network.connect()) {
-			logger.severe("接続に失敗しました。");
-			System.exit(1);
-		}
-		logger.info("接続に成功しました。");
-		completeLoad();
 		long targetTime = System.nanoTime();
 		while (true) {
 			targetTime += FRAME_TIME;
@@ -115,6 +117,21 @@ public final class GuiController extends Thread {
 		}
 	}
 
+	private synchronized void startConnection() {
+		network.setMessageListener(msg -> this.commandQueue.add(new Command(msg)));
+		Runtime.getRuntime().addShutdownHook(new Thread(network::close));
+		showLoad();
+		logger.info("接続を開始します...");
+		if (!network.connect()) {
+			logger.severe("接続に失敗しました。");
+			System.exit(1);
+		}
+		start();
+		logger.info("接続に成功しました。");
+		loadPanel.setNextScreen(this::showHome);
+		completeLoad();
+	}
+
 	private synchronized void joinRoom() {
 		String userName = matchingPanel.getUserName();
 		int roomId = matchingPanel.getRoomId();
@@ -127,24 +144,6 @@ public final class GuiController extends Thread {
 	}
 
 	private synchronized void showLoad() {
-		Runnable onFinish;
-		switch (currentCardId) {
-			case CARD_RESULT:
-			case CARD_MATCHING:
-				onFinish = this::showGameRoom;
-				break;
-			case CARD_GAME_ROOM:
-				onFinish = this::showGame;
-				break;
-			case CARD_GAME:
-				onFinish = this::showResult;
-				break;
-			default:
-				onFinish = this::showHome;
-				break;
-		}
-		loadPanel.setLoaded(onFinish);
-		cardLayout.show(cardPanel, CARD_LOAD);
 		loadPanel.startLoading();
 		currentCardId = CARD_LOAD;
 	}
@@ -191,9 +190,12 @@ public final class GuiController extends Thread {
 			case OPPONENT_DISCONNECTED:
 				break;
 			case JOIN_SUCCESS:
+				loadPanel.setNextScreen(this::showGameRoom);
 				completeLoad();
 				break;
 			case JOIN_FAILED:
+				loadPanel.setNextScreen(this::showMatching);
+				completeLoad();
 				break;
 			case RESULT:
 				break;

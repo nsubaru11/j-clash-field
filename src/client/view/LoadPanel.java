@@ -36,13 +36,14 @@ public class LoadPanel extends JPanel {
 	private boolean isLoaded = false;
 	private State state = State.HIDDEN;
 	private int xPosition; // スライドするカバーの x 座標
-	private Runnable onFinishCallback;
+	private Runnable onSwitchScreen;
 	private long startTime;
 
 	/** LoadPanelを構築します。 */
 	public LoadPanel() {
 		super();
 		setLayout(null);
+		setOpaque(false);
 		setBackground(BACKGROUND_COLOR);
 		animationTimer = new Timer(ANIMATION_DELAY, e -> {
 			updateAnimation();
@@ -69,6 +70,7 @@ public class LoadPanel extends JPanel {
 			case WAITING:
 				long waitTime = System.currentTimeMillis() - startTime;
 				if (isLoaded && waitTime >= MIN_WAIT_TIME) {
+					if (onSwitchScreen != null) onSwitchScreen.run();
 					state = State.SLIDE_OUT;
 				}
 				break;
@@ -77,9 +79,7 @@ public class LoadPanel extends JPanel {
 				xPosition += SLIDE_SPEED;
 				if (xPosition >= width) {
 					stopAnimation();
-					if (onFinishCallback != null) {
-						onFinishCallback.run();
-					}
+					setVisible(false);
 				}
 				break;
 
@@ -94,13 +94,10 @@ public class LoadPanel extends JPanel {
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+		if (state == State.HIDDEN) return;
+
 		int width = getWidth();
 		int height = getHeight();
-
-		g2d.setColor(BACKGROUND_COLOR);
-		g2d.fillRect(0, 0, width, height);
-
-		if (state == State.HIDDEN) return;
 
 		g2d.drawImage(BACKGROUND_IMAGE, xPosition, 0, width, height, null);
 
@@ -135,8 +132,8 @@ public class LoadPanel extends JPanel {
 	/**
 	 * ロード終了後のコールバック設定
 	 */
-	public void setLoaded(Runnable onFinish) {
-		this.onFinishCallback = onFinish;
+	public void setNextScreen(Runnable onSwitchScreen) {
+		this.onSwitchScreen = onSwitchScreen;
 	}
 
 	private void stopAnimation() {
