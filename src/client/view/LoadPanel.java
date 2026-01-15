@@ -116,29 +116,33 @@ public class LoadPanel extends JPanel {
 	 * ロード処理を開始します。
 	 */
 	public void startLoading() {
-		isLoaded = false;
-		state = State.SLIDE_IN;
-		xPosition = -getWidth();
-		animationTimer.start();
+		SwingUtilities.invokeLater(() -> {
+			isLoaded = false;
+			state = State.SLIDE_IN;
+			xPosition = -getWidth();
+			animationTimer.start();
+		});
 	}
 
 	/**
 	 * 通信完了通知（GuiControllerから呼ばれる）
 	 */
 	public void completeLoading() {
-		isLoaded = true;
+		SwingUtilities.invokeLater(() -> isLoaded = true);
 	}
 
 	/**
 	 * ロード終了後のコールバック設定
 	 */
 	public void setNextScreen(Runnable onSwitchScreen) {
-		this.onSwitchScreen = onSwitchScreen;
+		SwingUtilities.invokeLater(() -> this.onSwitchScreen = onSwitchScreen);
 	}
 
 	private void stopAnimation() {
-		animationTimer.stop();
-		state = State.HIDDEN;
+		SwingUtilities.invokeLater(() -> {
+			animationTimer.stop();
+			state = State.HIDDEN;
+		});
 	}
 
 	// アニメーションの状態定義

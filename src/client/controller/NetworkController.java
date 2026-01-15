@@ -44,24 +44,26 @@ class NetworkController implements Closeable {
 		}
 	}
 
-	public boolean connect() {
-		try {
-			socket = new Socket(host, port);
-			out = new PrintWriter(socket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			isConnected = true;
-			sendQueue = new LinkedBlockingQueue<>();
-			startThreads();
-			return true;
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, "接続に失敗しました。", e);
-			return false;
-		}
+	public void connect(Runnable onSuccess, Runnable onFailure) {
+		new Thread(() -> {
+			try {
+				socket = new Socket(host, port);
+				out = new PrintWriter(socket.getOutputStream(), true);
+				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				isConnected = true;
+				sendQueue = new LinkedBlockingQueue<>();
+				startThreads();
+				logger.info("接続に成功しました。");
+				if (onSuccess != null) onSuccess.run();
+			} catch (IOException e) {
+				logger.log(Level.SEVERE, "接続に失敗しました。", e);
+				if (onFailure != null) onFailure.run();
+			}
+		}).start();
 	}
 
-	public boolean joinRoom(String userName, int roomId) {
+	public void joinRoom(String userName, int roomId) {
 		sendQueue.offer(Protocol.join(userName, roomId));
-		return true;
 	}
 
 	public void moveLeft() {
