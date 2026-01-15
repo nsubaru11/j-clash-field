@@ -42,7 +42,6 @@ class GameRoom extends Thread implements Closeable {
 		isClosed = false;
 	}
 
-	@Override
 	public void run() {
 		long targetTime = System.nanoTime();
 		while (!isClosed) {

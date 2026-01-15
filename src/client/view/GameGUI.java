@@ -15,7 +15,7 @@ public class GameGUI extends JFrame {
 	/** アプリケーションアイコンの画像 */
 	private static final Image ICON_IMAGE;
 	/** アプリケーションアイコンの画像パス */
-	private static final String ICON_IMAGE_PATH = "../assets/icon.png";
+	private static final String ICON_IMAGE_PATH = "/client/assets/icon.png";
 
 	static {
 		// アイコンは読み込み失敗してもアプリ動作には影響しないため、ログ出力のみで続行
@@ -34,7 +34,6 @@ public class GameGUI extends JFrame {
 
 	/**
 	 * GameGUIを構築し、メインウィンドウを初期化します。
-	 * 画面サイズの設定、レイアウトの構築、各パネルの生成と配置を行います。
 	 */
 	public GameGUI(JPanel cardPanel) {
 		// フレームの基本設定
@@ -42,17 +41,27 @@ public class GameGUI extends JFrame {
 		if (ICON_IMAGE != null) setIconImage(ICON_IMAGE);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		// 画面サイズの設定（デフォルト）
-		// 短い辺の60%を幅、80%を高さにする
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		double size = Math.min(screenSize.getWidth(), screenSize.getHeight());
-		screenSize.setSize(size * 0.6, size * 0.8);
-		setSize(screenSize);
-		setLocationRelativeTo(null);
+		setUndecorated(true); // 枠を消す
+		setResizable(false);  // リサイズ禁止
+		setBackground(Color.BLACK);
+
+		// グラフィックスデバイスを取得してフルスクリーン化
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice gd = ge.getDefaultScreenDevice();
+
+		if (gd.isFullScreenSupported()) {
+			gd.setFullScreenWindow(this);
+		} else {
+			// 万が一フルスクリーン非対応の場合は最大化して表示
+			setExtendedState(JFrame.MAXIMIZED_BOTH);
+			setVisible(true);
+		}
 
 		// レイアウトとパネルの初期化
 		this.cardPanel = cardPanel;
 		add(cardPanel);
-	}
 
+		// フルスクリーンの場合、フォーカスを確実に持たせる
+		requestFocus();
+	}
 }

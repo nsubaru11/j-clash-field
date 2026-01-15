@@ -23,6 +23,9 @@ public class MatchingPanel extends JPanel {
 	private final JButton startButton;
 	/** キャンセルボタン */
 	private final JButton cancelButton;
+	private ActionListener startGameListener;
+	private ActionListener cancelListener;
+
 
 	/** ユーザーネームのキャッシュ */
 	private String userName = "";
@@ -30,7 +33,7 @@ public class MatchingPanel extends JPanel {
 	/**
 	 * MatchingPanelを構築します。
 	 */
-	public MatchingPanel(ActionListener startGameListener, ActionListener cancelListener) {
+	public MatchingPanel() {
 		// 半透明オーバーレイ背景
 		setOpaque(false);
 		setLayout(new GridBagLayout());
@@ -120,6 +123,14 @@ public class MatchingPanel extends JPanel {
 		add(dialogPanel);
 	}
 
+	public void setStartGameListener(ActionListener startGameListener) {
+		this.startGameListener = startGameListener;
+	}
+
+	public void setCancelListener(ActionListener cancelListener) {
+		this.cancelListener = cancelListener;
+	}
+
 	/**
 	 * パネル表示時に入力フィールドをリセットします。
 	 */
@@ -207,7 +218,7 @@ public class MatchingPanel extends JPanel {
 		return userNameField.getText().trim();
 	}
 
-	public int getRoomNumber() {
+	public int getRoomId() {
 		try {
 			return Integer.parseInt(roomNumberField.getText().trim());
 		} catch (NumberFormatException e) {
@@ -227,8 +238,8 @@ public class MatchingPanel extends JPanel {
 					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
-		int roomNumber = getRoomNumber();
-		if (roomNumber <= 0) {
+		int roomNumber = getRoomId();
+		if (roomNumber < 0) {
 			JOptionPane.showMessageDialog(this,
 					"ルーム番号を正の整数で入力してください。",
 					"入力エラー",

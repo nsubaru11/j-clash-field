@@ -17,9 +17,9 @@ import java.util.Objects;
 public class HomePanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	/** スタートボタンの画像のパス */
-	private static final String START_IMAGE_PATH = "../assets/start.png";
+	private static final String START_IMAGE_PATH = "/client/assets/start.png";
 	/** 終了ボタンの画像のパス */
-	private static final String FINISH_IMAGE_PATH = "../assets/finish.png";
+	private static final String FINISH_IMAGE_PATH = "/client/assets/finish.png";
 	/** スタートボタンの画像 */
 	private static final BufferedImage START_IMAGE;
 	/** 終了ボタンの画像 */
@@ -59,7 +59,11 @@ public class HomePanel extends BaseBackgroundPanel {
 		Dimension dimension = this.getSize();
 		int width = dimension.width;
 		int height = dimension.height;
-		setSize(dimension);
+		if (width == 0 || height == 0) {
+			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+			width = screenSize.width;
+			height = screenSize.height;
+		}
 
 		// 画面構成の設定
 		setLayout(new GridBagLayout());

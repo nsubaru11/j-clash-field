@@ -8,13 +8,13 @@ import client.view.LoadPanel;
 import client.view.MatchingPanel;
 import client.view.ResultPanel;
 import model.Command;
-import model.LoggingConfig;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
-public final class GuiController {
+public final class GuiController extends Thread {
 	private static final Logger logger = Logger.getLogger(GuiController.class.getName());
 	/** ロード画面の識別子 */
 	private static final String CARD_LOAD = "load";
@@ -28,6 +28,8 @@ public final class GuiController {
 	private static final String CARD_GAME = "game";
 	/** 結果画面の識別子 */
 	private static final String CARD_RESULT = "result";
+	private static final int FPS = 60;
+	private static final long FRAME_TIME = 1000_000_000L / FPS;
 
 	/** 画面切り替えレイアウトマネージャ */
 	private final CardLayout cardLayout;
@@ -47,21 +49,23 @@ public final class GuiController {
 	private final ResultPanel resultPanel;
 	/** ネットワークコントローラー */
 	private final NetworkController network;
+	private final ConcurrentLinkedQueue<Command> commandQueue;
 
 	/** 現在の画面の Id */
-	private String currentCardId;
+	private String currentCardId = "default";
 
 	public GuiController(NetworkController network) {
+		this.network = network;
 		cardLayout = new CardLayout();
 		cardPanel = new JPanel(cardLayout);
 
 		loadPanel = new LoadPanel();
 		homePanel = new HomePanel(e -> showMatching(), e -> System.exit(0));
-		matchingPanel = new MatchingPanel(e -> showGameRoom(), e -> showHome());
+		matchingPanel = new MatchingPanel();
+		matchingPanel.setStartGameListener(e -> joinRoom());
 		gameRoomPanel = new GameRoomPanel();
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
-		this.network = network;
 
 		cardPanel.add(loadPanel, CARD_LOAD);
 		cardPanel.add(homePanel, CARD_HOME);
@@ -72,26 +76,57 @@ public final class GuiController {
 
 		GameGUI gui = new GameGUI(cardPanel);
 		gui.setVisible(true);
+		commandQueue = new ConcurrentLinkedQueue<>();
 	}
 
-	public void start() {
-		network.start();
-		network.setMessageListener(s -> handleMessage(new Command(s)));
+	public void run() {
+		network.setMessageListener(msg -> this.commandQueue.add(new Command(msg)));
 		Runtime.getRuntime().addShutdownHook(new Thread(network::close));
 		showLoad();
+		logger.info("接続を開始します...");
 		if (!network.connect()) {
 			logger.severe("接続に失敗しました。");
 			System.exit(1);
 		}
+		logger.info("接続に成功しました。");
 		completeLoad();
+		long targetTime = System.nanoTime();
+		while (true) {
+			targetTime += FRAME_TIME;
+			while (!commandQueue.isEmpty()) {
+				Command cmd = commandQueue.poll();
+				handleCommand(cmd);
+			}
+			long waitNs = targetTime - System.nanoTime();
+			if (waitNs > 0) {
+				long waitMs = waitNs / 1_000_000;
+				int waitNsRest = (int) (waitNs % 1_000_000);
+				try {
+					// noinspection BusyWait
+					Thread.sleep(waitMs, waitNsRest);
+				} catch (InterruptedException e) {
+					logger.warning("");
+					break;
+				}
+			} else {
+				logger.fine("処理落ち発生: " + waitNs + "ns");
+				targetTime -= waitNs;
+			}
+		}
 	}
 
-	public void showHome() {
+	private synchronized void joinRoom() {
+		String userName = matchingPanel.getUserName();
+		int roomId = matchingPanel.getRoomId();
+		network.joinRoom(userName, roomId);
+	}
+
+	private synchronized void showHome() {
 		cardLayout.show(cardPanel, CARD_HOME);
 		currentCardId = CARD_HOME;
 	}
 
-	public void showLoad() {
+	private synchronized void showLoad() {
 		Runnable onFinish;
 		switch (currentCardId) {
 			case CARD_RESULT:
@@ -114,32 +149,61 @@ public final class GuiController {
 		currentCardId = CARD_LOAD;
 	}
 
-	public void showMatching() {
+	private synchronized void showMatching() {
 		cardLayout.show(cardPanel, CARD_MATCHING);
 		currentCardId = CARD_MATCHING;
 	}
 
-	public void showGameRoom() {
+	private synchronized void showGameRoom() {
 		cardLayout.show(cardPanel, CARD_GAME_ROOM);
 		currentCardId = CARD_GAME_ROOM;
 	}
 
-	public void showGame() {
+	private synchronized void showGame() {
 		cardLayout.show(cardPanel, CARD_GAME);
 		currentCardId = CARD_GAME;
 	}
 
-	public void showResult() {
+	private synchronized void showResult() {
 		cardLayout.show(cardPanel, CARD_RESULT);
 		currentCardId = CARD_RESULT;
 	}
 
-	public void completeLoad() {
+	private synchronized void completeLoad() {
 		loadPanel.completeLoading();
 	}
 
-	public void handleMessage(Command message) {
-		logger.info("受信したメッセージ: " + message);
+	private synchronized void handleCommand(Command command) {
+		// TODO: コマンド処理
+		switch (command.getCommandType()) {
+			case GAME_START:
+				break;
+			case GAME_OVER:
+				break;
+			case MOVE:
+				break;
+			case DAMAGE:
+				break;
+			case DEAD:
+				break;
+			case OPPONENT_RESIGNED:
+				break;
+			case OPPONENT_DISCONNECTED:
+				break;
+			case JOIN_SUCCESS:
+				completeLoad();
+				break;
+			case JOIN_FAILED:
+				break;
+			case RESULT:
+				break;
+			case GAME_ROOM_CLOSED:
+				break;
+			case SERVER_CLOSED:
+				break;
+			default:
+				break;
+		}
 	}
 
 }

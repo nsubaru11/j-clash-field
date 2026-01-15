@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,7 @@ public final class GameServer implements Runnable, Closeable {
 	private final ServerSocket serverSocket;
 	private final LinkedHashSet<GameRoom> gameRooms;
 	private final LinkedHashSet<ClientHandler> waitingPlayers;
+	private final ConcurrentHashMap<ClientHandler, String> playerNames;
 
 	// -------------------- インスタンス変数 --------------------
 	private volatile boolean isRunning;
@@ -46,6 +48,7 @@ public final class GameServer implements Runnable, Closeable {
 		}
 		gameRooms = new LinkedHashSet<>();
 		waitingPlayers = new LinkedHashSet<>();
+		playerNames = new ConcurrentHashMap<>();
 		isRunning = true;
 	}
 
@@ -125,13 +128,16 @@ public final class GameServer implements Runnable, Closeable {
 			logger.warning(() -> "不正なコマンドが送信されました。");
 			return;
 		}
-		String roomId = cmd.getBody();
-		if (roomId.isEmpty()) {
+		String body = cmd.getBody();
+		int index = body.lastIndexOf(':');
+		String userName = body.substring(0, index);
+		playerNames.put(handler, userName);
+		int roomId = Integer.parseInt(body.substring(index + 1));
+		if (roomId < 0) {
 			addWaitingHandler(handler);
 		} else {
-			int id = Integer.parseInt(roomId);
 			for (GameRoom room : gameRooms) {
-				if (room.getRoomId() == id) {
+				if (room.getRoomId() == roomId) {
 					if (room.join(handler)) {
 						handler.sendMessage(Protocol.joinSuccess(room.getRoomId()));
 						logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
@@ -142,7 +148,7 @@ public final class GameServer implements Runnable, Closeable {
 					return;
 				}
 			}
-			logger.warning(() -> "ルーム(ID: " + id + ")は存在しません。");
+			logger.warning(() -> "ルーム(ID: " + roomId + ")は存在しません。");
 			handler.sendMessage(Protocol.joinFailed());
 		}
 	}
@@ -190,5 +196,6 @@ public final class GameServer implements Runnable, Closeable {
 		if (!isRunning || handler == null) return;
 		logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")が切断されました。");
 		waitingPlayers.remove(handler);
+		playerNames.remove(handler);
 	}
 }

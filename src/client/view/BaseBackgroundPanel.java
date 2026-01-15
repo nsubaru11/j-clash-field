@@ -9,7 +9,7 @@ import java.util.Objects;
 
 abstract class BaseBackgroundPanel extends JPanel {
 	/** 背景画像のパス（デフォルト） */
-	protected static final String DEFAULT_BACKGROUND_IMAGE_PATH = "../assets/background.png";
+	protected static final String DEFAULT_BACKGROUND_IMAGE_PATH = "/client/assets/background.png";
 	/** 背景画像（デフォルト） */
 	protected static final BufferedImage DEFAULT_BACKGROUND_IMAGE;
 

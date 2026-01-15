@@ -63,9 +63,8 @@ public final class Protocol {
 		return CommandType.CONNECT.getId() + "";
 	}
 
-	public static String join(int roomId) {
-		if (roomId < 0) return CommandType.JOIN.getId() + "";
-		return CommandType.JOIN.getId() + ":" + roomId;
+	public static String join(String userName, int roomId) {
+		return CommandType.JOIN.getId() + ":" + userName + ":" + roomId;
 	}
 
 	public static String moveLeft() {

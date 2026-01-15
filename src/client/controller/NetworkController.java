@@ -8,7 +8,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
+import java.net.SocketException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,23 +17,31 @@ import java.util.logging.Logger;
 /**
  * 通信を管理するクラスです。
  */
-class NetworkController extends Thread implements Closeable {
+class NetworkController implements Closeable {
 	private static final Logger logger = Logger.getLogger(NetworkController.class.getName());
 	private final String host;
 	private final int port;
 	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
-
+	private LinkedBlockingQueue<String> sendQueue;
+	private Thread senderThread;
+	private Thread receiverThread;
 	private volatile Consumer<String> messageListener;
+	private volatile boolean isConnected;
 
 	public NetworkController(String host, int port) {
 		this.host = host;
 		this.port = port;
 	}
 
-	public void setMessageListener(Consumer<String> messageListener) {
-		this.messageListener = messageListener;
+	public void close() {
+		try {
+			socket.close();
+			logger.fine(() -> "ソケットをクローズしました");
+		} catch (IOException e) {
+			logger.log(Level.WARNING, "プレイヤーソケットクローズに失敗", e);
+		}
 	}
 
 	public boolean connect() {
@@ -40,6 +49,9 @@ class NetworkController extends Thread implements Closeable {
 			socket = new Socket(host, port);
 			out = new PrintWriter(socket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			isConnected = true;
+			sendQueue = new LinkedBlockingQueue<>();
+			startThreads();
 			return true;
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, "接続に失敗しました。", e);
@@ -47,69 +59,86 @@ class NetworkController extends Thread implements Closeable {
 		}
 	}
 
-	public boolean joinRoom(int roomId) {
-		out.println(Protocol.join(roomId));
-		return true;
-	}
-
-	public boolean joinRoom() {
-		out.println(Protocol.join(-1));
+	public boolean joinRoom(String userName, int roomId) {
+		sendQueue.offer(Protocol.join(userName, roomId));
 		return true;
 	}
 
 	public void moveLeft() {
-		out.println(Protocol.moveLeft());
+		sendQueue.offer(Protocol.moveLeft());
 	}
 
 	public void moveRight() {
-		out.println(Protocol.moveRight());
+		sendQueue.offer(Protocol.moveRight());
 	}
 
 	public void moveUp() {
-		out.println(Protocol.moveUp());
+		sendQueue.offer(Protocol.moveUp());
 	}
 
 	public void moveDown() {
-		out.println(Protocol.moveDown());
+		sendQueue.offer(Protocol.moveDown());
 	}
 
 	public void resign() {
-		out.println(Protocol.resign());
+		sendQueue.offer(Protocol.resign());
 	}
 
 	public void disconnect() {
-		out.println(Protocol.disconnect());
+		sendQueue.offer(Protocol.disconnect());
 	}
 
-	public void run() {
-		try {
-			// メッセージ受信ループ
-			while (true) {
-				String line = in.readLine();
-				if (line == null) break;
-				if (messageListener != null) {
-					logger.fine(() -> "サーバーから受信: " + line);
-					messageListener.accept(line);
+	public void setMessageListener(Consumer<String> messageListener) {
+		this.messageListener = messageListener;
+	}
+
+	private void startThreads() {
+		senderThread = new Thread(new MessageSender(), "Sender");
+		receiverThread = new Thread(new MessageReceiver(), "Receiver");
+
+		senderThread.start();
+		receiverThread.start();
+	}
+
+	private final class MessageSender implements Runnable {
+		public void run() {
+			try {
+				while (isConnected && !Thread.currentThread().isInterrupted()) {
+					String message = sendQueue.take();
+					out.println(message);
+					logger.fine(() -> "サーバーに送信: " + message);
+
+					if (out.checkError()) {
+						logger.warning("メッセージ送信エラー");
+						close();
+						break;
+					}
 				}
+			} catch (InterruptedException e) {
+				logger.fine("送信スレッド停止");
 			}
-		} catch (final SocketTimeoutException e) {
-			logger.log(Level.WARNING, "サーバーからのタイムアウトにより切断", e);
-		} catch (final IOException e) {
-			// 意図的に閉じた(isConnected==false)場合はエラーログを出さない
-			logger.log(Level.WARNING, "サーバー接続エラー", e);
-		} finally {
-			logger.log(Level.WARNING, "切断リスナー実行中にエラー");
-			close();
 		}
 	}
 
-	@Override
-	public void close() {
-		try {
-			socket.close();
-			logger.fine(() -> "ソケットをクローズしました");
-		} catch (IOException e) {
-			logger.log(Level.WARNING, "プレイヤーソケットクローズに失敗", e);
+	private final class MessageReceiver implements Runnable {
+		public void run() {
+			try {
+				while (isConnected) {
+					String line = in.readLine();
+					if (line == null) break; // 切断検知
+
+					if (messageListener != null) {
+						logger.fine(() -> "サーバーから受信: " + line);
+						messageListener.accept(line);
+					}
+				}
+			} catch (SocketException e) {
+				if (isConnected) logger.log(Level.WARNING, "予期せぬ切断", e);
+			} catch (IOException e) {
+				if (isConnected) logger.log(Level.WARNING, "受信エラー", e);
+			} finally {
+				close();
+			}
 		}
 	}
 }

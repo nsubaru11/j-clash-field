@@ -50,7 +50,6 @@ class ClientHandler implements Closeable {
 		receiverThread.start();
 	}
 
-	@Override
 	public void close() {
 		if (!isConnected) return;
 		isConnected = false;
@@ -82,7 +81,6 @@ class ClientHandler implements Closeable {
 	public void setDisconnectListener(final Runnable disconnectListener) {
 		this.disconnectListener = disconnectListener;
 	}
-
 
 	/**
 	 * 切断時のリスナー呼び出し処理を切り出し
