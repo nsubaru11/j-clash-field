@@ -16,14 +16,12 @@ public class TitlePanel extends BaseBackgroundPanel {
 	private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 64);
 	private static final Font SUB_FONT = new Font("Arial", Font.BOLD, 32);
 
-	private final Runnable onStartAction;
 	private final Timer blinkTimer;
 	private boolean showText = true;
 
 	public TitlePanel(Runnable onStartAction) {
 		// 背景画像は共通のものを使用（必要なら別のパスを指定）
 		super();
-		this.onStartAction = onStartAction;
 
 		setLayout(new GridBagLayout());
 
@@ -39,9 +37,7 @@ public class TitlePanel extends BaseBackgroundPanel {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				blinkTimer.stop();
-				if (TitlePanel.this.onStartAction != null) {
-					TitlePanel.this.onStartAction.run();
-				}
+				onStartAction.run();
 			}
 		});
 	}
