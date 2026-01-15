@@ -27,9 +27,7 @@ public final class GuiController {
 	private static final String CARD_RESULT = "result";
 
 	// -------------------- インスタンス定数 --------------------
-	/**
-	 * ルートパネル
-	 */
+	/** ルートパネル */
 	private final JLayeredPane rootPane;
 	/** 画面切り替えレイアウトマネージャ */
 	private final CardLayout cardLayout;
@@ -59,6 +57,7 @@ public final class GuiController {
 		homePanel = new HomePanel(e -> showMatching(), e -> System.exit(0));
 		matchingPanel = new MatchingPanel();
 		matchingPanel.setStartGameListener(e -> joinRoom());
+		matchingPanel.setCancelListener(e -> showHome());
 		gameRoomPanel = new GameRoomPanel();
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
@@ -99,11 +98,14 @@ public final class GuiController {
 	}
 
 	private void showHome() {
-		SwingUtilities.invokeLater(() -> cardLayout.show(cardPanel, CARD_HOME));
+		SwingUtilities.invokeLater(() -> {
+			matchingPanel.reset();
+			cardLayout.show(cardPanel, CARD_HOME);
+		});
 	}
 
 	private void showLoad() {
-		SwingUtilities.invokeLater(loadPanel::startLoading);
+		loadPanel.startLoading();
 	}
 
 	private void showMatching() {
