@@ -10,6 +10,7 @@ import java.util.Objects;
 /**
  * ゲーム起動時のロード画面を表示するパネルです。
  * ロード完了後にホーム画面へ遷移します。
+ * TODO: JOptionPane の UI を改善する
  */
 public class LoadPanel extends JPanel {
 	// --------------- フィールド ---------------
@@ -21,7 +22,7 @@ public class LoadPanel extends JPanel {
 	private static final int SLIDE_SPEED = 180;     // スライド速度 (px/frame)
 	private static final long MIN_WAIT_TIME = 500;
 	private static final Color BACKGROUND_COLOR = new Color(20, 20, 40); // 背景色
-	private static final String LOADING_TEXT = "CONNECTING...";
+	private static final String LOADING_TEXT = "CONNECTING";
 	private static final Font LOADING_FONT = new Font("Arial", Font.BOLD, 48);
 
 	static {
@@ -105,11 +106,14 @@ public class LoadPanel extends JPanel {
 		g2d.setColor(Color.WHITE);
 		g2d.setFont(LOADING_FONT);
 		FontMetrics fm = g2d.getFontMetrics();
+		StringBuilder dots = new StringBuilder(3);
+		int dotCount = (int) ((System.currentTimeMillis() - startTime) / 1000 % 3);
+		for (int i = 0; i <= dotCount; i++) dots.append(".");
 		int textWidth = fm.stringWidth(LOADING_TEXT);
-		int textX = xPosition + (width - textWidth) / 2;
+		int textX = xPosition + (width - textWidth - 3) / 2;
 		int textY = (height + fm.getAscent()) / 2;
 
-		g2d.drawString(LOADING_TEXT, textX, textY);
+		g2d.drawString(LOADING_TEXT + dots, textX, textY);
 	}
 
 	/**

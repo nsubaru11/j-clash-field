@@ -12,6 +12,7 @@ import model.Command;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -54,7 +55,10 @@ public final class GuiController {
 
 		titlePanel = new TitlePanel(this::startConnection);
 		loadPanel = new LoadPanel();
-		homePanel = new HomePanel(e -> showMatching(), e -> System.exit(0));
+		homePanel = new HomePanel(e -> showMatching(), e -> {
+			int result = JOptionPane.showConfirmDialog(cardPanel, "終了します。よろしいですか？", "終了確認", JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) System.exit(0);
+		});
 		matchingPanel = new MatchingPanel();
 		matchingPanel.setStartGameListener(e -> joinRoom());
 		matchingPanel.setCancelListener(e -> showHome());
@@ -87,7 +91,10 @@ public final class GuiController {
 			new GameLoopThread().start();
 			loadPanel.setNextScreen(this::showHome);
 			completeLoad();
-		}, () -> SwingUtilities.invokeLater(() -> System.exit(1)));
+		}, () -> SwingUtilities.invokeLater(() -> {
+			JOptionPane.showMessageDialog(cardPanel, "サーバーに接続できませんでした。", "接続エラー", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}));
 	}
 
 	private synchronized void joinRoom() {
@@ -146,6 +153,16 @@ public final class GuiController {
 			case OPPONENT_DISCONNECTED:
 				break;
 			case JOIN_SUCCESS:
+				String[] roomState = command.getBody().split(":");
+				String[] roomInfo = roomState[0].split(",");
+				int roomId = Integer.parseInt(roomInfo[0]);
+				boolean isPublic = Boolean.parseBoolean(roomInfo[1]);
+				int playerCount = Integer.parseInt(roomInfo[2]);
+				HashMap<Integer, String[]> playerMap = new HashMap<>();
+				for (String playerInfo : roomState[1].split(",")) {
+					String[] playerInfoArray = playerInfo.split(",");
+					playerMap.put(Integer.parseInt(playerInfoArray[0]), playerInfoArray);
+				}
 				loadPanel.setNextScreen(this::showGameRoom);
 				completeLoad();
 				break;

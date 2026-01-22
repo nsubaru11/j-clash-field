@@ -46,18 +46,32 @@ class NetworkController implements Closeable {
 
 	public void connect(Runnable onSuccess, Runnable onFailure) {
 		new Thread(() -> {
-			try {
-				socket = new Socket(host, port);
-				out = new PrintWriter(socket.getOutputStream(), true);
-				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				isConnected = true;
-				sendQueue = new LinkedBlockingQueue<>();
-				startThreads();
-				logger.info("接続に成功しました。");
-				if (onSuccess != null) onSuccess.run();
-			} catch (IOException e) {
-				logger.log(Level.SEVERE, "接続に失敗しました。", e);
-				if (onFailure != null) onFailure.run();
+			int attempt = 0;
+			while (attempt < 3) {
+				attempt++;
+				try {
+					socket = new Socket(host, port);
+					out = new PrintWriter(socket.getOutputStream(), true);
+					in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					isConnected = true;
+					sendQueue = new LinkedBlockingQueue<>();
+					startThreads();
+					logger.info("接続に成功しました。");
+					if (onSuccess != null) onSuccess.run();
+					break;
+				} catch (IOException e) {
+					if (attempt < 3) {
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e2) {
+							logger.warning("");
+							break;
+						}
+						continue;
+					}
+					logger.log(Level.SEVERE, "接続に失敗しました。", e);
+					if (onFailure != null) onFailure.run();
+				}
 			}
 		}).start();
 	}

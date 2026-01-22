@@ -1,5 +1,9 @@
 package model;
 
+/**
+ * 通信用のクラスです。
+ * 区切り文字をレベル別に[`:` > `,` > ` `]と定義するため、これらの文字を送信データ内に含んではいけません。
+ */
 public final class Protocol {
 	private Protocol() {
 	}
@@ -14,7 +18,7 @@ public final class Protocol {
 	}
 
 	public static String move(long id, double i, double j) {
-		return CommandType.MOVE.getId() + ":" + id + ":" + i + " " + j;
+		return CommandType.MOVE.getId() + ":" + id + ":" + i + "," + j;
 	}
 
 	public static String damage(int hp) {
@@ -33,12 +37,20 @@ public final class Protocol {
 		return CommandType.OPPONENT_DISCONNECTED.getId() + "";
 	}
 
-	public static String joinSuccess(int roomId) {
-		return CommandType.JOIN_SUCCESS.getId() + ":" + roomId;
+	public static String joinSuccess(String roomState) {
+		return CommandType.JOIN_SUCCESS.getId() + ":" + roomState;
 	}
 
 	public static String joinFailed() {
 		return CommandType.JOIN_FAILED.getId() + "";
+	}
+
+	public static String selectCharacter(String characterName) {
+		return CommandType.SELECT_CHARACTER.getId() + ":" + characterName;
+	}
+
+	public static String unselectCharacter() {
+		return CommandType.UNSELECT_CHARACTER.getId() + "";
 	}
 
 	public static String joinOpponent(String opponentName) {

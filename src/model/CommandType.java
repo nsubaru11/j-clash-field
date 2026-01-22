@@ -29,6 +29,9 @@ public enum CommandType {
 	MOVE_DOWN(57),
 	RESIGN(58),
 	DISCONNECT(59),
+	CREATE_ROOM(60),
+	SELECT_CHARACTER(61),
+	UNSELECT_CHARACTER(61),
 
 	// -------------------- その他 --------------------
 	ERROR(254),

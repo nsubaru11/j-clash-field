@@ -5,10 +5,12 @@ import model.GameCharacter;
 import model.Protocol;
 
 import java.io.Closeable;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * ゲームルームのクラスです。
@@ -28,6 +30,7 @@ class GameRoom extends Thread implements Closeable {
 
 	// -------------------- インスタンス変数 --------------------
 	private volatile Runnable disconnectListener;
+	private volatile boolean isPublic;
 	private volatile boolean isStarted;
 	private volatile boolean isClosed;
 	private volatile boolean isGameOver;
@@ -40,6 +43,7 @@ class GameRoom extends Thread implements Closeable {
 		playerMap = new ConcurrentHashMap<>(MAX_PLAYERS);
 		isStarted = false;
 		isClosed = false;
+		isPublic = true;
 	}
 
 	public void run() {
@@ -87,16 +91,18 @@ class GameRoom extends Thread implements Closeable {
 	}
 
 	/**
-	 * デバッグ用
+	 * 送信するデータ
 	 */
 	public synchronized String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("ルーム(ID: ").append(roomId).append("):\n");
-		if (isStarted) sb.append("ゲーム開始中\n");
-		else sb.append("マッチング中\n");
-		sb.append("プレイヤー:\n");
-		for (ClientHandler handler : playerMap.keySet()) sb.append("  ").append(handler.getConnectionId()).append("\n");
-		return sb.toString();
+		if (isClosed) return "ルーム(ID: " + roomId + ")は閉鎖されています。";
+		StringJoiner sj = new StringJoiner(":");
+		if (isStarted) {
+			sj.add(playerMap.size() + "").add(battleField.toString());
+		} else {
+			sj.add(roomId + "," + isPublic + "," + playerMap.size());
+			sj.add(playerMap.values().stream().map(Player::toString).collect(Collectors.joining(",")));
+		}
+		return sj.toString();
 	}
 
 	/** 一意識別用 */
@@ -112,6 +118,10 @@ class GameRoom extends Thread implements Closeable {
 
 	public synchronized int getRoomId() {
 		return roomId;
+	}
+
+	public synchronized boolean isPublic() {
+		return isPublic;
 	}
 
 	public synchronized boolean join(final ClientHandler handler) {
@@ -136,7 +146,7 @@ class GameRoom extends Thread implements Closeable {
 		if (player == null) return;
 		switch (command.getCommandType()) {
 			case READY:
-				player.setReady(command.getBody());
+				player.setReady();
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
 				startGame();
 				break;
@@ -145,6 +155,13 @@ class GameRoom extends Thread implements Closeable {
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備を解除しました。");
 				// TODO: 全体通知
 				break;
+			case SELECT_CHARACTER:
+				player.selectCharacter(command.getBody());
+				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")がキャラクターを設定しました。");
+				break;
+			case UNSELECT_CHARACTER:
+				player.unselectCharacter();
+				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")がキャラクターを解除しました。");
 			case MOVE_LEFT:
 				break;
 			case MOVE_UP:

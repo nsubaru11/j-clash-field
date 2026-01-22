@@ -49,16 +49,8 @@ public class GameGUI extends JFrame {
 		setBackground(Color.BLACK);
 
 		// グラフィックスデバイスを取得してフルスクリーン化
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice gd = ge.getDefaultScreenDevice();
-
-		if (gd.isFullScreenSupported()) {
-			gd.setFullScreenWindow(this);
-		} else {
-			// 万が一フルスクリーン非対応の場合は最大化して表示
-			setExtendedState(JFrame.MAXIMIZED_BOTH);
-			setVisible(true);
-		}
+		setExtendedState(JFrame.MAXIMIZED_BOTH);
+		setVisible(true);
 
 		// レイアウトとパネルの初期化
 		add(rootPane);

@@ -139,7 +139,7 @@ public final class GameServer implements Runnable, Closeable {
 			for (GameRoom room : gameRooms) {
 				if (room.getRoomId() == roomId) {
 					if (room.join(handler)) {
-						handler.sendMessage(Protocol.joinSuccess(room.getRoomId()));
+						handler.sendMessage(Protocol.joinSuccess(room.toString()));
 						logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 					} else {
 						logger.warning(() -> "ルーム(ID: " + room.getRoomId() + ")は既に満員です。");
