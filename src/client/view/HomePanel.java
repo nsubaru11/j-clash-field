@@ -1,6 +1,9 @@
 package client.view;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -39,29 +42,30 @@ public class HomePanel extends BaseBackgroundPanel {
 		JPanel leftPanel = new JPanel();
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 		leftPanel.setOpaque(false);
-		leftPanel.setBorder(BorderFactory.createEmptyBorder(350, 100, 0, 0));
+		leftPanel.setBorder(BorderFactory.createEmptyBorder(400, 100, 0, 0));
 
-		Dimension largeButtonSize = new Dimension(200, 50);
-		Dimension smallButtonSize = new Dimension(95, 50);
+		Dimension largeButtonSize = new Dimension(400, 50);
+		Dimension smallButtonSize = new Dimension(195, 50);
 
 		// ランダム参加ボタン
-		matchingButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(34, 139, 34));
+		matchingButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
 		matchingButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.RANDOM));
 		matchingButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(matchingButton);
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// ルーム作成・参加ボタン
-		JPanel subPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+		JPanel subPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		subPanel.setOpaque(false);
-		subPanel.setMaximumSize(new Dimension(210, 50));
+		subPanel.setMaximumSize(new Dimension(400, 50));
 		subPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(34, 139, 34));
+		createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(27, 110, 80));
 		createRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.CREATE));
 		subPanel.add(createRoomButton);
+		subPanel.add(Box.createHorizontalStrut(10));
 
-		joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(34, 139, 34));
+		joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(24, 102, 74));
 		joinRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.JOIN));
 		subPanel.add(joinRoomButton);
 
@@ -69,14 +73,15 @@ public class HomePanel extends BaseBackgroundPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// 設定ボタン
-		configButton = createSimpleButton("設定", largeButtonSize, Color.GRAY); // 色をグレーに
+		configButton = createSimpleButton("設定", largeButtonSize, new Color(90, 96, 104)); // 色をグレーに
 		configButton.setEnabled(false); // 押せないようにする
+		// configButton.setDisabledTextColor(new Color(210, 210, 210));
 		configButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(configButton);
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// 終了ボタン
-		exitButton = createSimpleButton("終了", largeButtonSize, new Color(139, 69, 69));
+		exitButton = createSimpleButton("終了", largeButtonSize, new Color(112, 45, 45));
 		exitButton.addActionListener(exitListener);
 		exitButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(exitButton);
@@ -120,11 +125,21 @@ public class HomePanel extends BaseBackgroundPanel {
 		button.setPreferredSize(size);
 		button.setMinimumSize(size);
 		button.setMaximumSize(size);
-		button.setFont(new Font("Dialog", Font.BOLD, 20));
-		button.setForeground(Color.WHITE);
+		button.setFont(new Font("Meiryo", Font.BOLD, 20));
+		button.setForeground(new Color(245, 245, 245));
 		button.setBackground(color);
 		button.setFocusPainted(false);
-		button.setBorder(null);
+		button.setBorder(new CompoundBorder(
+				new LineBorder(color.darker(), 1, true),
+				new EmptyBorder(0, 14, 0, 14)));
+		button.setContentAreaFilled(true);
+		button.setOpaque(true);
+		button.setHorizontalAlignment(SwingConstants.CENTER);
+		button.setVerticalAlignment(SwingConstants.CENTER);
+		button.setHorizontalTextPosition(SwingConstants.CENTER);
+		button.setVerticalTextPosition(SwingConstants.CENTER);
+		button.setMargin(new Insets(0, 0, 0, 0));
+		button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
 		button.addMouseListener(new MouseAdapter() {
 			@Override
