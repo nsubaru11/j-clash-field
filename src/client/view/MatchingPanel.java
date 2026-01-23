@@ -19,7 +19,6 @@ public class MatchingPanel extends JPanel {
 	private final JTextField roomNumberField; // ルーム番号入力フィールド
 	private final JButton startButton; // 開始ボタン
 	private final JButton cancelButton; // キャンセルボタン
-	private final JCheckBox isPrivateCheckBox; // プライベートルームチェックボックス
 	private final JLabel titleLabel;
 	private final JLabel roomNumberLabel; // 部屋番号入力ラベル
 
@@ -93,20 +92,6 @@ public class MatchingPanel extends JPanel {
 		gbc.insets = new Insets(10, 10, 5, 20);
 		dialogPanel.add(roomNumberField, gbc);
 
-		// プライベートチェックボックス
-		isPrivateCheckBox = new JCheckBox("プライベートルーム");
-		isPrivateCheckBox.setFont(new Font("Meiryo", Font.PLAIN, 14));
-		isPrivateCheckBox.setForeground(Color.WHITE);
-		isPrivateCheckBox.setOpaque(false);
-		isPrivateCheckBox.setFocusPainted(false);
-		isPrivateCheckBox.setIconTextGap(8);
-		gbc.gridx = 0;
-		gbc.gridy = 3;
-		gbc.gridwidth = 2;
-		gbc.insets = new Insets(10, 20, 5, 20);
-		gbc.anchor = GridBagConstraints.WEST;
-		dialogPanel.add(isPrivateCheckBox, gbc);
-
 		// ボタンパネル
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
 		buttonPanel.setOpaque(false);
@@ -120,7 +105,7 @@ public class MatchingPanel extends JPanel {
 		buttonPanel.add(cancelButton);
 
 		gbc.gridx = 0;
-		gbc.gridy = 4;
+		gbc.gridy = 3;
 		gbc.gridwidth = 2;
 		gbc.insets = new Insets(20, 20, 20, 20);
 		gbc.anchor = GridBagConstraints.CENTER;
@@ -138,21 +123,18 @@ public class MatchingPanel extends JPanel {
 				titleLabel.setText("ランダム参加");
 				roomNumberLabel.setVisible(false);
 				roomNumberField.setVisible(false);
-				isPrivateCheckBox.setVisible(false);
 				startButton.setText("参加");
 				break;
 			case CREATE:
 				titleLabel.setText("ルーム作成");
 				roomNumberLabel.setVisible(false);
 				roomNumberField.setVisible(false);
-				isPrivateCheckBox.setVisible(true);
 				startButton.setText("作成");
 				break;
 			case JOIN:
 				titleLabel.setText("ルーム参加");
 				roomNumberLabel.setVisible(true);
 				roomNumberField.setVisible(true);
-				isPrivateCheckBox.setVisible(false);
 				startButton.setText("参加");
 				break;
 		}
@@ -180,7 +162,6 @@ public class MatchingPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			userNameField.setText(userName);
 			roomNumberField.setText("");
-			isPrivateCheckBox.setSelected(false);
 			userNameField.requestFocusInWindow();
 		});
 	}
@@ -261,10 +242,6 @@ public class MatchingPanel extends JPanel {
 
 	public MatchingMode getCurrentMode() {
 		return currentMode;
-	}
-
-	public boolean isPrivate() {
-		return isPrivateCheckBox.isSelected();
 	}
 
 	public String getUserName() {

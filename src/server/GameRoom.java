@@ -30,7 +30,7 @@ class GameRoom extends Thread implements Closeable {
 
 	// -------------------- インスタンス変数 --------------------
 	private volatile Runnable disconnectListener;
-	private volatile boolean isPublic;
+	private final boolean isPublic;
 	private volatile boolean isStarted;
 	private volatile boolean isClosed;
 	private volatile boolean isGameOver;
@@ -38,12 +38,16 @@ class GameRoom extends Thread implements Closeable {
 	private volatile BattleField battleField;
 
 	public GameRoom() {
+		this(true);
+	}
+
+	public GameRoom(final boolean isPublic) {
 		roomId = ID_GENERATOR.incrementAndGet();
 		commandQueue = new ConcurrentLinkedQueue<>();
 		playerMap = new ConcurrentHashMap<>(MAX_PLAYERS);
+		this.isPublic = isPublic;
 		isStarted = false;
 		isClosed = false;
-		isPublic = true;
 	}
 
 	public void run() {
@@ -120,7 +124,7 @@ class GameRoom extends Thread implements Closeable {
 		return roomId;
 	}
 
-	public synchronized boolean isPublic() {
+	public boolean isPublic() {
 		return isPublic;
 	}
 
@@ -171,6 +175,9 @@ class GameRoom extends Thread implements Closeable {
 			case MOVE_DOWN:
 				break;
 			case RESIGN:
+				break;
+			case DISCONNECT:
+				handleDisconnect(sender);
 				break;
 			default:
 				break;

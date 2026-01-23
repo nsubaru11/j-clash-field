@@ -80,6 +80,10 @@ class NetworkController implements Closeable {
 		sendQueue.offer(Protocol.join(userName, roomId));
 	}
 
+	public void createRoom(String userName) {
+		sendQueue.offer(Protocol.createRoom(userName));
+	}
+
 	public void moveLeft() {
 		sendQueue.offer(Protocol.moveLeft());
 	}

@@ -31,7 +31,7 @@ public enum CommandType {
 	DISCONNECT(59),
 	CREATE_ROOM(60),
 	SELECT_CHARACTER(61),
-	UNSELECT_CHARACTER(61),
+	UNSELECT_CHARACTER(62),
 
 	// -------------------- その他 --------------------
 	ERROR(254),

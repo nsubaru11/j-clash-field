@@ -57,7 +57,10 @@ public final class GuiController {
 		loadPanel = new LoadPanel();
 		homePanel = new HomePanel(this::showMatching, e -> {
 			int result = JOptionPane.showConfirmDialog(cardPanel, "終了します。よろしいですか？", "終了確認", JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) System.exit(0);
+			if (result == JOptionPane.YES_OPTION) {
+				network.disconnect();
+				System.exit(0);
+			}
 		});
 		matchingPanel = new MatchingPanel();
 		matchingPanel.setVisible(false);
@@ -101,20 +104,21 @@ public final class GuiController {
 	private synchronized void joinRoom() {
 		String userName = matchingPanel.getUserName();
 		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
-		int roomId;
-		switch (mode) {
-			case JOIN:
-				roomId = matchingPanel.getRoomId();
-				break;
-			case CREATE:
-			case RANDOM:
-			default:
-				roomId = -1;
-				break;
-		}
 		matchingPanel.setVisible(false);
 		showLoad();
-		network.joinRoom(userName, roomId);
+		loadPanel.setNextScreen(this::showGameRoom);
+		switch (mode) {
+			case CREATE:
+				network.createRoom(userName);
+				break;
+			case JOIN:
+				network.joinRoom(userName, matchingPanel.getRoomId());
+				break;
+			case RANDOM:
+			default:
+				network.joinRoom(userName, -1);
+				break;
+		}
 	}
 
 	private void showHome() {
@@ -175,8 +179,8 @@ public final class GuiController {
 				String[] roomState = command.getBody().split(":");
 				String[] roomInfo = roomState[0].split(",");
 				int roomId = Integer.parseInt(roomInfo[0]);
-				boolean isPublic = Boolean.parseBoolean(roomInfo[1]);
-				int playerCount = Integer.parseInt(roomInfo[2]);
+				boolean isPublic = roomInfo.length > 2 && Boolean.parseBoolean(roomInfo[1]);
+				int playerCount = Integer.parseInt(roomInfo[roomInfo.length > 2 ? 2 : 1]);
 				HashMap<Integer, String[]> playerMap = new HashMap<>();
 				for (String playerInfo : roomState[1].split(",")) {
 					String[] playerInfoArray = playerInfo.split(",");

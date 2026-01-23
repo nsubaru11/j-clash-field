@@ -1,6 +1,5 @@
 package server;
 
-import model.CommandType;
 import model.LoggingConfig;
 import model.Protocol;
 
@@ -25,7 +24,8 @@ public final class GameServer implements Runnable, Closeable {
 
 	// -------------------- インスタンス定数 --------------------
 	private final ServerSocket serverSocket;
-	private final LinkedHashSet<GameRoom> gameRooms;
+	private final LinkedHashSet<GameRoom> publicRooms;
+	private final ConcurrentHashMap<Integer, GameRoom> privateRooms;
 	private final LinkedHashSet<ClientHandler> waitingPlayers;
 	private final ConcurrentHashMap<ClientHandler, String> playerNames;
 
@@ -46,7 +46,8 @@ public final class GameServer implements Runnable, Closeable {
 			logger.log(Level.SEVERE, "予期せぬ重大なエラーが発生しました。", e);
 			throw new RuntimeException(e);
 		}
-		gameRooms = new LinkedHashSet<>();
+		publicRooms = new LinkedHashSet<>();
+		privateRooms = new ConcurrentHashMap<>();
 		waitingPlayers = new LinkedHashSet<>();
 		playerNames = new ConcurrentHashMap<>();
 		isRunning = true;
@@ -111,7 +112,7 @@ public final class GameServer implements Runnable, Closeable {
 	public synchronized void close() {
 		isRunning = false;
 		waitingPlayers.forEach(ClientHandler::close);
-		gameRooms.forEach(GameRoom::close);
+		publicRooms.forEach(GameRoom::close);
 		try {
 			serverSocket.close();
 		} catch (final IOException e) {
@@ -124,11 +125,23 @@ public final class GameServer implements Runnable, Closeable {
 	/** プレイヤーがルームに参加するコマンドを受け取ったときの処理 */
 	private synchronized void join(ClientHandler handler, String msg) {
 		ServerCommand cmd = new ServerCommand(handler, msg);
-		if (cmd.getCommandType() != CommandType.JOIN) {
-			logger.warning(() -> "不正なコマンドが送信されました。");
-			return;
+		switch (cmd.getCommandType()) {
+			case JOIN:
+				handleJoin(handler, cmd.getBody());
+				break;
+			case CREATE_ROOM:
+				handleCreateRoom(handler, cmd.getBody());
+				break;
+			case DISCONNECT:
+				disconnectHandler(handler);
+				break;
+			default:
+				logger.warning(() -> "不正なコマンドが送信されました。");
+				break;
 		}
-		String body = cmd.getBody();
+	}
+
+	private void handleJoin(final ClientHandler handler, final String body) {
 		int index = body.lastIndexOf(':');
 		String userName = body.substring(0, index);
 		playerNames.put(handler, userName);
@@ -136,21 +149,34 @@ public final class GameServer implements Runnable, Closeable {
 		if (roomId < 0) {
 			addWaitingHandler(handler);
 		} else {
-			for (GameRoom room : gameRooms) {
-				if (room.getRoomId() == roomId) {
-					if (room.join(handler)) {
-						handler.sendMessage(Protocol.joinSuccess(room.toString()));
-						logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
-					} else {
-						logger.warning(() -> "ルーム(ID: " + room.getRoomId() + ")は既に満員です。");
-					}
-					logger.config(room::toString);
-					return;
-				}
+			GameRoom room = privateRooms.get(roomId);
+			if (room == null) {
+				logger.warning(() -> "ルーム(ID: " + roomId + ")は存在しません。");
+				handler.sendMessage(Protocol.joinFailed());
+				return;
 			}
-			logger.warning(() -> "ルーム(ID: " + roomId + ")は存在しません。");
-			handler.sendMessage(Protocol.joinFailed());
+			if (room.join(handler)) {
+				handler.sendMessage(Protocol.joinSuccess(room.toString()));
+				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
+			} else {
+				handler.sendMessage(Protocol.joinFailed());
+				logger.warning(() -> "ルーム(ID: " + room.getRoomId() + ")は既に満員です。");
+			}
+			logger.config(room::toString);
 		}
+	}
+
+	private void handleCreateRoom(final ClientHandler handler, final String body) {
+		if (!isRunning) return;
+		String userName = body.trim();
+		playerNames.put(handler, userName);
+		GameRoom room = new GameRoom(false);
+		room.join(handler);
+		room.start();
+		room.setDisconnectListener(() -> removeGameRoom(room));
+		privateRooms.put(room.getRoomId(), room);
+		handler.sendMessage(Protocol.joinSuccess(room.toString()));
+		logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がプライベートルーム(ID: " + room.getRoomId() + ")を作成しました。");
 	}
 
 	private synchronized void addWaitingHandler(final ClientHandler handler) {
@@ -166,7 +192,8 @@ public final class GameServer implements Runnable, Closeable {
 		while (iterator.hasNext()) {
 			ClientHandler handler = iterator.next();
 			boolean assigned = false;
-			for (GameRoom room : gameRooms) {
+			for (GameRoom room : publicRooms) {
+				if (!room.isPublic()) continue;
 				if (room.join(handler)) {
 					assigned = true;
 					logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
@@ -175,11 +202,11 @@ public final class GameServer implements Runnable, Closeable {
 				}
 			}
 			if (!assigned) {
-				GameRoom room = new GameRoom();
+				GameRoom room = new GameRoom(true);
 				room.join(handler);
 				room.start();
 				room.setDisconnectListener(() -> removeGameRoom(room));
-				gameRooms.add(room);
+				publicRooms.add(room);
 				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 				logger.config(room::toString);
 			}
@@ -189,7 +216,7 @@ public final class GameServer implements Runnable, Closeable {
 
 	private synchronized void removeGameRoom(final GameRoom room) {
 		if (!isRunning || room == null) return;
-		gameRooms.remove(room);
+		publicRooms.remove(room);
 	}
 
 	private synchronized void disconnectHandler(final ClientHandler handler) {

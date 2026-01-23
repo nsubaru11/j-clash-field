@@ -75,8 +75,20 @@ public final class Protocol {
 		return CommandType.CONNECT.getId() + "";
 	}
 
+	public static String createRoom(String userName) {
+		return CommandType.CREATE_ROOM.getId() + ":" + userName;
+	}
+
 	public static String join(String userName, int roomId) {
 		return CommandType.JOIN.getId() + ":" + userName + ":" + roomId;
+	}
+
+	public static String ready(GameCharacter character) {
+		return CommandType.READY.getId() + ":" + character.getClass().getName();
+	}
+
+	public static String unready() {
+		return CommandType.UNREADY.getId() + "";
 	}
 
 	public static String moveLeft() {
@@ -93,14 +105,6 @@ public final class Protocol {
 
 	public static String moveDown() {
 		return CommandType.MOVE_DOWN.getId() + "";
-	}
-
-	public static String ready(GameCharacter character) {
-		return CommandType.READY.getId() + ":" + character.getClass().getName();
-	}
-
-	public static String unready() {
-		return CommandType.UNREADY.getId() + "";
 	}
 
 	public static String resign() {
