@@ -55,7 +55,7 @@ public final class GuiController {
 
 		titlePanel = new TitlePanel(this::startConnection);
 		loadPanel = new LoadPanel();
-		homePanel = new HomePanel(e -> showMatching(), e -> {
+		homePanel = new HomePanel(this::showMatching, e -> {
 			int result = JOptionPane.showConfirmDialog(cardPanel, "終了します。よろしいですか？", "終了確認", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) System.exit(0);
 		});
@@ -115,7 +115,7 @@ public final class GuiController {
 		loadPanel.startLoading();
 	}
 
-	private void showMatching() {
+	private void showMatching(MatchingPanel.MatchingMode mode) {
 		SwingUtilities.invokeLater(() -> cardLayout.show(cardPanel, CARD_MATCHING));
 	}
 
@@ -167,7 +167,7 @@ public final class GuiController {
 				completeLoad();
 				break;
 			case JOIN_FAILED:
-				loadPanel.setNextScreen(this::showMatching);
+				loadPanel.setNextScreen(() -> showMatching(MatchingPanel.MatchingMode.CREATE));
 				completeLoad();
 				break;
 			case RESULT:

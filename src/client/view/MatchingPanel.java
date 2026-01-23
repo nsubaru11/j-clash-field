@@ -23,9 +23,12 @@ public class MatchingPanel extends BaseBackgroundPanel {
 	private final JButton startButton;
 	/** キャンセルボタン */
 	private final JButton cancelButton;
+	private final JCheckBox isPrivateCheckBox;
+	private final JLabel roomNumberLabel;
 
 	/** ユーザーネームのキャッシュ */
 	private String userName = "";
+	private MatchingMode currentMode = MatchingMode.RANDOM;
 
 	/**
 	 * MatchingPanelを構築します。
@@ -46,7 +49,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 
 		// タイトルラベル
 		JLabel titleLabel = new JLabel("Game Settings", SwingConstants.CENTER);
-		titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+		titleLabel.setFont(new Font("Meiryo", Font.BOLD, 28));
 		titleLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -56,7 +59,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 
 		// ユーザー名ラベル
 		JLabel userNameLabel = new JLabel("User Name:");
-		userNameLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+		userNameLabel.setFont(new Font("Meiryo", Font.PLAIN, 16));
 		userNameLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
 		gbc.gridy = 1;
@@ -67,7 +70,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 
 		// ユーザー名入力フィールド
 		userNameField = new JTextField(15);
-		userNameField.setFont(new Font("Arial", Font.PLAIN, 14));
+		userNameField.setFont(new Font("Meiryo", Font.PLAIN, 14));
 		userNameField.setPreferredSize(new Dimension(200, 30));
 		gbc.gridx = 1;
 		gbc.gridy = 1;
@@ -75,8 +78,8 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		dialogPanel.add(userNameField, gbc);
 
 		// 部屋番号ラベル
-		JLabel roomNumberLabel = new JLabel("Room Number:");
-		roomNumberLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+		roomNumberLabel = new JLabel("Room Number:");
+		roomNumberLabel.setFont(new Font("Meiryo", Font.PLAIN, 16));
 		roomNumberLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
 		gbc.gridy = 2;
@@ -87,12 +90,20 @@ public class MatchingPanel extends BaseBackgroundPanel {
 
 		// 部屋番号入力フィールド
 		roomNumberField = new JTextField(15);
-		roomNumberField.setFont(new Font("Arial", Font.PLAIN, 14));
+		roomNumberField.setFont(new Font("Meiryo", Font.PLAIN, 14));
 		roomNumberField.setPreferredSize(new Dimension(200, 30));
 		gbc.gridx = 1;
 		gbc.gridy = 2;
 		gbc.insets = new Insets(10, 10, 5, 20);
 		dialogPanel.add(roomNumberField, gbc);
+
+		isPrivateCheckBox = new JCheckBox("Private Room");
+		isPrivateCheckBox.setFont(new Font("Meiryo", Font.PLAIN, 14));
+		isPrivateCheckBox.setForeground(Color.WHITE);
+		gbc.gridx = 2;
+		gbc.gridy = 2;
+		gbc.insets = new Insets(10, 10, 5, 20);
+		dialogPanel.add(isPrivateCheckBox, gbc);
 
 		// ボタンパネル
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
@@ -116,9 +127,36 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		add(dialogPanel);
 	}
 
+	public void setupForMode(MatchingMode mode) {
+		currentMode = mode;
+		switch (mode) {
+			case RANDOM:
+				roomNumberLabel.setVisible(false);
+				roomNumberField.setVisible(false);
+				isPrivateCheckBox.setVisible(false);
+				startButton.setText("ランダム参加");
+				break;
+			case CREATE:
+				roomNumberLabel.setVisible(false);
+				roomNumberField.setVisible(false);
+				isPrivateCheckBox.setVisible(true);
+				startButton.setText("作成して待機");
+				break;
+			case JOIN:
+				roomNumberLabel.setVisible(true);
+				roomNumberField.setVisible(true);
+				isPrivateCheckBox.setVisible(false);
+				startButton.setText("参加");
+				break;
+		}
+	}
+
 	public void setStartGameListener(ActionListener startGameListener) {
 		startButton.addActionListener(e -> {
-			if (onStartClicked()) startGameListener.actionPerformed(e);
+			if (onStartClicked()) {
+				startGameListener.actionPerformed(e);
+				setupForMode(currentMode);
+			}
 		});
 	}
 
@@ -133,6 +171,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		SwingUtilities.invokeLater(() -> {
 			userNameField.setText(userName);
 			roomNumberField.setText("");
+			isPrivateCheckBox.setSelected(false);
 			userNameField.requestFocusInWindow();
 		});
 	}
@@ -184,7 +223,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 	 */
 	private JButton createStyledButton(final String text, final Color color) {
 		JButton button = new JButton(text);
-		button.setFont(new Font("Arial", Font.BOLD, 14));
+		button.setFont(new Font("Meiryo", Font.BOLD, 14));
 		button.setForeground(Color.WHITE);
 		button.setBackground(color);
 		button.setPreferredSize(new Dimension(100, 35));
@@ -211,11 +250,20 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		return button;
 	}
 
+	public MatchingMode getCurrentMode() {
+		return currentMode;
+	}
+
+	public boolean isPrivate() {
+		return isPrivateCheckBox.isSelected();
+	}
+
 	public String getUserName() {
 		return userNameField.getText().trim();
 	}
 
 	public int getRoomId() {
+		if (currentMode != MatchingMode.JOIN) return -1;
 		try {
 			return Integer.parseInt(roomNumberField.getText().trim());
 		} catch (NumberFormatException e) {
@@ -235,7 +283,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
-		if (!roomNumberField.getText().isEmpty()) {
+		if (currentMode == MatchingMode.JOIN) {
 			int roomNumber = getRoomId();
 			if (roomNumber < 0) {
 				JOptionPane.showMessageDialog(this,
@@ -248,4 +296,9 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		return true;
 	}
 
+	public enum MatchingMode {
+		RANDOM, // ランダムマッチ
+		CREATE, // ルーム作成
+		JOIN    // ルーム参加
+	}
 }
