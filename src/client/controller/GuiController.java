@@ -22,7 +22,6 @@ public final class GuiController {
 	private static final String CARD_TITLE = "title";
 	private static final String CARD_LOAD = "load";
 	private static final String CARD_HOME = "home";
-	private static final String CARD_MATCHING = "matching";
 	private static final String CARD_GAME_ROOM = "game_room";
 	private static final String CARD_GAME = "game";
 	private static final String CARD_RESULT = "result";
@@ -42,6 +41,7 @@ public final class GuiController {
 	private final GameRoomPanel gameRoomPanel;
 	private final GamePanel gamePanel;
 	private final ResultPanel resultPanel;
+	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
 
 	/** ネットワークコントローラー */
 	private final NetworkController network;
@@ -60,6 +60,7 @@ public final class GuiController {
 			if (result == JOptionPane.YES_OPTION) System.exit(0);
 		});
 		matchingPanel = new MatchingPanel();
+		matchingPanel.setVisible(false);
 		matchingPanel.setStartGameListener(e -> joinRoom());
 		matchingPanel.setCancelListener(e -> showHome());
 		gameRoomPanel = new GameRoomPanel();
@@ -68,12 +69,12 @@ public final class GuiController {
 
 		rootPane = new JLayeredPane();
 		rootPane.setLayout(new OverlayLayout(rootPane));
-		rootPane.add(loadPanel, JLayeredPane.PALETTE_LAYER);
 		rootPane.add(cardPanel, JLayeredPane.DEFAULT_LAYER);
+		rootPane.add(matchingPanel, JLayeredPane.PALETTE_LAYER);
+		rootPane.add(loadPanel, JLayeredPane.MODAL_LAYER);
 
 		cardPanel.add(titlePanel, CARD_TITLE);
 		cardPanel.add(homePanel, CARD_HOME);
-		cardPanel.add(matchingPanel, CARD_MATCHING);
 		cardPanel.add(gameRoomPanel, CARD_GAME_ROOM);
 		cardPanel.add(gamePanel, CARD_GAME);
 		cardPanel.add(resultPanel, CARD_RESULT);
@@ -99,7 +100,19 @@ public final class GuiController {
 
 	private synchronized void joinRoom() {
 		String userName = matchingPanel.getUserName();
-		int roomId = matchingPanel.getRoomId();
+		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
+		int roomId;
+		switch (mode) {
+			case JOIN:
+				roomId = matchingPanel.getRoomId();
+				break;
+			case CREATE:
+			case RANDOM:
+			default:
+				roomId = -1;
+				break;
+		}
+		matchingPanel.setVisible(false);
 		showLoad();
 		network.joinRoom(userName, roomId);
 	}
@@ -107,6 +120,7 @@ public final class GuiController {
 	private void showHome() {
 		SwingUtilities.invokeLater(() -> {
 			matchingPanel.reset();
+			matchingPanel.setVisible(false);
 			cardLayout.show(cardPanel, CARD_HOME);
 		});
 	}
@@ -116,7 +130,12 @@ public final class GuiController {
 	}
 
 	private void showMatching(MatchingPanel.MatchingMode mode) {
-		SwingUtilities.invokeLater(() -> cardLayout.show(cardPanel, CARD_MATCHING));
+		lastMatchingMode = mode;
+		SwingUtilities.invokeLater(() -> {
+			matchingPanel.setupForMode(mode);
+			matchingPanel.reset();
+			matchingPanel.setVisible(true);
+		});
 	}
 
 	private void showGameRoom() {
@@ -167,7 +186,7 @@ public final class GuiController {
 				completeLoad();
 				break;
 			case JOIN_FAILED:
-				loadPanel.setNextScreen(() -> showMatching(MatchingPanel.MatchingMode.CREATE));
+				loadPanel.setNextScreen(() -> showMatching(lastMatchingMode));
 				completeLoad();
 				break;
 			case RESULT:

@@ -13,22 +13,18 @@ import java.awt.event.MouseEvent;
  * マッチング設定画面を表示するパネルです。
  * ユーザー名の入力、ルーム番号の入力、開始/キャンセルボタンを提供します。
  */
-public class MatchingPanel extends BaseBackgroundPanel {
+public class MatchingPanel extends JPanel {
 	// --------------- フィールド ---------------
-	/** ユーザー名入力フィールド */
-	private final JTextField userNameField;
-	/** ルーム番号入力フィールド */
-	private final JTextField roomNumberField;
-	/** 開始ボタン */
-	private final JButton startButton;
-	/** キャンセルボタン */
-	private final JButton cancelButton;
-	private final JCheckBox isPrivateCheckBox;
-	private final JLabel roomNumberLabel;
+	private final JTextField userNameField;  // ユーザー名入力フィールド
+	private final JTextField roomNumberField; // ルーム番号入力フィールド
+	private final JButton startButton; // 開始ボタン
+	private final JButton cancelButton; // キャンセルボタン
+	private final JCheckBox isPrivateCheckBox; // プライベートルームチェックボックス
+	private final JLabel titleLabel;
+	private final JLabel roomNumberLabel; // 部屋番号入力ラベル
 
-	/** ユーザーネームのキャッシュ */
-	private String userName = "";
-	private MatchingMode currentMode = MatchingMode.RANDOM;
+	private String userName = ""; // ユーザーネームのキャッシュ
+	private MatchingMode currentMode = MatchingMode.RANDOM; // マッチングモードのキャッシュ
 
 	/**
 	 * MatchingPanelを構築します。
@@ -48,8 +44,8 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
 		// タイトルラベル
-		JLabel titleLabel = new JLabel("Game Settings", SwingConstants.CENTER);
-		titleLabel.setFont(new Font("Meiryo", Font.BOLD, 28));
+		titleLabel = new JLabel("マッチング設定", SwingConstants.CENTER);
+		titleLabel.setFont(new Font("Meiryo", Font.BOLD, 26));
 		titleLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -58,7 +54,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		dialogPanel.add(titleLabel, gbc);
 
 		// ユーザー名ラベル
-		JLabel userNameLabel = new JLabel("User Name:");
+		JLabel userNameLabel = new JLabel("ユーザー名");
 		userNameLabel.setFont(new Font("Meiryo", Font.PLAIN, 16));
 		userNameLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
@@ -78,7 +74,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		dialogPanel.add(userNameField, gbc);
 
 		// 部屋番号ラベル
-		roomNumberLabel = new JLabel("Room Number:");
+		roomNumberLabel = new JLabel("ルーム番号");
 		roomNumberLabel.setFont(new Font("Meiryo", Font.PLAIN, 16));
 		roomNumberLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
@@ -97,12 +93,18 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		gbc.insets = new Insets(10, 10, 5, 20);
 		dialogPanel.add(roomNumberField, gbc);
 
-		isPrivateCheckBox = new JCheckBox("Private Room");
+		// プライベートチェックボックス
+		isPrivateCheckBox = new JCheckBox("プライベートルーム");
 		isPrivateCheckBox.setFont(new Font("Meiryo", Font.PLAIN, 14));
 		isPrivateCheckBox.setForeground(Color.WHITE);
-		gbc.gridx = 2;
-		gbc.gridy = 2;
-		gbc.insets = new Insets(10, 10, 5, 20);
+		isPrivateCheckBox.setOpaque(false);
+		isPrivateCheckBox.setFocusPainted(false);
+		isPrivateCheckBox.setIconTextGap(8);
+		gbc.gridx = 0;
+		gbc.gridy = 3;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(10, 20, 5, 20);
+		gbc.anchor = GridBagConstraints.WEST;
 		dialogPanel.add(isPrivateCheckBox, gbc);
 
 		// ボタンパネル
@@ -110,45 +112,52 @@ public class MatchingPanel extends BaseBackgroundPanel {
 		buttonPanel.setOpaque(false);
 
 		// 開始ボタン
-		startButton = createStyledButton("Start", new Color(34, 139, 34));
+		startButton = createStyledButton("開始", new Color(34, 139, 34));
 		buttonPanel.add(startButton);
 
 		// キャンセルボタン
-		cancelButton = createStyledButton("Cancel", new Color(139, 69, 69));
+		cancelButton = createStyledButton("戻る", new Color(139, 69, 69));
 		buttonPanel.add(cancelButton);
 
 		gbc.gridx = 0;
-		gbc.gridy = 3;
+		gbc.gridy = 4;
 		gbc.gridwidth = 2;
 		gbc.insets = new Insets(20, 20, 20, 20);
+		gbc.anchor = GridBagConstraints.CENTER;
 		dialogPanel.add(buttonPanel, gbc);
 
 		// ダイアログをパネル中央に配置
 		add(dialogPanel);
+		setupForMode(MatchingMode.RANDOM);
 	}
 
 	public void setupForMode(MatchingMode mode) {
 		currentMode = mode;
 		switch (mode) {
 			case RANDOM:
+				titleLabel.setText("ランダム参加");
 				roomNumberLabel.setVisible(false);
 				roomNumberField.setVisible(false);
 				isPrivateCheckBox.setVisible(false);
-				startButton.setText("ランダム参加");
+				startButton.setText("参加");
 				break;
 			case CREATE:
+				titleLabel.setText("ルーム作成");
 				roomNumberLabel.setVisible(false);
 				roomNumberField.setVisible(false);
 				isPrivateCheckBox.setVisible(true);
-				startButton.setText("作成して待機");
+				startButton.setText("作成");
 				break;
 			case JOIN:
+				titleLabel.setText("ルーム参加");
 				roomNumberLabel.setVisible(true);
 				roomNumberField.setVisible(true);
 				isPrivateCheckBox.setVisible(false);
 				startButton.setText("参加");
 				break;
 		}
+		revalidate();
+		repaint();
 	}
 
 	public void setStartGameListener(ActionListener startGameListener) {
@@ -210,7 +219,7 @@ public class MatchingPanel extends BaseBackgroundPanel {
 			}
 		};
 		panel.setOpaque(false);
-		panel.setPreferredSize(new Dimension(400, 280));
+		panel.setPreferredSize(new Dimension(460, 320));
 		return panel;
 	}
 
@@ -223,10 +232,10 @@ public class MatchingPanel extends BaseBackgroundPanel {
 	 */
 	private JButton createStyledButton(final String text, final Color color) {
 		JButton button = new JButton(text);
-		button.setFont(new Font("Meiryo", Font.BOLD, 14));
+		button.setFont(new Font("Meiryo", Font.BOLD, 15));
 		button.setForeground(Color.WHITE);
 		button.setBackground(color);
-		button.setPreferredSize(new Dimension(100, 35));
+		button.setPreferredSize(new Dimension(160, 40));
 		button.setFocusPainted(false);
 		button.setBorder(new CompoundBorder(
 				new LineBorder(color.darker(), 1),

@@ -17,21 +17,11 @@ import java.util.function.Consumer;
 public class HomePanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	/** タイトルテキスト */
-	private static final String TITLE_TEXT = "Action Game";
+	private static final String TITLE_TEXT = "Online Action Game";
 	/** タイトルフォント */
 	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 64);
-
-	// --------------- フィールド ---------------
-	/** ランダム参加ボタン */
-	private final JButton matchingButton;
-	/** ルーム作成ボタン */
-	private final JButton createRoomButton;
-	/** ルーム参加ボタン */
-	private final JButton joinRoomButton;
-	/** 設定ボタン */
-	private final JButton configButton;
-	/** 終了ボタン */
-	private final JButton exitButton;
+	/** バージョン情報 */
+	private static final String VERSION_TEXT = "v1.0.0";
 
 	/**
 	 * HomePanelを構築します。
@@ -42,13 +32,13 @@ public class HomePanel extends BaseBackgroundPanel {
 		JPanel leftPanel = new JPanel();
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 		leftPanel.setOpaque(false);
-		leftPanel.setBorder(BorderFactory.createEmptyBorder(400, 100, 0, 0));
+		leftPanel.setBorder(BorderFactory.createEmptyBorder(550, 100, 0, 0));
 
-		Dimension largeButtonSize = new Dimension(400, 50);
-		Dimension smallButtonSize = new Dimension(195, 50);
+		Dimension largeButtonSize = new Dimension(500, 50);
+		Dimension smallButtonSize = new Dimension(245, 50);
 
 		// ランダム参加ボタン
-		matchingButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
+		JButton matchingButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
 		matchingButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.RANDOM));
 		matchingButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(matchingButton);
@@ -57,15 +47,15 @@ public class HomePanel extends BaseBackgroundPanel {
 		// ルーム作成・参加ボタン
 		JPanel subPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		subPanel.setOpaque(false);
-		subPanel.setMaximumSize(new Dimension(400, 50));
+		subPanel.setMaximumSize(new Dimension(500, 50));
 		subPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(27, 110, 80));
+		JButton createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(27, 110, 80));
 		createRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.CREATE));
 		subPanel.add(createRoomButton);
 		subPanel.add(Box.createHorizontalStrut(10));
 
-		joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(24, 102, 74));
+		JButton joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(24, 102, 74));
 		joinRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.JOIN));
 		subPanel.add(joinRoomButton);
 
@@ -73,7 +63,7 @@ public class HomePanel extends BaseBackgroundPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// 設定ボタン
-		configButton = createSimpleButton("設定", largeButtonSize, new Color(90, 96, 104)); // 色をグレーに
+		JButton configButton = createSimpleButton("設定", largeButtonSize, new Color(90, 96, 104)); // 色をグレーに
 		configButton.setEnabled(false); // 押せないようにする
 		// configButton.setDisabledTextColor(new Color(210, 210, 210));
 		configButton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -81,7 +71,7 @@ public class HomePanel extends BaseBackgroundPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// 終了ボタン
-		exitButton = createSimpleButton("終了", largeButtonSize, new Color(112, 45, 45));
+		JButton exitButton = createSimpleButton("終了", largeButtonSize, new Color(112, 45, 45));
 		exitButton.addActionListener(exitListener);
 		exitButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(exitButton);
@@ -105,7 +95,7 @@ public class HomePanel extends BaseBackgroundPanel {
 
 		// タイトルは画面中央上部に配置
 		int textX = (panelWidth - textWidth) / 2;
-		int textY = panelHeight / 3 - fm.getHeight() / 3 + fm.getAscent() - 50;
+		int textY = panelHeight / 4;
 
 		// 影の描画
 		g2d.setColor(new Color(0, 0, 0, 120));
@@ -114,6 +104,15 @@ public class HomePanel extends BaseBackgroundPanel {
 		// 文字の描画
 		g2d.setColor(Color.WHITE);
 		g2d.drawString(TITLE_TEXT, textX, textY);
+
+		textWidth = fm.stringWidth(VERSION_TEXT);
+		textX = panelWidth - textWidth - 20;
+		textY = panelHeight - 20;
+		g2d.setColor(new Color(0, 0, 0, 120));
+		g2d.drawString(VERSION_TEXT, textX + 3, textY + 3);
+		g2d.setColor(Color.WHITE);
+		g2d.drawString(VERSION_TEXT, textX, textY);
+
 	}
 
 	/**
