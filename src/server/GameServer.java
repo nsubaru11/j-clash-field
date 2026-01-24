@@ -144,9 +144,9 @@ public final class GameServer implements Runnable, Closeable {
 	private void handleJoin(final ClientHandler handler, final String body) {
 		int index = body.lastIndexOf(':');
 		String userName = body.substring(0, index);
-		playerNames.put(handler, userName);
 		int roomId = Integer.parseInt(body.substring(index + 1));
 		if (roomId < 0) {
+			playerNames.put(handler, userName);
 			addWaitingHandler(handler);
 		} else {
 			GameRoom room = privateRooms.get(roomId);
@@ -155,7 +155,7 @@ public final class GameServer implements Runnable, Closeable {
 				handler.sendMessage(Protocol.joinFailed());
 				return;
 			}
-			if (room.join(handler)) {
+			if (room.join(handler, userName)) {
 				handler.sendMessage(Protocol.joinSuccess(room.toString()));
 				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 			} else {
@@ -169,9 +169,8 @@ public final class GameServer implements Runnable, Closeable {
 	private void handleCreateRoom(final ClientHandler handler, final String body) {
 		if (!isRunning) return;
 		String userName = body.trim();
-		playerNames.put(handler, userName);
 		GameRoom room = new GameRoom(false);
-		room.join(handler);
+		room.join(handler, userName);
 		room.start();
 		room.setDisconnectListener(() -> removeGameRoom(room));
 		privateRooms.put(room.getRoomId(), room);
@@ -194,7 +193,7 @@ public final class GameServer implements Runnable, Closeable {
 			boolean assigned = false;
 			for (GameRoom room : publicRooms) {
 				if (!room.isPublic()) continue;
-				if (room.join(handler)) {
+				if (room.join(handler, playerNames.get(handler))) {
 					assigned = true;
 					logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 					logger.config(room::toString);
@@ -203,7 +202,7 @@ public final class GameServer implements Runnable, Closeable {
 			}
 			if (!assigned) {
 				GameRoom room = new GameRoom(true);
-				room.join(handler);
+				room.join(handler, playerNames.get(handler));
 				room.start();
 				room.setDisconnectListener(() -> removeGameRoom(room));
 				publicRooms.add(room);

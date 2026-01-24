@@ -128,11 +128,11 @@ class GameRoom extends Thread implements Closeable {
 		return isPublic;
 	}
 
-	public synchronized boolean join(final ClientHandler handler) {
+	public synchronized boolean join(final ClientHandler handler, final String playerName) {
 		if (isClosed || isStarted || playerMap.size() >= MAX_PLAYERS) return false;
 		handler.setMessageListener(msg -> this.commandQueue.add(new ServerCommand(handler, msg)));
 		handler.setDisconnectListener(() -> handleDisconnect(handler));
-		Player newPlayer = new Player("NoName");
+		Player newPlayer = new Player(playerName);
 		playerMap.put(handler, newPlayer);
 		// TODO: メッセージ処理
 		logger.info("ルーム(ID: " + roomId + ")にプレイヤー(ID: " + handler.getConnectionId() + ")を追加しました");
