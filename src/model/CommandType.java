@@ -1,6 +1,7 @@
 package model;
 
-import java.util.Arrays;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.stream;
 
 public enum CommandType {
 	// -------------------- サーバー -> クライアント --------------------
@@ -30,8 +31,8 @@ public enum CommandType {
 	RESIGN(58),
 	DISCONNECT(59),
 	CREATE_ROOM(60),
-	SELECT_CHARACTER(61),
-	UNSELECT_CHARACTER(62),
+	READY_SUCCESS(61),
+	UNREADY_SUCCESS(62),
 
 	// -------------------- その他 --------------------
 	ERROR(254),
@@ -42,12 +43,8 @@ public enum CommandType {
 	private static final CommandType[] CACHE = new CommandType[256];
 
 	static {
-		Arrays.fill(CACHE, UNKNOWN);
-		for (CommandType type : values()) {
-			if (type.id >= 0 && type.id < CACHE.length) {
-				CACHE[type.id] = type;
-			}
-		}
+		fill(CACHE, UNKNOWN);
+		stream(values()).forEach(type -> CACHE[type.id] = type);
 	}
 
 	CommandType(int id) {

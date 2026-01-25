@@ -37,28 +37,24 @@ public final class Protocol {
 		return CommandType.OPPONENT_DISCONNECTED.getId() + "";
 	}
 
-	public static String joinSuccess(String roomState) {
-		return CommandType.JOIN_SUCCESS.getId() + ":" + roomState;
+	public static String joinSuccess(int playerId, String roomState) {
+		return CommandType.JOIN_SUCCESS.getId() + ":" + playerId + ":" + roomState;
 	}
 
 	public static String joinFailed() {
 		return CommandType.JOIN_FAILED.getId() + "";
 	}
 
-	public static String selectCharacter(String characterName) {
-		return CommandType.SELECT_CHARACTER.getId() + ":" + characterName;
-	}
-
-	public static String unselectCharacter() {
-		return CommandType.UNSELECT_CHARACTER.getId() + "";
-	}
-
-	public static String joinOpponent(String opponentName) {
-		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentName;
-	}
-
 	public static String joinOpponent(int opponentId, String opponentName) {
-		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentId + " " + opponentName;
+		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentId + "," + opponentName;
+	}
+
+	public static String readySuccess(int playerId, CharacterType characterType) {
+		return CommandType.READY_SUCCESS.getId() + ":" + playerId + "," + characterType.getId();
+	}
+
+	public static String unreadySuccess(int playerId) {
+		return CommandType.UNREADY_SUCCESS.getId() + ":" + playerId;
 	}
 
 	public static String result(String result) {
@@ -87,8 +83,8 @@ public final class Protocol {
 		return CommandType.JOIN.getId() + ":" + userName + ":" + roomId;
 	}
 
-	public static String ready(GameCharacter character) {
-		return CommandType.READY.getId() + ":" + character.getClass().getName();
+	public static String ready(CharacterType characterType) {
+		return CommandType.READY.getId() + ":" + characterType.getId();
 	}
 
 	public static String unready() {

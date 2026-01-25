@@ -160,13 +160,7 @@ public final class GameServer implements Runnable, Closeable {
 				handler.sendMessage(Protocol.joinFailed());
 				return;
 			}
-			if (room.join(handler, userName)) {
-				handler.sendMessage(Protocol.joinSuccess(room.toString()));
-				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
-			} else {
-				handler.sendMessage(Protocol.joinFailed());
-				logger.warning(() -> "ルーム(ID: " + room.getRoomId() + ")は既に満員です。");
-			}
+			if (!room.join(handler, userName)) handler.sendMessage(Protocol.joinFailed());
 			logger.config(room::toString);
 		}
 	}
@@ -175,11 +169,10 @@ public final class GameServer implements Runnable, Closeable {
 		if (!isRunning) return;
 		String userName = body.trim();
 		GameRoom room = new GameRoom(false);
-		room.join(handler, userName);
-		room.start();
 		room.setDisconnectListener(() -> removeGameRoom(room));
+		room.start();
+		room.join(handler, userName);
 		privateRooms.put(room.getRoomId(), room);
-		handler.sendMessage(Protocol.joinSuccess(room.toString()));
 		logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がプライベートルーム(ID: " + room.getRoomId() + ")を作成しました。");
 	}
 
@@ -195,10 +188,10 @@ public final class GameServer implements Runnable, Closeable {
 		Iterator<ClientHandler> iterator = waitingPlayers.iterator();
 		while (iterator.hasNext()) {
 			ClientHandler handler = iterator.next();
-			GameRoom assignedRoom = null;
+			boolean assigned = false;
 			for (GameRoom room : publicRooms) {
 				if (room.join(handler, playerNames.get(handler))) {
-					assignedRoom = room;
+					assigned = true;
 					logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 					logger.config(room::toString);
 					break;
@@ -206,18 +199,15 @@ public final class GameServer implements Runnable, Closeable {
 			}
 
 			// ルームがない場合は新規作成
-			if (assignedRoom == null) {
+			if (!assigned) {
 				GameRoom room = new GameRoom(true);
 				room.join(handler, playerNames.get(handler));
 				room.start();
 				room.setDisconnectListener(() -> removeGameRoom(room));
 				publicRooms.add(room);
-				assignedRoom = room;
-				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 				logger.config(room::toString);
 			}
 
-			handler.sendMessage(Protocol.joinSuccess(assignedRoom.toString()));
 			playerNames.remove(handler);
 			iterator.remove();
 		}

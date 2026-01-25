@@ -1,15 +1,20 @@
 package client.view;
 
+import model.CharacterType;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,14 +37,29 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private static final Color AVATAR_ACTIVE = new Color(70, 70, 70);
 	private static final Color AVATAR_INACTIVE = new Color(180, 180, 180);
 	private static final Color SHADOW_COLOR = new Color(60, 60, 60, 170);
-	private static final String DEFAULT_CHARACTER_NAME = "Archer";
-	private static final String DEFAULT_CHARACTER_IMAGE_PATH = "/client/assets/archer.png";
-	private static final Map<String, BufferedImage> CHARACTER_IMAGES = new LinkedHashMap<>();
+	private static final CharacterType DEFAULT_CHARACTER = CharacterType.ARCHER;
+	private static final CharacterType[] CHARACTER_OPTIONS = new CharacterType[]{
+			CharacterType.ARCHER,
+			CharacterType.WARRIOR,
+			CharacterType.FIGHTER,
+			CharacterType.WIZARD
+	};
+	private static final String ARCHER_IMAGE_PATH = "/client/assets/archer.png";
+	private static final String WARRIOR_IMAGE_PATH = "/client/assets/warrior.png";
+	private static final String FIGHTER_IMAGE_PATH = "/client/assets/fighter.png";
+	private static final String WIZARD_IMAGE_PATH = "/client/assets/wizard.png";
+	private static final Map<CharacterType, BufferedImage> CHARACTER_IMAGES = new EnumMap<>(CharacterType.class);
 
 	static {
 		try {
-			CHARACTER_IMAGES.put(DEFAULT_CHARACTER_NAME.toLowerCase(),
-					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(DEFAULT_CHARACTER_IMAGE_PATH))));
+			CHARACTER_IMAGES.put(CharacterType.ARCHER,
+					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(ARCHER_IMAGE_PATH))));
+			CHARACTER_IMAGES.put(CharacterType.WARRIOR,
+					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(WARRIOR_IMAGE_PATH))));
+			CHARACTER_IMAGES.put(CharacterType.FIGHTER,
+					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(FIGHTER_IMAGE_PATH))));
+			CHARACTER_IMAGES.put(CharacterType.WIZARD,
+					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(WIZARD_IMAGE_PATH))));
 		} catch (IOException | NullPointerException e) {
 			throw new RuntimeException("キャラクター画像の読み込みに失敗しました", e);
 		}
@@ -52,6 +72,9 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private final PlayerSlot[] slots;
 	private final Map<Integer, PlayerEntry> players = new LinkedHashMap<>();
 	private String localPlayerName = "";
+	private int selectedCharacterIndex = 0;
+	private CharacterType selectedCharacter = DEFAULT_CHARACTER;
+	private boolean hasLocalSelectionOverride = false;
 
 	/**
 	 * GameRoomPanelを構築します。
@@ -106,7 +129,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		slots = new PlayerSlot[MAX_PLAYERS];
 		for (int i = 0; i < MAX_PLAYERS; i++) {
-			PlayerSlot slot = new PlayerSlot(i == 0);
+			PlayerSlot slot = new PlayerSlot();
 			slots[i] = slot;
 			slotsPanel.add(slot);
 		}
@@ -119,31 +142,23 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		SwingUtilities.invokeLater(() -> roomLabel.setText("ルーム : " + roomId));
 	}
 
-	public void setPlayers(Collection<PlayerEntry> playerEntries) {
-		SwingUtilities.invokeLater(() -> {
-			players.clear();
-			for (PlayerEntry entry : playerEntries) {
-				int key = entry.getId() < 0 ? entry.getName().hashCode() : entry.getId();
-				players.put(key, entry);
-			}
-			refreshSlots();
-		});
+	private static BufferedImage resolveCharacterImage(CharacterType characterType) {
+		return CHARACTER_IMAGES.get(characterType);
 	}
 
-	public void addPlayer(int playerId, String playerName) {
-		SwingUtilities.invokeLater(() -> {
-			int key = playerId < 0 ? playerName.hashCode() : playerId;
-			players.put(key, new PlayerEntry(key, playerName, false, ""));
-			refreshSlots();
-		});
-	}
-
-	public void reset() {
-		SwingUtilities.invokeLater(() -> {
-			players.clear();
-			roomLabel.setText("ルーム : -");
-			refreshSlots();
-		});
+	private static String formatCharacterLabel(CharacterType characterType) {
+		switch (characterType) {
+			case ARCHER:
+				return "Archer";
+			case WARRIOR:
+				return "Warrior";
+			case FIGHTER:
+				return "Fighter";
+			case WIZARD:
+				return "Wizard";
+			default:
+				return " ";
+		}
 	}
 
 	public void setLocalPlayerName(String playerName) {
@@ -161,11 +176,52 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		backButton.addActionListener(listener);
 	}
 
+	public void updatePlayerStatus(int playerId, boolean isReady, CharacterType characterType) {
+		SwingUtilities.invokeLater(() -> {
+			PlayerEntry entry = players.get(playerId);
+			entry.setReady(isReady);
+			entry.setCharacter(characterType);
+			refreshSlots();
+		});
+	}
+
+	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
+		SwingUtilities.invokeLater(() -> {
+			int key = playerId < 0 ? playerName.hashCode() : playerId;
+			players.put(key, new PlayerEntry(key, playerName, ready, characterType));
+			refreshSlots();
+		});
+	}
+
+	public void reset() {
+		SwingUtilities.invokeLater(() -> {
+			players.clear();
+			roomLabel.setText("ルーム : -");
+			resetSelectedCharacter();
+			refreshSlots();
+		});
+	}
+
+	public CharacterType getSelectedCharacterType() {
+		return selectedCharacter;
+	}
+
 	private void refreshSlots() {
 		List<PlayerEntry> sortedPlayers = new ArrayList<>(players.values());
 		sortedPlayers.sort(Comparator
 				.comparingInt(PlayerEntry::getId)
 				.thenComparing(PlayerEntry::getName));
+
+		CharacterType localCharacter = DEFAULT_CHARACTER;
+		for (PlayerEntry entry : sortedPlayers) {
+			if (entry.getName().equals(localPlayerName)) {
+				localCharacter = entry.getCharacter();
+				break;
+			}
+		}
+		if (!hasLocalSelectionOverride) {
+			syncSelectedCharacter(localCharacter);
+		}
 		for (int i = 0; i < slots.length; i++) {
 			PlayerEntry entry = i < sortedPlayers.size() ? sortedPlayers.get(i) : null;
 			boolean isLocal = entry != null && entry.getName().equals(localPlayerName);
@@ -173,25 +229,50 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private static String formatCharacter(PlayerEntry entry) {
-		String character = entry.getCharacter();
-		if (character == null || character.isEmpty() || "0".equals(character)) return DEFAULT_CHARACTER_NAME;
-		int lastDot = character.lastIndexOf('.');
-		return lastDot >= 0 ? character.substring(lastDot + 1) : character;
+	private void resetSelectedCharacter() {
+		selectedCharacterIndex = 0;
+		selectedCharacter = DEFAULT_CHARACTER;
+		hasLocalSelectionOverride = false;
 	}
 
-	private static BufferedImage resolveCharacterImage(String characterName) {
-		if (characterName == null || characterName.isEmpty()) return null;
-		return CHARACTER_IMAGES.get(characterName.toLowerCase());
+	private void changeCharacterByDelta(int delta) {
+		updateSelectedCharacter(selectedCharacterIndex + delta);
+	}
+
+	private void updateSelectedCharacter(int index) {
+		Runnable updater = () -> applySelectedCharacter(index);
+		if (SwingUtilities.isEventDispatchThread()) {
+			updater.run();
+		} else {
+			SwingUtilities.invokeLater(updater);
+		}
+	}
+
+	private void applySelectedCharacter(int index) {
+		int normalized = ((index % CHARACTER_OPTIONS.length) + CHARACTER_OPTIONS.length) % CHARACTER_OPTIONS.length;
+		selectedCharacterIndex = normalized;
+		selectedCharacter = CHARACTER_OPTIONS[normalized];
+		hasLocalSelectionOverride = true;
+		refreshSlots();
+	}
+
+	private void syncSelectedCharacter(CharacterType characterType) {
+		for (int i = 0; i < CHARACTER_OPTIONS.length; i++) {
+			if (CHARACTER_OPTIONS[i] == characterType) {
+				selectedCharacterIndex = i;
+				selectedCharacter = characterType;
+				return;
+			}
+		}
 	}
 
 	public static final class PlayerEntry {
 		private final int id;
 		private final String name;
-		private final boolean ready;
-		private final String character;
+		private boolean ready;
+		private CharacterType character;
 
-		public PlayerEntry(int id, String name, boolean ready, String character) {
+		public PlayerEntry(int id, String name, boolean ready, CharacterType character) {
 			this.id = id;
 			this.name = name;
 			this.ready = ready;
@@ -210,111 +291,16 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			return ready;
 		}
 
-		public String getCharacter() {
+		public CharacterType getCharacter() {
 			return character;
 		}
-	}
 
-	private final class PlayerSlot extends JPanel {
-		private final JLabel statusLabel;
-		private final JLabel nameLabel;
-		private final JLabel characterLabel;
-		private final AvatarPanel avatarPanel;
-		private final ShadowPanel shadowPanel;
-		private final JLabel leftArrow;
-		private final JLabel rightArrow;
-		private final boolean showArrows;
-
-		private PlayerSlot(boolean showArrows) {
-			this.showArrows = showArrows;
-			setOpaque(false);
-			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
-			statusLabel = new JLabel("準備中", SwingConstants.CENTER);
-			statusLabel.setFont(STATUS_FONT);
-			statusLabel.setOpaque(true);
-			statusLabel.setBackground(STATUS_BG);
-			statusLabel.setForeground(STATUS_FG);
-			statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			statusLabel.setBorder(new EmptyBorder(6, 14, 6, 14));
-			add(statusLabel);
-			add(Box.createVerticalStrut(12));
-
-			JPanel avatarRow = new JPanel();
-			avatarRow.setOpaque(false);
-			avatarRow.setLayout(new BoxLayout(avatarRow, BoxLayout.X_AXIS));
-			leftArrow = createArrowLabel("<");
-			rightArrow = createArrowLabel(">");
-			avatarPanel = new AvatarPanel();
-
-			if (showArrows) {
-				avatarRow.add(leftArrow);
-				avatarRow.add(Box.createHorizontalStrut(6));
-			}
-			avatarRow.add(avatarPanel);
-			if (showArrows) {
-				avatarRow.add(Box.createHorizontalStrut(6));
-				avatarRow.add(rightArrow);
-			}
-			avatarRow.setAlignmentX(Component.CENTER_ALIGNMENT);
-			add(avatarRow);
-
-			add(Box.createVerticalStrut(6));
-			shadowPanel = new ShadowPanel();
-			shadowPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			add(shadowPanel);
-			add(Box.createVerticalStrut(12));
-
-			characterLabel = new JLabel(" ", SwingConstants.CENTER);
-			characterLabel.setFont(new Font("Meiryo", Font.PLAIN, 12));
-			characterLabel.setForeground(new Color(80, 80, 80));
-			characterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			add(characterLabel);
-			add(Box.createVerticalStrut(6));
-
-			nameLabel = new JLabel("-", SwingConstants.CENTER);
-			nameLabel.setFont(STATUS_FONT);
-			nameLabel.setOpaque(true);
-			nameLabel.setBackground(NAME_BG);
-			nameLabel.setForeground(NAME_FG);
-			nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			nameLabel.setBorder(new EmptyBorder(6, 20, 6, 20));
-			add(nameLabel);
+		public void setReady(boolean ready) {
+			this.ready = ready;
 		}
 
-		private JLabel createArrowLabel(String text) {
-			JLabel label = new JLabel(text);
-			label.setFont(new Font("Meiryo", Font.BOLD, 22));
-			label.setForeground(new Color(90, 90, 90));
-			label.setVisible(false);
-			return label;
-		}
-
-		private void setPlayer(PlayerEntry entry, boolean isLocal) {
-			if (entry == null) {
-				statusLabel.setText("空き");
-				nameLabel.setText("-");
-				nameLabel.setBackground(NAME_BG);
-				avatarPanel.setActive(false);
-				characterLabel.setText(" ");
-				avatarPanel.setCharacter(null);
-				setArrowVisible(false);
-				return;
-			}
-			statusLabel.setText(entry.isReady() ? "準備完了!" : "準備中");
-			nameLabel.setText(entry.getName());
-			nameLabel.setBackground(isLocal ? NAME_BG_LOCAL : NAME_BG);
-			avatarPanel.setActive(true);
-			String character = formatCharacter(entry);
-			characterLabel.setText(character.isEmpty() ? " " : character);
-			avatarPanel.setCharacter(character);
-			setArrowVisible(isLocal);
-		}
-
-		private void setArrowVisible(boolean visible) {
-			if (!showArrows) return;
-			leftArrow.setVisible(visible);
-			rightArrow.setVisible(visible);
+		public void setCharacter(CharacterType character) {
+			this.character = character;
 		}
 	}
 
@@ -333,8 +319,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			repaint();
 		}
 
-		private void setCharacter(String characterName) {
-			this.characterImage = resolveCharacterImage(characterName);
+		private void setCharacter(CharacterType characterType) {
+			this.characterImage = resolveCharacterImage(characterType);
 			repaint();
 		}
 
@@ -373,9 +359,116 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 				} else {
 					g2d.drawImage(characterImage, imgX, imgY, imgWidth, imgHeight, null);
 				}
+			}
+		}
+	}
 
+	private final class PlayerSlot extends JPanel {
+		private final JLabel statusLabel;
+		private final JLabel nameLabel;
+		private final JLabel characterLabel;
+		private final AvatarPanel avatarPanel;
+		private final ShadowPanel shadowPanel;
+		private final JLabel leftArrow;
+		private final JLabel rightArrow;
+		private boolean isLocalPlayer;
+
+		private PlayerSlot() {
+			setOpaque(false);
+			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+			statusLabel = new JLabel("準備中", SwingConstants.CENTER);
+			statusLabel.setFont(STATUS_FONT);
+			statusLabel.setOpaque(true);
+			statusLabel.setBackground(STATUS_BG);
+			statusLabel.setForeground(STATUS_FG);
+			statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			statusLabel.setBorder(new EmptyBorder(6, 14, 6, 14));
+			add(statusLabel);
+			add(Box.createVerticalStrut(12));
+
+			JPanel avatarRow = new JPanel();
+			avatarRow.setOpaque(false);
+			avatarRow.setLayout(new BoxLayout(avatarRow, BoxLayout.X_AXIS));
+			leftArrow = createArrowLabel("<");
+			rightArrow = createArrowLabel(">");
+			leftArrow.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					if (isLocalPlayer) changeCharacterByDelta(-1);
+				}
+			});
+			rightArrow.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					if (isLocalPlayer) changeCharacterByDelta(1);
+				}
+			});
+			avatarPanel = new AvatarPanel();
+
+			avatarRow.add(leftArrow);
+			avatarRow.add(Box.createHorizontalStrut(6));
+			avatarRow.add(avatarPanel);
+			avatarRow.add(Box.createHorizontalStrut(6));
+			avatarRow.add(rightArrow);
+			avatarRow.setAlignmentX(Component.CENTER_ALIGNMENT);
+			add(avatarRow);
+
+			add(Box.createVerticalStrut(6));
+			shadowPanel = new ShadowPanel();
+			shadowPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			add(shadowPanel);
+			add(Box.createVerticalStrut(12));
+
+			characterLabel = new JLabel(" ", SwingConstants.CENTER);
+			characterLabel.setFont(new Font("Meiryo", Font.PLAIN, 12));
+			characterLabel.setForeground(new Color(80, 80, 80));
+			characterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			add(characterLabel);
+			add(Box.createVerticalStrut(6));
+
+			nameLabel = new JLabel("-", SwingConstants.CENTER);
+			nameLabel.setFont(STATUS_FONT);
+			nameLabel.setOpaque(true);
+			nameLabel.setBackground(NAME_BG);
+			nameLabel.setForeground(NAME_FG);
+			nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			nameLabel.setBorder(new EmptyBorder(6, 20, 6, 20));
+			add(nameLabel);
+		}
+
+		private JLabel createArrowLabel(String text) {
+			JLabel label = new JLabel(text);
+			label.setFont(new Font("Meiryo", Font.BOLD, 22));
+			label.setForeground(Color.WHITE);
+			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			label.setVisible(false);
+			return label;
+		}
+
+		private void setPlayer(PlayerEntry entry, boolean isLocal) {
+			isLocalPlayer = isLocal;
+			if (entry == null) {
+				statusLabel.setText("空き");
+				nameLabel.setText("-");
+				nameLabel.setBackground(NAME_BG);
+				avatarPanel.setActive(false);
+				characterLabel.setText(" ");
+				avatarPanel.setCharacter(null);
+				leftArrow.setVisible(false);
+				rightArrow.setVisible(false);
 				return;
 			}
+			statusLabel.setText(entry.isReady() ? "準備完了!" : "準備中");
+			nameLabel.setText(entry.getName());
+			nameLabel.setBackground(isLocal ? NAME_BG_LOCAL : NAME_BG);
+			avatarPanel.setActive(true);
+
+			CharacterType characterType = isLocal ? selectedCharacter : entry.getCharacter();
+			characterLabel.setText(formatCharacterLabel(characterType));
+			avatarPanel.setCharacter(characterType);
+			leftArrow.setVisible(isLocal);
+			rightArrow.setVisible(isLocal);
 		}
 	}
 

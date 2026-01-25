@@ -8,12 +8,11 @@ import client.view.LoadPanel;
 import client.view.MatchingPanel;
 import client.view.ResultPanel;
 import client.view.TitlePanel;
+import model.CharacterType;
 import model.Command;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -43,7 +42,8 @@ public final class GuiController {
 	private final GamePanel gamePanel;
 	private final ResultPanel resultPanel;
 	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
-	private volatile String localPlayerName = "";
+	private volatile String playerName = "";
+	private volatile int playerId = 0;
 
 	/** ネットワークコントローラー */
 	private final NetworkController network;
@@ -69,7 +69,14 @@ public final class GuiController {
 		matchingPanel.setStartGameListener(e -> joinRoom());
 		matchingPanel.setCancelListener(e -> showHome());
 		gameRoomPanel = new GameRoomPanel();
-		gameRoomPanel.setBackAction(e -> showHome());
+		gameRoomPanel.setBackAction(e -> {
+			int result = JOptionPane.showConfirmDialog(cardPanel,
+					"接続を切断し、ホームに戻ります。よろしいですか？",
+					"確認",
+					JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) showHome();
+		});
+		gameRoomPanel.setReadyAction(e -> network.ready(gameRoomPanel.getSelectedCharacterType()));
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
 		resultPanel.setBackAction(e -> showGameRoom());
@@ -109,9 +116,9 @@ public final class GuiController {
 		String userName = matchingPanel.getUserName();
 		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
 		matchingPanel.setVisible(false);
-		localPlayerName = userName;
-		gameRoomPanel.setLocalPlayerName(userName);
+		playerName = userName;
 		gameRoomPanel.reset();
+		gameRoomPanel.setLocalPlayerName(userName);
 		showLoad();
 		loadPanel.setNextScreen(this::showGameRoom);
 		switch (mode) {
@@ -167,8 +174,10 @@ public final class GuiController {
 
 	private void handleCommand(Command command) {
 		// TODO: コマンド処理
+		String body = command.getBody();
 		switch (command.getCommandType()) {
 			case GAME_START:
+				showGame();
 				break;
 			case GAME_OVER:
 				break;
@@ -183,13 +192,23 @@ public final class GuiController {
 			case OPPONENT_DISCONNECTED:
 				break;
 			case JOIN_SUCCESS:
-				handleJoinSuccess(command.getBody());
+				handleJoinSuccess(body);
 				break;
 			case JOIN_FAILED:
 				handleJoinFailed();
 				break;
 			case JOIN_OPPONENT:
-				handleJoinOpponent(command.getBody());
+				handleJoinOpponent(body);
+				break;
+			case READY_SUCCESS:
+				String[] playerInfo = body.split(",");
+				int playerId = Integer.parseInt(playerInfo[0]);
+				int characterId = Integer.parseInt(playerInfo[1]);
+				CharacterType characterType = CharacterType.fromId(characterId);
+				gameRoomPanel.updatePlayerStatus(playerId, true, characterType);
+				break;
+			case UNREADY_SUCCESS:
+				gameRoomPanel.updatePlayerStatus(Integer.parseInt(body), false, CharacterType.ARCHER);
 				break;
 			case RESULT:
 				break;
@@ -203,33 +222,32 @@ public final class GuiController {
 	}
 
 	private void handleJoinSuccess(String body) {
-		String trimmed = body == null ? "" : body.trim();
-		String[] parts = trimmed.split(":", 2);
-		String roomInfoPart = parts.length > 0 ? parts[0] : "";
-		String playerInfoPart = parts.length > 1 ? parts[1] : "";
-		String[] roomInfo = roomInfoPart.isEmpty() ? new String[0] : roomInfoPart.split(",");
+		String[] parts = body.split(":", 2);
+		int joinedPlayerId = Integer.parseInt(parts[0]);
+		this.playerId = joinedPlayerId;
+		String roomState = parts[1];
+		String[] roomStateParts = roomState.split(":", 2);
+		String roomInfoPart = roomStateParts[0];
+		String playerInfoPart = roomStateParts[1]; // 自分が参加成功した時点でサーバーから送られてくるメッセージには自分の情報が入っている
 
-		int roomId = roomInfo.length > 0 ? parseIntSafe(roomInfo[0], -1) : -1;
-		boolean isPublic = roomInfo.length > 1 && Boolean.parseBoolean(roomInfo[1]);
+		// 部屋情報
+		String[] roomInfo = roomInfoPart.split(",");
+		int roomId = Integer.parseInt(roomInfo[0]);
+		boolean isPublic = Boolean.parseBoolean(roomInfo[1]);
 
-		List<GameRoomPanel.PlayerEntry> players = new ArrayList<>();
-		if (!playerInfoPart.isEmpty()) {
-			String[] playerEntries = playerInfoPart.split(",");
-			for (String entry : playerEntries) {
-				String playerText = entry.trim();
-				if (playerText.isEmpty()) continue;
-				String[] fields = playerText.split("\\s+");
-				if (fields.length < 2) continue;
-				int playerId = parseIntSafe(fields[0], -1);
-				String playerName = fields[1];
-				boolean isReady = fields.length > 2 && Boolean.parseBoolean(fields[2]);
-				String character = fields.length > 3 ? fields[3] : "";
-				players.add(new GameRoomPanel.PlayerEntry(playerId, playerName, isReady, character));
-			}
+		// プレイヤー情報
+		String[] playerEntries = playerInfoPart.split(",");
+		for (String playerInfo : playerEntries) {
+			String[] fields = playerInfo.split("\\s");
+			int playerId = Integer.parseInt(fields[0]);
+			String playerName = fields[1];
+			boolean isReady = Boolean.parseBoolean(fields[2]);
+			int id = Integer.parseInt(fields[3]);
+			CharacterType characterType = CharacterType.fromId(id);
+			gameRoomPanel.addPlayer(playerId, playerName, isReady, characterType);
 		}
 
 		gameRoomPanel.setRoomInfo(roomId, isPublic);
-		gameRoomPanel.setPlayers(players);
 		loadPanel.setNextScreen(this::showGameRoom);
 		completeLoad();
 	}
@@ -244,26 +262,10 @@ public final class GuiController {
 	}
 
 	private void handleJoinOpponent(String body) {
-		if (body == null) return;
-		String trimmed = body.trim();
-		if (trimmed.isEmpty()) return;
-		String[] fields = trimmed.split(" ", 2);
-		int playerId = -1;
-		String playerName = trimmed;
-		if (fields.length == 2) {
-			playerId = parseIntSafe(fields[0], -1);
-			playerName = fields[1];
-		}
-		if (playerName.trim().isEmpty()) return;
-		gameRoomPanel.addPlayer(playerId, playerName);
-	}
-
-	private static int parseIntSafe(String value, int fallback) {
-		try {
-			return Integer.parseInt(value.trim());
-		} catch (NumberFormatException e) {
-			return fallback;
-		}
+		String[] fields = body.split(",", 2);
+		int playerId = Integer.parseInt(fields[0]);
+		String playerName = fields[1];
+		gameRoomPanel.addPlayer(playerId, playerName, false, CharacterType.ARCHER);
 	}
 
 	private final class GameLoopThread extends Thread {

@@ -1,5 +1,6 @@
 package client.controller;
 
+import model.CharacterType;
 import model.Protocol;
 
 import java.io.BufferedReader;
@@ -82,6 +83,10 @@ class NetworkController implements Closeable {
 
 	public void createRoom(String userName) {
 		sendQueue.offer(Protocol.createRoom(userName));
+	}
+
+	public void ready(CharacterType characterType) {
+		sendQueue.offer(Protocol.ready(characterType));
 	}
 
 	public void moveLeft() {

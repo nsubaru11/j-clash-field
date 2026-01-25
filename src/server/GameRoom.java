@@ -1,6 +1,7 @@
 package server;
 
 import model.BattleField;
+import model.CharacterType;
 import model.GameCharacter;
 import model.Protocol;
 
@@ -96,6 +97,9 @@ class GameRoom extends Thread implements Closeable {
 
 	/**
 	 * 送信するデータ
+	 * 開始済み：プレイヤー数:フィールド状態
+	 * 未開始：ルームID,公開フラグ,プレイヤー数:プレイヤー情報1, ...,プレイヤー情報n
+	 * プレイヤー情報：プレイヤーID,プレイヤー名,キャラクター名
 	 */
 	public synchronized String toString() {
 		if (isClosed) return "ルーム(ID: " + roomId + ")は閉鎖されています。";
@@ -129,16 +133,18 @@ class GameRoom extends Thread implements Closeable {
 	}
 
 	public synchronized boolean join(final ClientHandler handler, final String playerName) {
-		if (isClosed || isStarted || playerMap.size() >= MAX_PLAYERS) return false;
+		if (isClosed || isStarted || playerMap.size() >= MAX_PLAYERS) {
+			logger.warning(() -> "ルーム(ID: " + roomId + ")は既に満員です。");
+			return false;
+		}
 		handler.setMessageListener(msg -> this.commandQueue.add(new ServerCommand(handler, msg)));
 		handler.setDisconnectListener(() -> handleDisconnect(handler));
 		Player newPlayer = new Player(handler.getConnectionId(), playerName);
 		playerMap.put(handler, newPlayer);
+		handler.sendMessage(Protocol.joinSuccess(newPlayer.getId(), toString()));
 		String joinMessage = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getPlayerName());
 		playerMap.keySet().forEach(other -> {
-			if (other != handler) {
-				other.sendMessage(joinMessage);
-			}
+			if (other != handler) other.sendMessage(joinMessage);
 		});
 		logger.info("ルーム(ID: " + roomId + ")にプレイヤー(ID: " + handler.getConnectionId() + ")を追加しました");
 		return true;
@@ -153,24 +159,23 @@ class GameRoom extends Thread implements Closeable {
 		ClientHandler sender = command.getSender();
 		Player player = playerMap.get(sender);
 		if (player == null) return;
+		String body = command.getBody();
 		switch (command.getCommandType()) {
 			case READY:
+				CharacterType characterType = CharacterType.fromId(Integer.parseInt(body));
+				player.selectCharacter(characterType);
 				player.setReady();
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
+				String readyMessage = Protocol.readySuccess(player.getId(), characterType);
+				playerMap.keySet().forEach(handler -> handler.sendMessage(readyMessage));
 				startGame();
 				break;
 			case UNREADY:
 				player.setUnReady();
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備を解除しました。");
-				// TODO: 全体通知
+				String unreadyMessage = Protocol.unreadySuccess(player.getId());
+				playerMap.keySet().forEach(handler -> handler.sendMessage(unreadyMessage));
 				break;
-			case SELECT_CHARACTER:
-				player.selectCharacter(command.getBody());
-				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")がキャラクターを設定しました。");
-				break;
-			case UNSELECT_CHARACTER:
-				player.unselectCharacter();
-				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")がキャラクターを解除しました。");
 			case MOVE_LEFT:
 				break;
 			case MOVE_UP:
@@ -190,6 +195,8 @@ class GameRoom extends Thread implements Closeable {
 	}
 
 	private synchronized void startGame() {
+		if (isClosed || isStarted) return;
+		if (playerMap.size() < 2) return;
 		for (Player player : playerMap.values()) {
 			if (!player.isReady()) return;
 		}
@@ -201,7 +208,8 @@ class GameRoom extends Thread implements Closeable {
 		for (Player player : playerMap.values()) {
 			battleField.addEntity(player.getCharacter());
 		}
-		// TODO: 開始通知
+		String startMessage = Protocol.gameStart();
+		playerMap.keySet().forEach(handler -> handler.sendMessage(startMessage));
 	}
 
 	private synchronized void endGame() {
