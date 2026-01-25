@@ -3,7 +3,9 @@ package server;
 import model.BattleField;
 import model.CharacterType;
 import model.GameCharacter;
-import model.Protocol;
+import model.Projectile;
+import model.ProjectileType;
+import network.Protocol;
 
 import java.io.Closeable;
 import java.util.StringJoiner;
@@ -23,6 +25,15 @@ class GameRoom extends Thread implements Closeable {
 	private static final int MAX_PLAYERS = 4;
 	private static final int FPS = 60;
 	private static final long FRAME_TIME = 1000_000_000L / FPS;
+	private static final int FIELD_WIDTH = 1000;
+	private static final int FIELD_HEIGHT = 520;
+	private static final double MOVE_STEP = 6.0;
+	private static final double JUMP_VELOCITY = 14.0;
+	private static final double GROUND_Y = FIELD_HEIGHT * 0.36;
+	private static final double GRAVITY = -0.9;
+	private static final double PROJECTILE_SPEED = 9.0;
+	private static final long MAX_CHARGE_MS = 1200;
+	private static final double MAX_CHARGE_MULTIPLIER = 2.5;
 
 	// -------------------- インスタンス定数 --------------------
 	private final int roomId;
@@ -60,7 +71,8 @@ class GameRoom extends Thread implements Closeable {
 				handleCommand(cmd);
 			}
 			if (isStarted && battleField != null) {
-				battleField.update();
+				BattleField.UpdateResult result = battleField.update();
+				broadcastState(result);
 			}
 			long waitNs = targetTime - System.nanoTime();
 			if (waitNs > 0) {
@@ -177,14 +189,42 @@ class GameRoom extends Thread implements Closeable {
 				playerMap.keySet().forEach(handler -> handler.sendMessage(unreadyMessage));
 				break;
 			case MOVE_LEFT:
+				player.setFacingDirection(-1);
+				applyMove(player, -MOVE_STEP, 0);
 				break;
 			case MOVE_UP:
+				applyMove(player, 0, MOVE_STEP);
 				break;
 			case MOVE_RIGHT:
+				player.setFacingDirection(1);
+				applyMove(player, MOVE_STEP, 0);
 				break;
 			case MOVE_DOWN:
+				applyMove(player, 0, -MOVE_STEP);
+				break;
+			case JUMP:
+				if (applyJump(player)) {
+					broadcastAction(Protocol.jump(player.getId()));
+				}
+				break;
+			case CHARGE_START:
+				player.startCharge();
+				broadcastAction(Protocol.chargeStart(player.getId()));
+				break;
+			case NORMAL_ATTACK:
+				applyNormalAttack(player);
+				broadcastAction(Protocol.normalAttack(player.getId()));
+				break;
+			case CHARGE_ATTACK:
+				applyChargeAttack(player);
+				broadcastAction(Protocol.chargeAttack(player.getId()));
+				break;
+			case DEFEND:
+				applyDefend(player);
+				broadcastAction(Protocol.defend(player.getId()));
 				break;
 			case RESIGN:
+				handleResign(sender);
 				break;
 			case DISCONNECT:
 				handleDisconnect(sender);
@@ -204,9 +244,18 @@ class GameRoom extends Thread implements Closeable {
 		isGameOver = false;
 		alivePlayers = playerMap.size();
 		logger.info("ルーム(ID: " + roomId + ")でゲーム開始");
-		battleField = new BattleField();
+		battleField = new BattleField(FIELD_WIDTH, FIELD_HEIGHT, GROUND_Y, GRAVITY);
+		int index = 0;
 		for (Player player : playerMap.values()) {
-			battleField.addEntity(player.getCharacter());
+			GameCharacter character = player.getCharacter();
+			if (character != null) {
+				double x = FIELD_WIDTH * (0.2 + 0.2 * index);
+				character.setPosition(x, GROUND_Y);
+				character.setGrounded(true);
+				character.setOwnerId(player.getId());
+				battleField.addEntity(character);
+			}
+			index++;
 		}
 		String startMessage = Protocol.gameStart();
 		playerMap.keySet().forEach(handler -> handler.sendMessage(startMessage));
@@ -253,17 +302,109 @@ class GameRoom extends Thread implements Closeable {
 		if (playerMap.isEmpty()) close();
 	}
 
-	private synchronized void broadcastState() {
+	private synchronized void broadcastState(BattleField.UpdateResult result) {
 		// TODO: 状態を全員に通知する
 		if (!isStarted || battleField == null) return;
 
 		playerMap.forEach((handler, player) -> {
 			GameCharacter character = player.getCharacter();
-			if (character != null) {
-				String msg = Protocol.move(character.getId(), character.getPosition().getX(), character.getPosition().getY());
+			if (character != null && character.getPosition() != null) {
+				String msg = Protocol.move(player.getId(), character.getPosition().getX(), character.getPosition().getY());
 				playerMap.keySet().forEach(h -> h.sendMessage(msg));
 			}
 		});
+
+		for (Projectile projectile : battleField.getProjectiles()) {
+			if (projectile.getPosition() == null) continue;
+			String msg = Protocol.projectile(projectile.getId(), projectile.getType(),
+					projectile.getPosition().getX(), projectile.getPosition().getY(), projectile.getPower());
+			playerMap.keySet().forEach(h -> h.sendMessage(msg));
+		}
+
+		if (result != null) {
+			for (Projectile projectile : result.getRemovedProjectiles()) {
+				String msg = Protocol.projectileRemove(projectile.getId());
+				playerMap.keySet().forEach(h -> h.sendMessage(msg));
+			}
+			for (BattleField.DamageEvent damage : result.getDamageEvents()) {
+				String msg = Protocol.damage(damage.getTargetId(), damage.getHp());
+				playerMap.keySet().forEach(h -> h.sendMessage(msg));
+			}
+		}
 	}
 
+	private void broadcastAction(String message) {
+		if (message == null || message.isEmpty()) return;
+		playerMap.keySet().forEach(h -> h.sendMessage(message));
+	}
+
+	private void applyMove(Player player, double dx, double dy) {
+		GameCharacter character = player.getCharacter();
+		if (character == null || character.getPosition() == null) return;
+		double nextX = character.getPosition().getX() + dx;
+		double nextY = character.getPosition().getY() + dy;
+		if (nextX < 0) nextX = 0;
+		if (nextX > FIELD_WIDTH) nextX = FIELD_WIDTH;
+		if (nextY < 0) nextY = 0;
+		if (nextY > FIELD_HEIGHT) nextY = FIELD_HEIGHT;
+		character.setPosition(nextX, nextY);
+	}
+
+	private void applyNormalAttack(Player player) {
+		GameCharacter character = player.getCharacter();
+		if (character == null) return;
+		character.normalAttack();
+		spawnProjectile(player, character, 1.0);
+	}
+
+	private void applyChargeAttack(Player player) {
+		GameCharacter character = player.getCharacter();
+		if (character == null) return;
+		character.chargeAttack();
+		double power = resolveChargePower(player.stopCharge());
+		spawnProjectile(player, character, power);
+	}
+
+	private void applyDefend(Player player) {
+		GameCharacter character = player.getCharacter();
+		if (character == null) return;
+		character.defend();
+	}
+
+	private void spawnProjectile(Player player, GameCharacter character, double power) {
+		if (battleField == null || character.getPosition() == null) return;
+		ProjectileType projectileType;
+		switch (character.getType()) {
+			case ARCHER:
+				projectileType = ProjectileType.ARROW;
+				break;
+			case WIZARD:
+				projectileType = ProjectileType.MAGIC;
+				break;
+			default:
+				return;
+		}
+		int direction = player.getFacingDirection();
+		double speed = PROJECTILE_SPEED * Math.max(1.0, power);
+		double damage = character.getAttack();
+		double startX = character.getPosition().getX() + (direction * 16);
+		double startY = character.getPosition().getY() + 16;
+		Projectile projectile = new Projectile(projectileType, player.getId(), startX, startY, direction * speed, 0, power, damage);
+		battleField.addEntity(projectile);
+	}
+
+	private boolean applyJump(Player player) {
+		GameCharacter character = player.getCharacter();
+		if (character == null || !character.canJump()) return false;
+		character.setVerticalVelocity(JUMP_VELOCITY);
+		character.registerJump();
+		return true;
+	}
+
+	private double resolveChargePower(long chargeMs) {
+		if (chargeMs <= 0) return 1.0;
+		long clamped = Math.min(chargeMs, MAX_CHARGE_MS);
+		double ratio = clamped / (double) MAX_CHARGE_MS;
+		return 1.0 + (MAX_CHARGE_MULTIPLIER - 1.0) * ratio;
+	}
 }

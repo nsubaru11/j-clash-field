@@ -12,7 +12,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -44,10 +43,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			CharacterType.FIGHTER,
 			CharacterType.WIZARD
 	};
-	private static final String ARCHER_IMAGE_PATH = "/client/assets/archer.png";
-	private static final String WARRIOR_IMAGE_PATH = "/client/assets/warrior.png";
-	private static final String FIGHTER_IMAGE_PATH = "/client/assets/fighter.png";
-	private static final String WIZARD_IMAGE_PATH = "/client/assets/wizard.png";
+	private static final String ARCHER_IMAGE_PATH = "/resorces/archer.png";
+	private static final String WARRIOR_IMAGE_PATH = "/resorces/warrior.png";
+	private static final String FIGHTER_IMAGE_PATH = "/resorces/fighter.png";
+	private static final String WIZARD_IMAGE_PATH = "/resorces/wizard.png";
 	private static final Map<CharacterType, BufferedImage> CHARACTER_IMAGES = new EnumMap<>(CharacterType.class);
 
 	static {

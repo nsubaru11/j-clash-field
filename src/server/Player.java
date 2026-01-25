@@ -12,10 +12,13 @@ import java.util.logging.Logger;
 public class Player {
 	private static final Logger logger = Logger.getLogger(Player.class.getName());
 
-	private int id;
+	private final int id;
 	private String name;
 	private boolean isReady; // ゲームロジックとしての状態
 	private GameCharacter character;
+	private int facingDirection = 1;
+	private boolean charging;
+	private long chargeStartMs;
 
 	public Player(int id, String name) {
 		this.id = id;
@@ -34,6 +37,8 @@ public class Player {
 	public void reset() {
 		character = new Archer();
 		isReady = false;
+		charging = false;
+		chargeStartMs = 0;
 	}
 
 	public void setPlayerName(String name) {
@@ -80,6 +85,26 @@ public class Player {
 
 	public GameCharacter getCharacter() {
 		return character;
+	}
+
+	public void startCharge() {
+		charging = true;
+		chargeStartMs = System.currentTimeMillis();
+	}
+
+	public long stopCharge() {
+		if (!charging) return 0;
+		charging = false;
+		return Math.max(0, System.currentTimeMillis() - chargeStartMs);
+	}
+
+	public int getFacingDirection() {
+		return facingDirection;
+	}
+
+	public void setFacingDirection(int facingDirection) {
+		if (facingDirection == 0) return;
+		this.facingDirection = facingDirection > 0 ? 1 : -1;
 	}
 
 	public int getId() {

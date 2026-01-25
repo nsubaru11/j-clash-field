@@ -36,8 +36,35 @@ public abstract class Entity {
 	}
 
 	public boolean collidesWith(Entity other) {
-		// TODO: 衝突判定
-		return false;
+		if (other == null || position == null || other.position == null) return false;
+		double widthValue = getWidthValue();
+		double heightValue = getHeightValue();
+		double otherWidth = other.getWidthValue();
+		double otherHeight = other.getHeightValue();
+		if (widthValue <= 0 || heightValue <= 0 || otherWidth <= 0 || otherHeight <= 0) return false;
+
+		double thisMinX = position.getX() - widthValue / 2.0;
+		double thisMaxX = position.getX() + widthValue / 2.0;
+		double thisMinY = position.getY() - heightValue;
+		double thisMaxY = position.getY();
+
+		double otherMinX = other.position.getX() - otherWidth / 2.0;
+		double otherMaxX = other.position.getX() + otherWidth / 2.0;
+		double otherMinY = other.position.getY() - otherHeight;
+		double otherMaxY = other.position.getY();
+
+		return thisMinX < otherMaxX && thisMaxX > otherMinX
+				&& thisMinY < otherMaxY && thisMaxY > otherMinY;
+	}
+
+	private double getWidthValue() {
+		if (width == null) return 0;
+		return Math.abs(width.getX());
+	}
+
+	private double getHeightValue() {
+		if (height == null) return 0;
+		return Math.abs(height.getY());
 	}
 
 }

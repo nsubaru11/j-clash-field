@@ -1,7 +1,7 @@
 package server;
 
 
-import model.Command;
+import network.Command;
 
 class ServerCommand extends Command {
 	private final ClientHandler sender;

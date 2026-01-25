@@ -15,7 +15,7 @@ import java.util.Objects;
 public class LoadPanel extends JPanel {
 	// --------------- フィールド ---------------
 	/** 背景画像のパス */
-	private static final String BACKGROUND_IMAGE_PATH = "/client/assets/loading.png";
+	private static final String BACKGROUND_IMAGE_PATH = "/resorces/loading.png";
 	/** 背景画像 */
 	private static final BufferedImage BACKGROUND_IMAGE;
 	private static final int ANIMATION_DELAY = 10; // 更新間隔 (ms)

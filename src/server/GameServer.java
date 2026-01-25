@@ -1,7 +1,7 @@
 package server;
 
 import model.LoggingConfig;
-import model.Protocol;
+import network.Protocol;
 
 import java.io.Closeable;
 import java.io.IOException;

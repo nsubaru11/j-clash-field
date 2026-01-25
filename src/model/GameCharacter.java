@@ -4,6 +4,22 @@ public  abstract class GameCharacter extends Entity {
 	protected double speedX, speedY;
 	protected double hp, attack, defend;
 	protected CharacterType type;
+	protected static final int MAX_JUMPS = 3;
+	protected boolean grounded;
+	protected int ownerId = -1;
+	protected int jumpCount;
+
+	protected GameCharacter() {
+		position = new Vector2D(0, 0);
+		width = new Vector2D(32, 0);
+		height = new Vector2D(0, 32);
+		velocity = new Vector2D(0, 0);
+		speedX = 6;
+		speedY = 6;
+		hp = 100;
+		attack = 10;
+		defend = 0;
+	}
 
 	public abstract CharacterType getType();
 
@@ -14,6 +30,66 @@ public  abstract class GameCharacter extends Entity {
 	public abstract void specialAttack();
 
 	public abstract void defend();
+
+	public void setPosition(double x, double y) {
+		if (position == null) {
+			position = new Vector2D(x, y);
+		} else {
+			position.setX(x);
+			position.setY(y);
+		}
+	}
+
+	public boolean isGrounded() {
+		return grounded;
+	}
+
+	public void setGrounded(boolean grounded) {
+		this.grounded = grounded;
+	}
+
+	public void setVerticalVelocity(double vy) {
+		if (velocity == null) {
+			velocity = new Vector2D(0, vy);
+		} else {
+			velocity.setY(vy);
+		}
+	}
+
+	public boolean canJump() {
+		return jumpCount < MAX_JUMPS;
+	}
+
+	public void registerJump() {
+		jumpCount++;
+		grounded = false;
+	}
+
+	public void resetJumpCount() {
+		jumpCount = 0;
+	}
+
+	public int getOwnerId() {
+		return ownerId;
+	}
+
+	public void setOwnerId(int ownerId) {
+		this.ownerId = ownerId;
+	}
+
+	public double getAttack() {
+		return attack;
+	}
+
+	public int getHp() {
+		return (int) Math.max(0, Math.round(hp));
+	}
+
+	public int applyDamage(double damage) {
+		double mitigated = Math.max(0, damage - defend);
+		hp = Math.max(0, hp - mitigated);
+		return getHp();
+	}
 
 	public void movLeft() {
 		position.moveX(-speedX);

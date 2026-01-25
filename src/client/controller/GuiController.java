@@ -9,10 +9,14 @@ import client.view.MatchingPanel;
 import client.view.ResultPanel;
 import client.view.TitlePanel;
 import model.CharacterType;
-import model.Command;
+import network.Command;
+import network.CommandType;
+import model.ProjectileType;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -44,6 +48,7 @@ public final class GuiController {
 	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
 	private volatile String playerName = "";
 	private volatile int playerId = 0;
+	private final Map<Integer, PlayerSnapshot> playerSnapshots = new LinkedHashMap<>();
 
 	/** ネットワークコントローラー */
 	private final NetworkController network;
@@ -78,6 +83,18 @@ public final class GuiController {
 		});
 		gameRoomPanel.setReadyAction(e -> network.ready(gameRoomPanel.getSelectedCharacterType()));
 		gamePanel = new GamePanel();
+		gamePanel.setInputActions(
+				network::moveLeft,
+				network::moveRight,
+				network::moveUp,
+				network::moveDown,
+				network::jump,
+				network::normalAttack,
+				network::chargeStart,
+				network::chargeAttack,
+				network::defend,
+				network::resign
+		);
 		resultPanel = new ResultPanel();
 		resultPanel.setBackAction(e -> showGameRoom());
 
@@ -161,7 +178,15 @@ public final class GuiController {
 	}
 
 	private void showGame() {
-		SwingUtilities.invokeLater(() -> cardLayout.show(cardPanel, CARD_GAME));
+		SwingUtilities.invokeLater(() -> {
+			gamePanel.clearPlayers();
+			for (PlayerSnapshot snapshot : playerSnapshots.values()) {
+				gamePanel.setPlayerInfo(snapshot.playerId, snapshot.playerName, snapshot.characterType);
+			}
+			gamePanel.setLocalPlayerId(playerId);
+			cardLayout.show(cardPanel, CARD_GAME);
+			gamePanel.requestFocusInWindow();
+		});
 	}
 
 	private void showResult() {
@@ -182,8 +207,23 @@ public final class GuiController {
 			case GAME_OVER:
 				break;
 			case MOVE:
+				handleMove(body);
+				break;
+			case JUMP:
+			case NORMAL_ATTACK:
+			case CHARGE_START:
+			case CHARGE_ATTACK:
+			case DEFEND:
+				handlePlayerAction(command.getCommandType(), body);
+				break;
+			case PROJECTILE:
+				handleProjectile(body);
+				break;
+			case PROJECTILE_REMOVE:
+				handleProjectileRemove(body);
 				break;
 			case DAMAGE:
+				handleDamage(body);
 				break;
 			case DEAD:
 				break;
@@ -206,6 +246,7 @@ public final class GuiController {
 				int characterId = Integer.parseInt(playerInfo[1]);
 				CharacterType characterType = CharacterType.fromId(characterId);
 				gameRoomPanel.updatePlayerStatus(playerId, true, characterType);
+				updatePlayerSnapshot(playerId, null, characterType);
 				break;
 			case UNREADY_SUCCESS:
 				gameRoomPanel.updatePlayerStatus(Integer.parseInt(body), false, CharacterType.ARCHER);
@@ -225,6 +266,7 @@ public final class GuiController {
 		String[] parts = body.split(":", 2);
 		int joinedPlayerId = Integer.parseInt(parts[0]);
 		this.playerId = joinedPlayerId;
+		playerSnapshots.clear();
 		String roomState = parts[1];
 		String[] roomStateParts = roomState.split(":", 2);
 		String roomInfoPart = roomStateParts[0];
@@ -245,6 +287,7 @@ public final class GuiController {
 			int id = Integer.parseInt(fields[3]);
 			CharacterType characterType = CharacterType.fromId(id);
 			gameRoomPanel.addPlayer(playerId, playerName, isReady, characterType);
+			updatePlayerSnapshot(playerId, playerName, characterType);
 		}
 
 		gameRoomPanel.setRoomInfo(roomId, isPublic);
@@ -266,6 +309,78 @@ public final class GuiController {
 		int playerId = Integer.parseInt(fields[0]);
 		String playerName = fields[1];
 		gameRoomPanel.addPlayer(playerId, playerName, false, CharacterType.ARCHER);
+		updatePlayerSnapshot(playerId, playerName, CharacterType.ARCHER);
+	}
+
+	private void handleMove(String body) {
+		String[] parts = body.split(":", 2);
+		if (parts.length < 2) return;
+		int movedPlayerId = Integer.parseInt(parts[0]);
+		String[] coords = parts[1].split(",", 2);
+		if (coords.length < 2) return;
+		double x = Double.parseDouble(coords[0]);
+		double y = Double.parseDouble(coords[1]);
+		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerPosition(movedPlayerId, x, y));
+	}
+
+	private void handlePlayerAction(CommandType actionType, String body) {
+		if (body == null || body.isEmpty()) return;
+		int actedPlayerId = Integer.parseInt(body);
+		GamePanel.PlayerAction action;
+		switch (actionType) {
+			case NORMAL_ATTACK:
+				action = GamePanel.PlayerAction.NORMAL_ATTACK;
+				break;
+			case CHARGE_START:
+				action = GamePanel.PlayerAction.CHARGE_HOLD;
+				break;
+			case CHARGE_ATTACK:
+				action = GamePanel.PlayerAction.CHARGE_ATTACK;
+				break;
+			case DEFEND:
+				action = GamePanel.PlayerAction.DEFEND;
+				break;
+			case JUMP:
+				action = GamePanel.PlayerAction.JUMP;
+				break;
+			default:
+				action = GamePanel.PlayerAction.NONE;
+				break;
+		}
+		if (action == GamePanel.PlayerAction.NONE) return;
+		SwingUtilities.invokeLater(() -> gamePanel.recordPlayerAction(actedPlayerId, action));
+	}
+
+	private void handleProjectile(String body) {
+		String[] parts = body.split(",", 5);
+		if (parts.length < 4) return;
+		long projectileId = Long.parseLong(parts[0]);
+		int typeId = Integer.parseInt(parts[1]);
+		double x = Double.parseDouble(parts[2]);
+		double y = Double.parseDouble(parts[3]);
+		double power = parts.length >= 5 ? Double.parseDouble(parts[4]) : 1.0;
+		ProjectileType type = ProjectileType.fromId(typeId);
+		SwingUtilities.invokeLater(() -> gamePanel.updateProjectile(projectileId, type, x, y, power));
+	}
+
+	private void handleProjectileRemove(String body) {
+		if (body == null || body.isEmpty()) return;
+		long projectileId = Long.parseLong(body);
+		SwingUtilities.invokeLater(() -> gamePanel.removeProjectile(projectileId));
+	}
+
+	private void handleDamage(String body) {
+		String[] parts = body.split(",", 2);
+		if (parts.length < 2) return;
+		int targetId = Integer.parseInt(parts[0]);
+		int hp = Integer.parseInt(parts[1]);
+		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerHp(targetId, hp));
+	}
+
+	private void updatePlayerSnapshot(int playerId, String playerName, CharacterType characterType) {
+		PlayerSnapshot snapshot = playerSnapshots.computeIfAbsent(playerId, PlayerSnapshot::new);
+		if (playerName != null) snapshot.playerName = playerName;
+		if (characterType != null) snapshot.characterType = characterType;
 	}
 
 	private final class GameLoopThread extends Thread {
@@ -297,6 +412,16 @@ public final class GuiController {
 					targetTime -= waitNs;
 				}
 			}
+		}
+	}
+
+	private static final class PlayerSnapshot {
+		private final int playerId;
+		private String playerName = "";
+		private CharacterType characterType = CharacterType.ARCHER;
+
+		private PlayerSnapshot(int playerId) {
+			this.playerId = playerId;
 		}
 	}
 

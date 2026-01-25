@@ -1,4 +1,4 @@
-package model;
+package network;
 
 import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
@@ -18,6 +18,8 @@ public enum CommandType {
 	RESULT(10),
 	GAME_ROOM_CLOSED(11),
 	SERVER_CLOSED(12),
+	PROJECTILE(13),
+	PROJECTILE_REMOVE(14),
 
 	// -------------------- クライアント -> サーバー --------------------
 	CONNECT(50),
@@ -33,6 +35,11 @@ public enum CommandType {
 	CREATE_ROOM(60),
 	READY_SUCCESS(61),
 	UNREADY_SUCCESS(62),
+	JUMP(63),
+	NORMAL_ATTACK(64),
+	CHARGE_ATTACK(65),
+	DEFEND(66),
+	CHARGE_START(67),
 
 	// -------------------- その他 --------------------
 	ERROR(254),

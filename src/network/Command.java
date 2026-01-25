@@ -1,4 +1,4 @@
-package model;
+package network;
 
 
 public class Command {

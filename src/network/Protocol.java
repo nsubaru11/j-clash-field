@@ -1,4 +1,7 @@
-package model;
+package network;
+
+import model.CharacterType;
+import model.ProjectileType;
 
 /**
  * 通信用のクラスです。
@@ -17,12 +20,12 @@ public final class Protocol {
 		return CommandType.GAME_OVER.getId() + "";
 	}
 
-	public static String move(long id, double i, double j) {
-		return CommandType.MOVE.getId() + ":" + id + ":" + i + "," + j;
+	public static String move(int playerId, double i, double j) {
+		return CommandType.MOVE.getId() + ":" + playerId + ":" + i + "," + j;
 	}
 
-	public static String damage(int hp) {
-		return CommandType.DAMAGE.getId() + ":" + hp;
+	public static String damage(int playerId, int hp) {
+		return CommandType.DAMAGE.getId() + ":" + playerId + "," + hp;
 	}
 
 	public static String dead() {
@@ -69,6 +72,14 @@ public final class Protocol {
 		return CommandType.SERVER_CLOSED.getId() + "";
 	}
 
+	public static String projectile(long projectileId, ProjectileType type, double x, double y, double power) {
+		return CommandType.PROJECTILE.getId() + ":" + projectileId + "," + type.getId() + "," + x + "," + y + "," + power;
+	}
+
+	public static String projectileRemove(long projectileId) {
+		return CommandType.PROJECTILE_REMOVE.getId() + ":" + projectileId;
+	}
+
 	// -------------------- クライアント -> サーバー --------------------
 
 	public static String connect() {
@@ -105,6 +116,46 @@ public final class Protocol {
 
 	public static String moveDown() {
 		return CommandType.MOVE_DOWN.getId() + "";
+	}
+
+	public static String jump() {
+		return CommandType.JUMP.getId() + "";
+	}
+
+	public static String jump(int playerId) {
+		return CommandType.JUMP.getId() + ":" + playerId;
+	}
+
+	public static String normalAttack() {
+		return CommandType.NORMAL_ATTACK.getId() + "";
+	}
+
+	public static String normalAttack(int playerId) {
+		return CommandType.NORMAL_ATTACK.getId() + ":" + playerId;
+	}
+
+	public static String chargeAttack() {
+		return CommandType.CHARGE_ATTACK.getId() + "";
+	}
+
+	public static String chargeStart() {
+		return CommandType.CHARGE_START.getId() + "";
+	}
+
+	public static String chargeAttack(int playerId) {
+		return CommandType.CHARGE_ATTACK.getId() + ":" + playerId;
+	}
+
+	public static String defend() {
+		return CommandType.DEFEND.getId() + "";
+	}
+
+	public static String chargeStart(int playerId) {
+		return CommandType.CHARGE_START.getId() + ":" + playerId;
+	}
+
+	public static String defend(int playerId) {
+		return CommandType.DEFEND.getId() + ":" + playerId;
 	}
 
 	public static String resign() {

@@ -1,7 +1,7 @@
 package client.controller;
 
 import model.CharacterType;
-import model.Protocol;
+import network.Protocol;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -103,6 +103,26 @@ class NetworkController implements Closeable {
 
 	public void moveDown() {
 		sendQueue.offer(Protocol.moveDown());
+	}
+
+	public void jump() {
+		sendQueue.offer(Protocol.jump());
+	}
+
+	public void normalAttack() {
+		sendQueue.offer(Protocol.normalAttack());
+	}
+
+	public void chargeAttack() {
+		sendQueue.offer(Protocol.chargeAttack());
+	}
+
+	public void chargeStart() {
+		sendQueue.offer(Protocol.chargeStart());
+	}
+
+	public void defend() {
+		sendQueue.offer(Protocol.defend());
 	}
 
 	public void resign() {
