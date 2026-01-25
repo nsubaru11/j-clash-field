@@ -39,8 +39,8 @@ rem ---------------------------------------------------------
 echo Compiling...
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 
-rem クライアントに必要なソースファイルをリストアップ (modelとclient)
-dir /s /b "%SRC_DIR%\model\*.java" "%SRC_DIR%\client\*.java" > "%REPO_DIR%\sources.txt"
+rem クライアントに必要なソースファイルをリストアップ (model, network, client)
+dir /s /b "%SRC_DIR%\model\*.java" "%SRC_DIR%\network\*.java" "%SRC_DIR%\client\*.java" > "%REPO_DIR%\sources.txt"
 
 "%JAVAC_CMD%" -encoding UTF-8 -d "%OUT_DIR%" @"%REPO_DIR%\sources.txt"
 
@@ -56,14 +56,14 @@ del "%REPO_DIR%\sources.txt"
 rem ---------------------------------------------------------
 rem ★ここが修正点: 画像ファイル(assets)のコピー
 rem ---------------------------------------------------------
-echo Copying assets...
+echo Copying resources...
 rem /E: ディレクトリ構造ごとコピー
 rem /I: 送り側がディレクトリなら受け側もディレクトリとみなす
 rem /Y: 上書き確認なし
-xcopy /E /I /Y "%SRC_DIR%\client\assets" "%OUT_DIR%\client\assets" > nul
+xcopy /E /I /Y "%SRC_DIR%\resorces" "%OUT_DIR%\resorces" > nul
 
 if %errorlevel% neq 0 (
-    echo [Warning] Failed to copy assets.
+    echo [Warning] Failed to copy resources.
 )
 
 rem ---------------------------------------------------------

@@ -40,8 +40,8 @@ rem ---------------------------------------------------------
 echo Compiling...
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 
-rem サーバーに必要なソースファイルをリストアップ (modelとserver)
-dir /s /b "%SRC_DIR%\model\*.java" "%SRC_DIR%\server\*.java" > "%REPO_DIR%\sources.txt"
+rem サーバーに必要なソースファイルをリストアップ (model, network, server)
+dir /s /b "%SRC_DIR%\model\*.java" "%SRC_DIR%\network\*.java" "%SRC_DIR%\server\*.java" > "%REPO_DIR%\sources.txt"
 
 "%JAVAC_CMD%" -encoding UTF-8 -d "%OUT_DIR%" @"%REPO_DIR%\sources.txt"
 
