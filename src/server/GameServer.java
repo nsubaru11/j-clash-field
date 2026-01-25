@@ -92,8 +92,8 @@ public final class GameServer implements Runnable, Closeable {
 				// クライアントの接続を待つ
 				Socket clientSocket = serverSocket.accept();
 				ClientHandler handler = new ClientHandler(clientSocket);
-				handler.start();
 				handler.setMessageListener(msg -> join(handler, msg));
+				handler.start();
 				logger.info(() -> "新しいクライアント(ID: " + handler.getConnectionId() + ")が接続しました。");
 			} catch (final IOException e) {
 				if (isRunning) {
@@ -113,6 +113,11 @@ public final class GameServer implements Runnable, Closeable {
 		isRunning = false;
 		waitingPlayers.forEach(ClientHandler::close);
 		publicRooms.forEach(GameRoom::close);
+		privateRooms.values().forEach(GameRoom::close);
+		waitingPlayers.clear();
+		playerNames.clear();
+		publicRooms.clear();
+		privateRooms.clear();
 		try {
 			serverSocket.close();
 		} catch (final IOException e) {
@@ -190,32 +195,38 @@ public final class GameServer implements Runnable, Closeable {
 		Iterator<ClientHandler> iterator = waitingPlayers.iterator();
 		while (iterator.hasNext()) {
 			ClientHandler handler = iterator.next();
-			boolean assigned = false;
+			GameRoom assignedRoom = null;
 			for (GameRoom room : publicRooms) {
-				if (!room.isPublic()) continue;
 				if (room.join(handler, playerNames.get(handler))) {
-					assigned = true;
+					assignedRoom = room;
 					logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 					logger.config(room::toString);
 					break;
 				}
 			}
-			if (!assigned) {
+
+			// ルームがない場合は新規作成
+			if (assignedRoom == null) {
 				GameRoom room = new GameRoom(true);
 				room.join(handler, playerNames.get(handler));
 				room.start();
 				room.setDisconnectListener(() -> removeGameRoom(room));
 				publicRooms.add(room);
+				assignedRoom = room;
 				logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")がルーム(ID: " + room.getRoomId() + ")に追加されました。");
 				logger.config(room::toString);
 			}
+
+			handler.sendMessage(Protocol.joinSuccess(assignedRoom.toString()));
+			playerNames.remove(handler);
 			iterator.remove();
 		}
 	}
 
 	private synchronized void removeGameRoom(final GameRoom room) {
-		if (!isRunning || room == null) return;
+		if (room == null) return;
 		publicRooms.remove(room);
+		privateRooms.remove(room.getRoomId());
 	}
 
 	private synchronized void disconnectHandler(final ClientHandler handler) {
@@ -223,5 +234,6 @@ public final class GameServer implements Runnable, Closeable {
 		logger.info(() -> "プレイヤー(ID: " + handler.getConnectionId() + ")が切断されました。");
 		waitingPlayers.remove(handler);
 		playerNames.remove(handler);
+		handler.close();
 	}
 }

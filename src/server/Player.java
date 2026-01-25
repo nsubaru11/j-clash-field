@@ -12,8 +12,8 @@ public class Player {
 	private boolean isReady; // ゲームロジックとしての状態
 	private GameCharacter character;
 
-
-	public Player(String name) {
+	public Player(int id, String name) {
+		this.id = id;
 		this.name = name;
 	}
 

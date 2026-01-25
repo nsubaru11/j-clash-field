@@ -132,9 +132,14 @@ class GameRoom extends Thread implements Closeable {
 		if (isClosed || isStarted || playerMap.size() >= MAX_PLAYERS) return false;
 		handler.setMessageListener(msg -> this.commandQueue.add(new ServerCommand(handler, msg)));
 		handler.setDisconnectListener(() -> handleDisconnect(handler));
-		Player newPlayer = new Player(playerName);
+		Player newPlayer = new Player(handler.getConnectionId(), playerName);
 		playerMap.put(handler, newPlayer);
-		// TODO: メッセージ処理
+		String joinMessage = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getPlayerName());
+		playerMap.keySet().forEach(other -> {
+			if (other != handler) {
+				other.sendMessage(joinMessage);
+			}
+		});
 		logger.info("ルーム(ID: " + roomId + ")にプレイヤー(ID: " + handler.getConnectionId() + ")を追加しました");
 		return true;
 	}

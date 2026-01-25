@@ -57,6 +57,10 @@ public final class Protocol {
 		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentName;
 	}
 
+	public static String joinOpponent(int opponentId, String opponentName) {
+		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentId + " " + opponentName;
+	}
+
 	public static String result(String result) {
 		return CommandType.RESULT.getId() + ":" + result;
 	}

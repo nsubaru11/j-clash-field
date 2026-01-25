@@ -12,7 +12,8 @@ import model.Command;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ public final class GuiController {
 	private final GamePanel gamePanel;
 	private final ResultPanel resultPanel;
 	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
+	private volatile String localPlayerName = "";
 
 	/** ネットワークコントローラー */
 	private final NetworkController network;
@@ -67,8 +69,10 @@ public final class GuiController {
 		matchingPanel.setStartGameListener(e -> joinRoom());
 		matchingPanel.setCancelListener(e -> showHome());
 		gameRoomPanel = new GameRoomPanel();
+		gameRoomPanel.setBackAction(e -> showHome());
 		gamePanel = new GamePanel();
 		resultPanel = new ResultPanel();
+		resultPanel.setBackAction(e -> showGameRoom());
 
 		rootPane = new JLayeredPane();
 		rootPane.setLayout(new OverlayLayout(rootPane));
@@ -105,6 +109,9 @@ public final class GuiController {
 		String userName = matchingPanel.getUserName();
 		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
 		matchingPanel.setVisible(false);
+		localPlayerName = userName;
+		gameRoomPanel.setLocalPlayerName(userName);
+		gameRoomPanel.reset();
 		showLoad();
 		loadPanel.setNextScreen(this::showGameRoom);
 		switch (mode) {
@@ -176,22 +183,13 @@ public final class GuiController {
 			case OPPONENT_DISCONNECTED:
 				break;
 			case JOIN_SUCCESS:
-				String[] roomState = command.getBody().split(":");
-				String[] roomInfo = roomState[0].split(",");
-				int roomId = Integer.parseInt(roomInfo[0]);
-				boolean isPublic = roomInfo.length > 2 && Boolean.parseBoolean(roomInfo[1]);
-				int playerCount = Integer.parseInt(roomInfo[roomInfo.length > 2 ? 2 : 1]);
-				HashMap<Integer, String[]> playerMap = new HashMap<>();
-				for (String playerInfo : roomState[1].split(",")) {
-					String[] playerInfoArray = playerInfo.split(",");
-					playerMap.put(Integer.parseInt(playerInfoArray[0]), playerInfoArray);
-				}
-				loadPanel.setNextScreen(this::showGameRoom);
-				completeLoad();
+				handleJoinSuccess(command.getBody());
 				break;
 			case JOIN_FAILED:
-				loadPanel.setNextScreen(() -> showMatching(lastMatchingMode));
-				completeLoad();
+				handleJoinFailed();
+				break;
+			case JOIN_OPPONENT:
+				handleJoinOpponent(command.getBody());
 				break;
 			case RESULT:
 				break;
@@ -201,6 +199,70 @@ public final class GuiController {
 				break;
 			default:
 				break;
+		}
+	}
+
+	private void handleJoinSuccess(String body) {
+		String trimmed = body == null ? "" : body.trim();
+		String[] parts = trimmed.split(":", 2);
+		String roomInfoPart = parts.length > 0 ? parts[0] : "";
+		String playerInfoPart = parts.length > 1 ? parts[1] : "";
+		String[] roomInfo = roomInfoPart.isEmpty() ? new String[0] : roomInfoPart.split(",");
+
+		int roomId = roomInfo.length > 0 ? parseIntSafe(roomInfo[0], -1) : -1;
+		boolean isPublic = roomInfo.length > 1 && Boolean.parseBoolean(roomInfo[1]);
+
+		List<GameRoomPanel.PlayerEntry> players = new ArrayList<>();
+		if (!playerInfoPart.isEmpty()) {
+			String[] playerEntries = playerInfoPart.split(",");
+			for (String entry : playerEntries) {
+				String playerText = entry.trim();
+				if (playerText.isEmpty()) continue;
+				String[] fields = playerText.split("\\s+");
+				if (fields.length < 2) continue;
+				int playerId = parseIntSafe(fields[0], -1);
+				String playerName = fields[1];
+				boolean isReady = fields.length > 2 && Boolean.parseBoolean(fields[2]);
+				String character = fields.length > 3 ? fields[3] : "";
+				players.add(new GameRoomPanel.PlayerEntry(playerId, playerName, isReady, character));
+			}
+		}
+
+		gameRoomPanel.setRoomInfo(roomId, isPublic);
+		gameRoomPanel.setPlayers(players);
+		loadPanel.setNextScreen(this::showGameRoom);
+		completeLoad();
+	}
+
+	private void handleJoinFailed() {
+		SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(cardPanel,
+				"ルームに参加できませんでした。",
+				"参加エラー",
+				JOptionPane.WARNING_MESSAGE));
+		loadPanel.setNextScreen(() -> showMatching(lastMatchingMode));
+		completeLoad();
+	}
+
+	private void handleJoinOpponent(String body) {
+		if (body == null) return;
+		String trimmed = body.trim();
+		if (trimmed.isEmpty()) return;
+		String[] fields = trimmed.split(" ", 2);
+		int playerId = -1;
+		String playerName = trimmed;
+		if (fields.length == 2) {
+			playerId = parseIntSafe(fields[0], -1);
+			playerName = fields[1];
+		}
+		if (playerName.trim().isEmpty()) return;
+		gameRoomPanel.addPlayer(playerId, playerName);
+	}
+
+	private static int parseIntSafe(String value, int fallback) {
+		try {
+			return Integer.parseInt(value.trim());
+		} catch (NumberFormatException e) {
+			return fallback;
 		}
 	}
 

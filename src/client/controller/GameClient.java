@@ -2,6 +2,7 @@ package client.controller;
 
 import model.LoggingConfig;
 
+import javax.swing.*;
 import java.util.logging.Logger;
 
 public final class GameClient {
@@ -17,7 +18,9 @@ public final class GameClient {
 		int port = len <= 1 ? DEFAULT_PORT : Integer.parseInt(args[1]);
 
 		NetworkController network = new NetworkController(host, port);
-		GuiController gui = new GuiController(network);
-		logger.info("ゲームが正常に開始されました。");
+		SwingUtilities.invokeLater(() -> {
+			new GuiController(network);
+			logger.info("ゲームが正常に開始されました。");
+		});
 	}
 }
