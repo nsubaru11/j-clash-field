@@ -1,17 +1,17 @@
-package server;
+package server.controller;
 
-import model.Archer;
-import model.AttackHitbox;
-import model.BattleField;
 import model.CharacterType;
-import model.Fighter;
 import model.GameCharacter;
 import model.PlayerInfo;
-import model.Projectile;
 import model.ProjectileType;
-import model.Warrior;
-import model.Wizard;
 import network.Protocol;
+import server.model.Archer;
+import server.model.AttackHitbox;
+import server.model.BattleField;
+import server.model.Fighter;
+import server.model.Projectile;
+import server.model.Warrior;
+import server.model.Wizard;
 
 import java.io.Closeable;
 import java.util.ArrayList;

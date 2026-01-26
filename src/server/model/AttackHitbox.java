@@ -1,4 +1,7 @@
-package model;
+package server.model;
+
+import model.Entity;
+import model.Vector2D;
 
 /**
  * 近接攻撃の当たり判定用

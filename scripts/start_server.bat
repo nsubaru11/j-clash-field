@@ -58,6 +58,6 @@ rem ---------------------------------------------------------
 rem 実行
 rem ---------------------------------------------------------
 echo Starting Server Application...
-"%JAVA_CMD%" -cp "%OUT_DIR%" server.GameServer
+"%JAVA_CMD%" -cp "%OUT_DIR%" server.controller.GameServer
 
 pause

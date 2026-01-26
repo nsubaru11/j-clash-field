@@ -1,4 +1,8 @@
-package model;
+package server.model;
+
+import model.Entity;
+import model.GameCharacter;
+import model.Vector2D;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -130,16 +134,20 @@ public final class BattleField {
 	}
 
 	private void applyGravity(GameCharacter character) {
-		if (character.velocity == null) return;
-		character.velocity.setY(character.velocity.getY() + character.getGravity());
+		if (character == null) return;
+		Vector2D velocity = character.getVelocity();
+		if (velocity == null) return;
+		velocity.setY(velocity.getY() + character.getGravity());
 	}
 
 	private void clampToGround(GameCharacter character) {
-		if (character.getPosition() == null || character.velocity == null) return;
+		if (character == null || character.getPosition() == null) return;
+		Vector2D velocity = character.getVelocity();
+		if (velocity == null) return;
 		if (character.getPosition().getY() <= groundY) {
 			character.getPosition().setY(groundY);
-			if (character.velocity.getY() < 0) {
-				character.velocity.setY(0);
+			if (velocity.getY() < 0) {
+				character.setVerticalVelocity(0);
 			}
 			character.setGrounded(true);
 			character.resetJumpCount();

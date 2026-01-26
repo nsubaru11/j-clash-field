@@ -30,21 +30,6 @@ public enum CharacterType {
 		return BY_ID[id];
 	}
 
-	public static GameCharacter createCharacter(CharacterType type) {
-		switch (type) {
-			case ARCHER:
-				return new Archer();
-			case WARRIOR:
-				return new Warrior();
-			case FIGHTER:
-				return new Fighter();
-			case WIZARD:
-				return new Wizard();
-			default:
-				return null;
-		}
-	}
-
 	public int getId() {
 		return id;
 	}

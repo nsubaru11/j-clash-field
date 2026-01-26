@@ -1,9 +1,13 @@
-package model;
+package server.model;
 
-public class Wizard extends GameCharacter {
-	private static final double GRAVITY = -0.5;
+import model.CharacterType;
+import model.GameCharacter;
+import model.ProjectileType;
+
+public class Archer extends GameCharacter {
+	private static final double GRAVITY = -0.7;
 	private double speedX = 5, speedY = 5;
-	private CharacterType type = CharacterType.WIZARD;
+	private CharacterType type = CharacterType.ARCHER;
 
 	@Override
 	public CharacterType getType() {
@@ -17,12 +21,12 @@ public class Wizard extends GameCharacter {
 
 	@Override
 	public ProjectileType getProjectileType() {
-		return ProjectileType.MAGIC;
+		return ProjectileType.ARROW;
 	}
 
 	@Override
 	public double getProjectileRange() {
-		return DEFAULT_MAGIC_RANGE;
+		return DEFAULT_ARROW_RANGE;
 	}
 
 	@Override

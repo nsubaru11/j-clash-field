@@ -25,6 +25,10 @@ public abstract class Entity {
 		return position;
 	}
 
+	public Vector2D getVelocity() {
+		return velocity;
+	}
+
 	public void update() {
 		if (velocity != null && position != null) {
 			position.addLocal(velocity);

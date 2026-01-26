@@ -1,5 +1,6 @@
 package client.view;
 
+import client.model.CharacterSprite;
 import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
@@ -177,6 +178,12 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		backButton.addActionListener(listener);
 	}
 
+	private static CharacterSprite createCharacterSprite(CharacterType characterType) {
+		CharacterType resolved = characterType == null ? DEFAULT_CHARACTER : characterType;
+		CharacterSprite sprite = CharacterSprite.forType(resolved);
+		return sprite != null ? sprite : CharacterSprite.forType(DEFAULT_CHARACTER);
+	}
+
 	public void updatePlayerStatus(int playerId, boolean isReady, CharacterType characterType) {
 		SwingUtilities.invokeLater(() -> {
 			PlayerInfo entry = players.get(playerId);
@@ -185,18 +192,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 				if (characterType != null) {
 					GameCharacter current = entry.getCharacter();
 					if (current == null || current.getType() != characterType) {
-						entry.setCharacter(createCharacterView(characterType));
+						entry.setCharacter(createCharacterSprite(characterType));
 					}
 				}
 			}
-			refreshSlots();
-		});
-	}
-
-	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
-		SwingUtilities.invokeLater(() -> {
-			int key = playerId < 0 ? playerName.hashCode() : playerId;
-			players.put(key, new PlayerInfo(key, playerName, ready, createCharacterView(characterType)));
 			refreshSlots();
 		});
 	}
@@ -220,10 +219,12 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return character != null ? character.getType() : DEFAULT_CHARACTER;
 	}
 
-	private static CharacterView createCharacterView(CharacterType characterType) {
-		CharacterType resolved = characterType == null ? DEFAULT_CHARACTER : characterType;
-		CharacterView view = CharacterView.forType(resolved);
-		return view != null ? view : CharacterView.forType(DEFAULT_CHARACTER);
+	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
+		SwingUtilities.invokeLater(() -> {
+			int key = playerId < 0 ? playerName.hashCode() : playerId;
+			players.put(key, new PlayerInfo(key, playerName, ready, createCharacterSprite(characterType)));
+			refreshSlots();
+		});
 	}
 
 	private void refreshSlots() {

@@ -1,4 +1,8 @@
-package model;
+package server.model;
+
+import model.Entity;
+import model.ProjectileType;
+import model.Vector2D;
 
 public final class Projectile extends Entity {
 	private final ProjectileType type;

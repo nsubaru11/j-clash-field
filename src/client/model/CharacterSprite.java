@@ -1,4 +1,4 @@
-package client.view;
+package client.model;
 
 import model.CharacterType;
 import model.GameCharacter;
@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class CharacterView extends GameCharacter {
+public abstract class CharacterSprite extends GameCharacter {
 	private static final int DEFAULT_COLUMNS = 3;
 	private static final int DEFAULT_ROWS = 3;
 	private static final Map<String, BufferedImage> SPRITE_CACHE = new HashMap<>();
@@ -27,19 +27,19 @@ public abstract class CharacterView extends GameCharacter {
 	private final int sheetRows;
 	private final RenderState renderState = new RenderState();
 	private boolean hasPosition;
-	protected CharacterView(CharacterType type, String spriteSheetPath) {
+	protected CharacterSprite(CharacterType type, String spriteSheetPath) {
 		this(type, spriteSheetPath, DEFAULT_COLUMNS, DEFAULT_ROWS, Color.BLACK);
 	}
 
-	protected CharacterView(CharacterType type, String spriteSheetPath, Color accentColor) {
+	protected CharacterSprite(CharacterType type, String spriteSheetPath, Color accentColor) {
 		this(type, spriteSheetPath, DEFAULT_COLUMNS, DEFAULT_ROWS, accentColor);
 	}
 
-	protected CharacterView(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows) {
+	protected CharacterSprite(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows) {
 		this(type, spriteSheetPath, sheetColumns, sheetRows, Color.BLACK);
 	}
 
-	protected CharacterView(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows, Color accentColor) {
+	protected CharacterSprite(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows, Color accentColor) {
 		this.type = type == null ? CharacterType.NONE : type;
 		this.sheetColumns = sheetColumns;
 		this.sheetRows = sheetRows;
@@ -47,21 +47,21 @@ public abstract class CharacterView extends GameCharacter {
 		this.spriteSheet = loadSpriteSheet(spriteSheetPath);
 	}
 
-	public static CharacterView forType(CharacterType type) {
+	public static CharacterSprite forType(CharacterType type) {
 		if (type == null || type == CharacterType.NONE) return null;
-		return createView(type);
+		return createSprite(type);
 	}
 
-	private static CharacterView createView(CharacterType type) {
+	private static CharacterSprite createSprite(CharacterType type) {
 		switch (type) {
 			case ARCHER:
-				return new ArcherView();
+				return new ArcherSprite();
 			case WARRIOR:
-				return new WarriorView();
+				return new WarriorSprite();
 			case FIGHTER:
-				return new FighterView();
+				return new FighterSprite();
 			case WIZARD:
-				return new WizardView();
+				return new WizardSprite();
 			default:
 				return null;
 		}
@@ -72,7 +72,7 @@ public abstract class CharacterView extends GameCharacter {
 		BufferedImage cached = SPRITE_CACHE.get(spriteSheetPath);
 		if (cached != null) return cached;
 		try {
-			BufferedImage image = ImageIO.read(Objects.requireNonNull(CharacterView.class.getResource(spriteSheetPath)));
+			BufferedImage image = ImageIO.read(Objects.requireNonNull(CharacterSprite.class.getResource(spriteSheetPath)));
 			SPRITE_CACHE.put(spriteSheetPath, image);
 			return image;
 		} catch (IOException | NullPointerException e) {
