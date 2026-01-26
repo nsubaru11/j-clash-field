@@ -61,12 +61,12 @@ public abstract class Entity {
 				&& thisMinY < otherMaxY && thisMaxY > otherMinY;
 	}
 
-	private double getWidthValue() {
+	public double getWidthValue() {
 		if (width == null) return 0;
 		return Math.abs(width.getX());
 	}
 
-	private double getHeightValue() {
+	public double getHeightValue() {
 		if (height == null) return 0;
 		return Math.abs(height.getY());
 	}

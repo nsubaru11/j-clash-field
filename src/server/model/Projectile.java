@@ -29,8 +29,8 @@ public final class Projectile extends Entity {
 		this.damage = damage;
 		this.maxDistance = maxDistance;
 		position = new Vector2D(x, y);
-		width = new Vector2D(16, 0);
-		height = new Vector2D(0, 16);
+		width = new Vector2D(10, 0);
+		height = new Vector2D(0, 10);
 		velocity = new Vector2D(velocityX, velocityY);
 	}
 
@@ -48,6 +48,36 @@ public final class Projectile extends Entity {
 
 	public double getDamage() {
 		return damage;
+	}
+
+	@Override
+	public boolean collidesWith(Entity other) {
+		if (other == null || position == null || other.getPosition() == null) return false;
+		double widthValue = getWidthValue();
+		double heightValue = getHeightValue();
+		double otherWidth = other.getWidthValue();
+		double otherHeight = other.getHeightValue();
+		if (widthValue <= 0 || heightValue <= 0 || otherWidth <= 0 || otherHeight <= 0) return false;
+
+		double thisMinX = position.getX() - widthValue / 2.0;
+		double thisMaxX = position.getX() + widthValue / 2.0;
+		double thisMinY = position.getY() - heightValue / 2.0;
+		double thisMaxY = position.getY() + heightValue / 2.0;
+
+		double otherMinX = other.getPosition().getX() - otherWidth / 2.0;
+		double otherMaxX = other.getPosition().getX() + otherWidth / 2.0;
+		double otherMinY;
+		double otherMaxY;
+		if (other instanceof Projectile) {
+			otherMinY = other.getPosition().getY() - otherHeight / 2.0;
+			otherMaxY = other.getPosition().getY() + otherHeight / 2.0;
+		} else {
+			otherMinY = other.getPosition().getY() - otherHeight;
+			otherMaxY = other.getPosition().getY();
+		}
+
+		return thisMinX < otherMaxX && thisMaxX > otherMinX
+				&& thisMinY < otherMaxY && thisMaxY > otherMinY;
 	}
 
 	@Override

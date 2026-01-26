@@ -22,8 +22,8 @@ public  abstract class GameCharacter extends Entity {
 
 	protected GameCharacter() {
 		position = new Vector2D(0, 0);
-		width = new Vector2D(32, 0);
-		height = new Vector2D(0, 32);
+		width = new Vector2D(96, 0);
+		height = new Vector2D(0, 96);
 		velocity = new Vector2D(0, 0);
 		speedX = DEFAULT_MOVE_STEP;
 		speedY = DEFAULT_MOVE_STEP;

@@ -400,7 +400,7 @@ class GameRoom extends Thread implements Closeable {
 		double speed = character.getProjectileSpeed() * Math.max(1.0, power);
 		double damage = character.getAttack();
 		double startX = character.getPosition().getX() + (direction * 16);
-		double startY = character.getPosition().getY() - 16;
+		double startY = character.getPosition().getY() + 35;
 		Projectile projectile = new Projectile(
 				projectileType,
 				player.getId(),

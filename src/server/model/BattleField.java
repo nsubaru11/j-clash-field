@@ -11,7 +11,7 @@ import java.util.List;
 public final class BattleField {
 public static final int DEFAULT_WIDTH = 1280;
 public static final int DEFAULT_HEIGHT = 720;
-public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.36;
+public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 	private final List<Entity> entities = new ArrayList<>();
 	private final int width;
 	private final int height;

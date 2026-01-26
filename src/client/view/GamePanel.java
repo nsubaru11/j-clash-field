@@ -432,7 +432,7 @@ public class GamePanel extends BaseBackgroundPanel {
 			if (projectiles.isEmpty()) return;
 			double scaleX = width / (double) SCREEN_WIDTH;
 			double scaleY = height / (double) SCREEN_HEIGHT;
-			int baseSize = (int) Math.round(TILE_SIZE * 1.2 * Math.min(scaleX, scaleY));
+			int baseSize = (int) Math.round(TILE_SIZE * 1.5 * Math.min(scaleX, scaleY));
 			List<Long> stale = new ArrayList<>();
 			for (ProjectileState projectile : projectiles.values()) {
 				if (!projectile.hasPosition) continue;

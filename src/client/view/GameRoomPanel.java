@@ -28,17 +28,47 @@ import java.util.Objects;
 public class GameRoomPanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	private static final int MAX_PLAYERS = 4;
-	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 28);
-	private static final Font INFO_FONT = new Font("Meiryo", Font.PLAIN, 18);
-	private static final Font STATUS_FONT = new Font("Meiryo", Font.PLAIN, 14);
-	private static final Color STATUS_BG = new Color(200, 200, 200);
-	private static final Color STATUS_FG = new Color(40, 40, 40);
-	private static final Color NAME_BG = new Color(170, 170, 170);
-	private static final Color NAME_BG_LOCAL = new Color(130, 150, 170);
-	private static final Color NAME_FG = new Color(30, 30, 30);
-	private static final Color AVATAR_ACTIVE = new Color(70, 70, 70);
-	private static final Color AVATAR_INACTIVE = new Color(180, 180, 180);
-	private static final Color SHADOW_COLOR = new Color(60, 60, 60, 170);
+	private static final int BOARD_ARC = 28;
+	private static final int CARD_ARC = 24;
+	private static final int BOARD_SHADOW_SIZE = 10;
+	private static final int CARD_SHADOW_SIZE = 8;
+	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 30);
+	private static final Font INFO_FONT = new Font("Meiryo", Font.PLAIN, 16);
+	private static final Font STATUS_FONT = new Font("Meiryo", Font.BOLD, 12);
+	private static final Font CHARACTER_FONT = new Font("Meiryo", Font.BOLD, 14);
+	private static final Font DESCRIPTION_FONT = new Font("Meiryo", Font.PLAIN, 11);
+	private static final Font NAME_FONT = new Font("Meiryo", Font.PLAIN, 13);
+	private static final Color TEXT_PRIMARY = new Color(40, 45, 50);
+	private static final Color TEXT_SECONDARY = new Color(90, 95, 100);
+	private static final Color OVERLAY_TOP = new Color(250, 247, 240, 200);
+	private static final Color OVERLAY_BOTTOM = new Color(238, 232, 224, 200);
+	private static final Color BOARD_TOP = new Color(255, 255, 255, 230);
+	private static final Color BOARD_BOTTOM = new Color(244, 238, 230, 230);
+	private static final Color BOARD_BORDER = new Color(210, 200, 190, 180);
+	private static final Color BOARD_SHADOW = new Color(0, 0, 0, 40);
+	private static final Color CARD_TOP = new Color(255, 255, 255, 240);
+	private static final Color CARD_BOTTOM = new Color(244, 240, 233, 240);
+	private static final Color CARD_TOP_LOCAL = new Color(236, 246, 255, 240);
+	private static final Color CARD_BOTTOM_LOCAL = new Color(224, 238, 252, 240);
+	private static final Color CARD_TOP_EMPTY = new Color(250, 248, 245, 210);
+	private static final Color CARD_BOTTOM_EMPTY = new Color(242, 238, 232, 210);
+	private static final Color CARD_BORDER = new Color(210, 202, 193);
+	private static final Color CARD_BORDER_LOCAL = new Color(132, 170, 210);
+	private static final Color CARD_SHADOW = new Color(0, 0, 0, 35);
+	private static final Color STATUS_BG_READY = new Color(186, 226, 202);
+	private static final Color STATUS_BG_WAIT = new Color(233, 214, 183);
+	private static final Color STATUS_BG_EMPTY = new Color(226, 226, 226);
+	private static final Color STATUS_FG = new Color(45, 55, 50);
+	private static final Color NAME_BG = new Color(238, 234, 228);
+	private static final Color NAME_BG_LOCAL = new Color(210, 228, 244);
+	private static final Color NAME_FG = new Color(50, 55, 60);
+	private static final Color BUTTON_NEUTRAL_BG = new Color(232, 227, 220);
+	private static final Color BUTTON_NEUTRAL_BORDER = new Color(186, 178, 168);
+	private static final Color BUTTON_READY_BG = new Color(204, 232, 214);
+	private static final Color BUTTON_READY_BORDER = new Color(155, 195, 170);
+	private static final Color AVATAR_FRAME = new Color(255, 255, 255, 210);
+	private static final Color AVATAR_BORDER = new Color(210, 210, 210, 170);
+	private static final Color SHADOW_COLOR = new Color(0, 0, 0, 55);
 	private static final CharacterType DEFAULT_CHARACTER = CharacterType.ARCHER;
 	private static final CharacterType[] CHARACTER_OPTIONS = new CharacterType[]{
 			CharacterType.ARCHER,
@@ -84,50 +114,35 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	public GameRoomPanel() {
 		setLayout(new GridBagLayout());
 
-		JPanel board = new JPanel(new BorderLayout());
-		board.setOpaque(false);
-		board.setBorder(new EmptyBorder(30, 40, 40, 40));
+		JPanel board = new BoardPanel();
+		board.setLayout(new BorderLayout());
+		board.setBorder(new EmptyBorder(28, 36, 36, 36));
 		board.setPreferredSize(new Dimension(1200, 620));
 
 		JPanel header = new JPanel(new BorderLayout());
 		header.setOpaque(false);
+		header.setBorder(new EmptyBorder(0, 0, 18, 0));
 
 		roomLabel = new JLabel("ルーム : -");
 		roomLabel.setFont(TITLE_FONT);
-		roomLabel.setForeground(new Color(40, 40, 40));
+		roomLabel.setForeground(TEXT_PRIMARY);
 		header.add(roomLabel, BorderLayout.WEST);
 
 		JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actionPanel.setOpaque(false);
 
-		backButton = new JButton("ホームへ戻る");
-		backButton.setFont(INFO_FONT);
-		backButton.setForeground(new Color(40, 40, 40));
-		backButton.setBackground(new Color(185, 185, 185));
-		backButton.setFocusPainted(false);
-		backButton.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(140, 140, 140), 1),
-				BorderFactory.createEmptyBorder(8, 18, 8, 18)
-		));
+		backButton = createActionButton("ホームへ戻る", BUTTON_NEUTRAL_BG, BUTTON_NEUTRAL_BORDER);
 		actionPanel.add(backButton);
 
-		readyButton = new JButton("準備完了");
-		readyButton.setFont(INFO_FONT);
-		readyButton.setForeground(new Color(40, 40, 40));
-		readyButton.setBackground(new Color(200, 200, 200));
-		readyButton.setFocusPainted(false);
-		readyButton.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(140, 140, 140), 1),
-				BorderFactory.createEmptyBorder(8, 20, 8, 20)
-		));
+		readyButton = createActionButton("準備完了", BUTTON_READY_BG, BUTTON_READY_BORDER);
 		actionPanel.add(readyButton);
 		header.add(actionPanel, BorderLayout.EAST);
 
 		board.add(header, BorderLayout.NORTH);
 
-		JPanel slotsPanel = new JPanel(new GridLayout(1, MAX_PLAYERS, 35, 0));
+		JPanel slotsPanel = new JPanel(new GridLayout(1, MAX_PLAYERS, 28, 0));
 		slotsPanel.setOpaque(false);
-		slotsPanel.setBorder(new EmptyBorder(40, 10, 0, 10));
+		slotsPanel.setBorder(new EmptyBorder(24, 6, 6, 6));
 
 		slots = new PlayerSlot[MAX_PLAYERS];
 		for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -138,6 +153,17 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		board.add(slotsPanel, BorderLayout.CENTER);
 		add(board);
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		Paint originalPaint = g2d.getPaint();
+		g2d.setPaint(new GradientPaint(0, 0, OVERLAY_TOP, 0, getHeight(), OVERLAY_BOTTOM));
+		g2d.fillRect(0, 0, getWidth(), getHeight());
+		g2d.setPaint(originalPaint);
 	}
 
 	public void setRoomInfo(int roomId, boolean isPublic) {
@@ -163,6 +189,37 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
+	private static String formatCharacterDescription(CharacterType characterType) {
+		switch (characterType) {
+			case ARCHER:
+				return "遠距離で支援する弓使い";
+			case WARRIOR:
+				return "高耐久の前衛アタッカー";
+			case FIGHTER:
+				return "素早い連撃の近接型";
+			case WIZARD:
+				return "範囲魔法のエキスパート";
+			default:
+				return " ";
+		}
+	}
+
+	private static Color resolveCharacterAccent(CharacterType characterType) {
+		if (characterType == null) return new Color(180, 180, 180);
+		switch (characterType) {
+			case ARCHER:
+				return new Color(66, 140, 210);
+			case WARRIOR:
+				return new Color(220, 82, 72);
+			case FIGHTER:
+				return new Color(170, 110, 220);
+			case WIZARD:
+				return new Color(255, 146, 62);
+			default:
+				return new Color(180, 180, 180);
+		}
+	}
+
 	public void setLocalPlayerName(String playerName) {
 		SwingUtilities.invokeLater(() -> {
 			localPlayerName = playerName == null ? "" : playerName;
@@ -176,6 +233,33 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	public void setBackAction(ActionListener listener) {
 		backButton.addActionListener(listener);
+	}
+
+	private JButton createActionButton(String text, Color background, Color border) {
+		JButton button = new JButton(text);
+		button.setFont(INFO_FONT);
+		button.setForeground(TEXT_PRIMARY);
+		button.setBackground(background);
+		button.setFocusPainted(false);
+		button.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(border, 1, true),
+				BorderFactory.createEmptyBorder(8, 20, 8, 20)
+		));
+		button.setContentAreaFilled(true);
+		button.setOpaque(true);
+		button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		button.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				if (button.isEnabled()) button.setBackground(background.brighter());
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				if (button.isEnabled()) button.setBackground(background);
+			}
+		});
+		return button;
 	}
 
 	private static CharacterSprite createCharacterSprite(CharacterType characterType) {
@@ -287,8 +371,41 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
+	private static final class BoardPanel extends JPanel {
+		private BoardPanel() {
+			setOpaque(false);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			int width = getWidth();
+			int height = getHeight();
+			int shadow = BOARD_SHADOW_SIZE;
+			int x = shadow;
+			int y = shadow;
+			int w = width - shadow * 2;
+			int h = height - shadow * 2;
+			if (w <= 0 || h <= 0) return;
+
+			g2d.setColor(BOARD_SHADOW);
+			g2d.fillRoundRect(x, y + 3, w, h, BOARD_ARC, BOARD_ARC);
+
+			Paint originalPaint = g2d.getPaint();
+			g2d.setPaint(new GradientPaint(0, y, BOARD_TOP, 0, y + h, BOARD_BOTTOM));
+			g2d.fillRoundRect(x, y, w, h, BOARD_ARC, BOARD_ARC);
+			g2d.setPaint(originalPaint);
+
+			g2d.setColor(BOARD_BORDER);
+			g2d.drawRoundRect(x, y, w - 1, h - 1, BOARD_ARC, BOARD_ARC);
+		}
+	}
+
 	private static final class AvatarPanel extends JComponent {
 		private boolean active = false;
+		private CharacterType characterType;
 		private BufferedImage characterImage;
 
 		private AvatarPanel() {
@@ -303,7 +420,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 
 		private void setCharacter(CharacterType characterType) {
-			this.characterImage = resolveCharacterImage(characterType);
+			this.characterType = characterType;
+			this.characterImage = characterType == null ? null : resolveCharacterImage(characterType);
 			repaint();
 		}
 
@@ -315,8 +433,26 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			int width = getWidth();
 			int height = getHeight();
 
+			int frameInset = 8;
+			int frameX = frameInset;
+			int frameY = frameInset;
+			int frameWidth = width - frameInset * 2;
+			int frameHeight = height - frameInset * 2;
+			if (frameWidth > 0 && frameHeight > 0) {
+				g2d.setColor(AVATAR_FRAME);
+				g2d.fillRoundRect(frameX, frameY, frameWidth, frameHeight, 28, 28);
+
+				Color accent = resolveCharacterAccent(characterType);
+				int alpha = active ? 90 : 40;
+				g2d.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), alpha));
+				g2d.fillOval(frameX + 10, frameY + 12, frameWidth - 20, frameHeight - 24);
+
+				g2d.setColor(AVATAR_BORDER);
+				g2d.drawRoundRect(frameX, frameY, frameWidth - 1, frameHeight - 1, 28, 28);
+			}
+
 			if (characterImage != null) {
-				int inset = 4;
+				int inset = 16;
 				int drawWidth = width - inset * 2;
 				int drawHeight = height - inset * 2;
 				double imageAspect = (double) characterImage.getWidth() / characterImage.getHeight();
@@ -336,7 +472,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 				if (!active) {
 					Composite original = g2d.getComposite();
-					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.35f));
 					g2d.drawImage(characterImage, imgX, imgY, imgWidth, imgHeight, null);
 					g2d.setComposite(original);
 				} else {
@@ -350,25 +486,31 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		private final JLabel statusLabel;
 		private final JLabel nameLabel;
 		private final JLabel characterLabel;
+		private final JLabel descriptionLabel;
 		private final AvatarPanel avatarPanel;
 		private final ShadowPanel shadowPanel;
 		private final JLabel leftArrow;
 		private final JLabel rightArrow;
 		private boolean isLocalPlayer;
+		private boolean hasPlayer;
 
 		private PlayerSlot() {
 			setOpaque(false);
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+			setBorder(new EmptyBorder(18, 16, 16, 16));
 
 			statusLabel = new JLabel("準備中", SwingConstants.CENTER);
 			statusLabel.setFont(STATUS_FONT);
 			statusLabel.setOpaque(true);
-			statusLabel.setBackground(STATUS_BG);
+			statusLabel.setBackground(STATUS_BG_WAIT);
 			statusLabel.setForeground(STATUS_FG);
 			statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			statusLabel.setBorder(new EmptyBorder(6, 14, 6, 14));
+			statusLabel.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+					new EmptyBorder(4, 12, 4, 12)
+			));
 			add(statusLabel);
-			add(Box.createVerticalStrut(12));
+			add(Box.createVerticalStrut(10));
 
 			JPanel avatarRow = new JPanel();
 			avatarRow.setOpaque(false);
@@ -397,33 +539,77 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			avatarRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(avatarRow);
 
-			add(Box.createVerticalStrut(6));
+			add(Box.createVerticalStrut(8));
 			shadowPanel = new ShadowPanel();
 			shadowPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(shadowPanel);
-			add(Box.createVerticalStrut(12));
+			add(Box.createVerticalStrut(10));
 
 			characterLabel = new JLabel(" ", SwingConstants.CENTER);
-			characterLabel.setFont(new Font("Meiryo", Font.PLAIN, 12));
-			characterLabel.setForeground(new Color(80, 80, 80));
+			characterLabel.setFont(CHARACTER_FONT);
+			characterLabel.setForeground(TEXT_PRIMARY);
 			characterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(characterLabel);
-			add(Box.createVerticalStrut(6));
+			add(Box.createVerticalStrut(2));
+
+			descriptionLabel = new JLabel(" ", SwingConstants.CENTER);
+			descriptionLabel.setFont(DESCRIPTION_FONT);
+			descriptionLabel.setForeground(TEXT_SECONDARY);
+			descriptionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+			add(descriptionLabel);
+			add(Box.createVerticalStrut(10));
 
 			nameLabel = new JLabel("-", SwingConstants.CENTER);
-			nameLabel.setFont(STATUS_FONT);
+			nameLabel.setFont(NAME_FONT);
 			nameLabel.setOpaque(true);
 			nameLabel.setBackground(NAME_BG);
 			nameLabel.setForeground(NAME_FG);
 			nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			nameLabel.setBorder(new EmptyBorder(6, 20, 6, 20));
+			nameLabel.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(new Color(205, 198, 190), 1, true),
+					new EmptyBorder(6, 16, 6, 16)
+			));
 			add(nameLabel);
 		}
 
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			int width = getWidth();
+			int height = getHeight();
+			int shadow = CARD_SHADOW_SIZE;
+			int x = shadow;
+			int y = shadow;
+			int w = width - shadow * 2;
+			int h = height - shadow * 2;
+			if (w <= 0 || h <= 0) return;
+
+			g2d.setColor(CARD_SHADOW);
+			g2d.fillRoundRect(x, y + 3, w, h, CARD_ARC, CARD_ARC);
+
+			Color top = hasPlayer ? (isLocalPlayer ? CARD_TOP_LOCAL : CARD_TOP) : CARD_TOP_EMPTY;
+			Color bottom = hasPlayer ? (isLocalPlayer ? CARD_BOTTOM_LOCAL : CARD_BOTTOM) : CARD_BOTTOM_EMPTY;
+			Paint originalPaint = g2d.getPaint();
+			g2d.setPaint(new GradientPaint(0, y, top, 0, y + h, bottom));
+			g2d.fillRoundRect(x, y, w, h, CARD_ARC, CARD_ARC);
+			g2d.setPaint(originalPaint);
+
+			g2d.setColor(isLocalPlayer ? CARD_BORDER_LOCAL : CARD_BORDER);
+			g2d.drawRoundRect(x, y, w - 1, h - 1, CARD_ARC, CARD_ARC);
+		}
+
 		private JLabel createArrowLabel(String text) {
-			JLabel label = new JLabel(text);
-			label.setFont(new Font("Meiryo", Font.BOLD, 22));
-			label.setForeground(Color.WHITE);
+			JLabel label = new JLabel(text, SwingConstants.CENTER);
+			label.setFont(new Font("Meiryo", Font.BOLD, 18));
+			label.setForeground(new Color(90, 100, 110));
+			label.setOpaque(true);
+			label.setBackground(new Color(255, 255, 255, 200));
+			label.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(new Color(205, 198, 190), 1, true),
+					new EmptyBorder(2, 8, 2, 8)
+			));
 			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			label.setVisible(false);
 			return label;
@@ -432,26 +618,34 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		private void setPlayer(PlayerInfo entry, boolean isLocal) {
 			isLocalPlayer = isLocal;
 			if (entry == null) {
+				hasPlayer = false;
 				statusLabel.setText("空き");
+				statusLabel.setBackground(STATUS_BG_EMPTY);
 				nameLabel.setText("-");
 				nameLabel.setBackground(NAME_BG);
 				avatarPanel.setActive(false);
 				characterLabel.setText(" ");
+				descriptionLabel.setText(" ");
 				avatarPanel.setCharacter(null);
 				leftArrow.setVisible(false);
 				rightArrow.setVisible(false);
+				repaint();
 				return;
 			}
+			hasPlayer = true;
 			statusLabel.setText(entry.isReady() ? "準備完了!" : "準備中");
+			statusLabel.setBackground(entry.isReady() ? STATUS_BG_READY : STATUS_BG_WAIT);
 			nameLabel.setText(entry.getName());
 			nameLabel.setBackground(isLocal ? NAME_BG_LOCAL : NAME_BG);
 			avatarPanel.setActive(true);
 
 			CharacterType characterType = isLocal ? selectedCharacter : resolveCharacterType(entry);
 			characterLabel.setText(formatCharacterLabel(characterType));
+			descriptionLabel.setText(formatCharacterDescription(characterType));
 			avatarPanel.setCharacter(characterType);
 			leftArrow.setVisible(isLocal);
 			rightArrow.setVisible(isLocal);
+			repaint();
 		}
 	}
 
