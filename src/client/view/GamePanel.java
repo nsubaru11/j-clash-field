@@ -28,8 +28,8 @@ import java.util.Objects;
  */
 public class GamePanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
-	private static final int SCREEN_WIDTH = 1000;
-	private static final int SCREEN_HEIGHT = 520;
+	private static final int SCREEN_WIDTH = 1280;
+	private static final int SCREEN_HEIGHT = 720;
 	private static final int INFO_HEIGHT = 160;
 	private static final int SCREEN_PADDING = 32;
 	private static final int INFO_PADDING = 24;
@@ -256,22 +256,6 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private void setupKeyBindings() {
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, false), "move_left_arrow", () -> {
-			leftKeyDown = true;
-			recordLocalMove(-1);
-			if (moveLeftAction != null) moveLeftAction.run();
-		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, true), "move_left_arrow_release", () -> leftKeyDown = false);
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, false), "move_right_arrow", () -> {
-			rightKeyDown = true;
-			recordLocalMove(1);
-			if (moveRightAction != null) moveRightAction.run();
-		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, true), "move_right_arrow_release", () -> rightKeyDown = false);
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "move_down_arrow", () -> {
-			recordLocalMove(0);
-			if (moveDownAction != null) moveDownAction.run();
-		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, false), "move_left", () -> {
 			leftKeyDown = true;
 			recordLocalMove(-1);
@@ -284,9 +268,6 @@ public class GamePanel extends BaseBackgroundPanel {
 			if (moveRightAction != null) moveRightAction.run();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "move_right_release", () -> rightKeyDown = false);
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "jump_arrow", () -> {
-			triggerJump();
-		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0), "jump", () -> {
 			triggerJump();
 		});
@@ -297,10 +278,12 @@ public class GamePanel extends BaseBackgroundPanel {
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "jump", () -> {
 			triggerJump();
 		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0), "defend", () -> {
+		Runnable defendRunnable = () -> {
 			recordLocalAction(CharacterSprite.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
-		});
+		};
+		bindKey(KeyStroke.getKeyStroke("pressed SHIFT"), "defend", defendRunnable);
+		bindKey(KeyStroke.getKeyStroke("shift pressed SHIFT"), "defend", defendRunnable);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resign", () -> {
 			if (resignAction != null) resignAction.run();
 		});

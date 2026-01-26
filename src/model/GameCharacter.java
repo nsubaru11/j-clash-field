@@ -4,11 +4,11 @@ public  abstract class GameCharacter extends Entity {
 	protected static final double DEFAULT_MOVE_STEP = 6.0;
 	protected static final double DEFAULT_JUMP_VELOCITY = 14.0;
 	protected static final double DEFAULT_PROJECTILE_SPEED = 9.0;
-	protected static final double DEFAULT_ARROW_RANGE = 100.0;
-	protected static final double DEFAULT_MAGIC_RANGE = 100.0;
-	protected static final double DEFAULT_MELEE_WIDTH = 30.0;
-	protected static final double DEFAULT_MELEE_HEIGHT = 30.0;
-	protected static final double DEFAULT_MELEE_OFFSET = 30.0;
+	protected static final double DEFAULT_ARROW_RANGE = 520.0;
+	protected static final double DEFAULT_MAGIC_RANGE = 560.0;
+	protected static final double DEFAULT_MELEE_WIDTH = 180.0;
+	protected static final double DEFAULT_MELEE_HEIGHT = 70.0;
+	protected static final double DEFAULT_MELEE_OFFSET = 60.0;
 	protected static final int DEFAULT_MELEE_LIFETIME_TICKS = 2;
 	protected static final long DEFAULT_MAX_CHARGE_MS = 1200;
 	protected static final double DEFAULT_MAX_CHARGE_MULTIPLIER = 2.5;

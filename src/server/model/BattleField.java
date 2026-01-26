@@ -9,9 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class BattleField {
-	public static final int DEFAULT_WIDTH = 1200;
-	public static final int DEFAULT_HEIGHT = 640;
-	public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.2;
+public static final int DEFAULT_WIDTH = 1280;
+public static final int DEFAULT_HEIGHT = 720;
+public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.36;
 	private final List<Entity> entities = new ArrayList<>();
 	private final int width;
 	private final int height;
