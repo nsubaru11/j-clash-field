@@ -1,13 +1,18 @@
 package model;
 
 public class Fighter extends GameCharacter {
-	private Vector2D GRAVITY = new Vector2D(0, -4.9);
+	private static final double GRAVITY = -1.3;
 	private double speedX = 5, speedY = 5;
 	private CharacterType type = CharacterType.FIGHTER;
 
 	@Override
 	public CharacterType getType() {
 		return type;
+	}
+
+	@Override
+	public double getGravity() {
+		return GRAVITY;
 	}
 
 	@Override

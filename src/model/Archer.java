@@ -1,13 +1,28 @@
 package model;
 
 public class Archer extends GameCharacter {
-	private Vector2D GRAVITY = new Vector2D(0, -4.9);
+	private static final double GRAVITY = -0.7;
 	private double speedX = 5, speedY = 5;
 	private CharacterType type = CharacterType.ARCHER;
 
 	@Override
 	public CharacterType getType() {
 		return type;
+	}
+
+	@Override
+	public double getGravity() {
+		return GRAVITY;
+	}
+
+	@Override
+	public ProjectileType getProjectileType() {
+		return ProjectileType.ARROW;
+	}
+
+	@Override
+	public double getProjectileRange() {
+		return DEFAULT_ARROW_RANGE;
 	}
 
 	@Override

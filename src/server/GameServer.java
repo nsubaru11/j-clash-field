@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * サーバーを起動するためのクラスです。
  */
-public final class GameServer implements Runnable, Closeable {
+final class GameServer implements Runnable, Closeable {
 	// -------------------- クラス定数 --------------------
 	private static final Logger logger = Logger.getLogger(GameServer.class.getName());
 	private static final int DEFAULT_PORT = 10000;
@@ -92,7 +92,7 @@ public final class GameServer implements Runnable, Closeable {
 				// クライアントの接続を待つ
 				Socket clientSocket = serverSocket.accept();
 				ClientHandler handler = new ClientHandler(clientSocket);
-				handler.setMessageListener(msg -> join(handler, msg));
+				handler.setMessageListener(msg -> handleMessage(handler, msg));
 				handler.start();
 				logger.info(() -> "新しいクライアント(ID: " + handler.getConnectionId() + ")が接続しました。");
 			} catch (final IOException e) {
@@ -128,7 +128,7 @@ public final class GameServer implements Runnable, Closeable {
 
 	// -------------------- privateメソッド --------------------
 	/** プレイヤーがルームに参加するコマンドを受け取ったときの処理 */
-	private synchronized void join(ClientHandler handler, String msg) {
+	private synchronized void handleMessage(ClientHandler handler, String msg) {
 		ServerCommand cmd = new ServerCommand(handler, msg);
 		switch (cmd.getCommandType()) {
 			case JOIN:

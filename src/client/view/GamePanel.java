@@ -1,6 +1,8 @@
 package client.view;
 
 import model.CharacterType;
+import model.GameCharacter;
+import model.PlayerInfo;
 import model.ProjectileType;
 
 import javax.imageio.ImageIO;
@@ -31,26 +33,18 @@ public class GamePanel extends BaseBackgroundPanel {
 	private static final int SCREEN_PADDING = 32;
 	private static final int INFO_PADDING = 24;
 	private static final int MAX_PLAYERS = 4;
-	private static final Color SKY_COLOR = new Color(29, 184, 220);
-	private static final Color GROUND_COLOR = new Color(122, 214, 98);
-	private static final Color PLATFORM_COLOR = new Color(15, 15, 15);
-	private static final Color CLOUD_COLOR = new Color(196, 242, 248, 220);
 	private static final Color PANEL_BG = new Color(10, 10, 10, 150);
 	private static final Color INFO_TEXT = new Color(250, 250, 250);
 	private static final Color INFO_SUB_TEXT = new Color(210, 210, 210);
 	private static final Font NAME_FONT = new Font("Meiryo", Font.BOLD, 16);
 	private static final Font HP_FONT = new Font("Meiryo", Font.PLAIN, 14);
 	private static final double WORLD_GROUND_Y = SCREEN_HEIGHT * 0.36;
-	private static final long MOVE_ANIM_GRACE_MS = 180;
-	private static final long RUN_FRAME_MS = 120;
-	private static final long NORMAL_ATTACK_MS = 320;
-	private static final long CHARGE_ATTACK_MS = 480;
-	private static final long DEFEND_MS = 420;
-	private static final long JUMP_MS = 250;
 	private static final long PROJECTILE_TTL_MS = 600;
 	private static final String ARROW_IMAGE = "/resorces/arrow.png";
 	private static final String MAGIC_IMAGE = "/resorces/magic.png";
+	private static final String BACKGROUND_IMAGE = "/resorces/gameBackGround.png";
 	private static final Map<ProjectileType, BufferedImage> PROJECTILE_IMAGES = new EnumMap<>(ProjectileType.class);
+	private static BufferedImage backgroundImage;
 
 	static {
 		try {
@@ -58,14 +52,15 @@ public class GamePanel extends BaseBackgroundPanel {
 					ImageIO.read(Objects.requireNonNull(GamePanel.class.getResource(ARROW_IMAGE))));
 			PROJECTILE_IMAGES.put(ProjectileType.MAGIC,
 					ImageIO.read(Objects.requireNonNull(GamePanel.class.getResource(MAGIC_IMAGE))));
+			backgroundImage = ImageIO.read(Objects.requireNonNull(GamePanel.class.getResource(BACKGROUND_IMAGE)));
 		} catch (IOException | NullPointerException e) {
-			throw new RuntimeException("プロジェクタイル画像の読み込みに失敗しました", e);
+			throw new RuntimeException("画像の読み込みに失敗しました", e);
 		}
 	}
 	// --------------- フィールド ---------------
 	private final ScreenPanel screenPanel;
 	private final InfoPanel infoPanel;
-	private final Map<Integer, PlayerState> players = new LinkedHashMap<>();
+	private final Map<Integer, PlayerInfo> players = new LinkedHashMap<>();
 	private final Map<Long, ProjectileState> projectiles = new LinkedHashMap<>();
 	private final Timer repaintTimer;
 	private int localPlayerId = -1;
@@ -79,6 +74,8 @@ public class GamePanel extends BaseBackgroundPanel {
 	private Runnable chargeAttackAction;
 	private Runnable defendAction;
 	private Runnable resignAction;
+	private boolean leftKeyDown;
+	private boolean rightKeyDown;
 
 	/**
 	 * GamePanelを構築します。
@@ -143,44 +140,61 @@ public class GamePanel extends BaseBackgroundPanel {
 		projectiles.clear();
 	}
 
-	public void setPlayerInfo(int playerId, String name, CharacterType characterType) {
-		PlayerState state = players.computeIfAbsent(playerId, PlayerState::new);
-		state.name = name == null ? "" : name;
-		state.characterType = characterType;
+	public void setPlayerInfo(PlayerInfo info) {
+		if (info == null) return;
+		players.put(info.getId(), info);
+		ensureCharacter(info);
+	}
+
+	private PlayerInfo ensurePlayer(int playerId) {
+		PlayerInfo info = players.get(playerId);
+		if (info == null) {
+			info = new PlayerInfo(playerId, "", false, createCharacterView(CharacterType.ARCHER));
+			players.put(playerId, info);
+		}
+		ensureCharacter(info);
+		return info;
+	}
+
+	private void ensureCharacter(PlayerInfo info) {
+		if (info == null) return;
+		if (info.getCharacter() == null) {
+			info.setCharacter(createCharacterView(CharacterType.ARCHER));
+		}
+	}
+
+	private CharacterView createCharacterView(CharacterType characterType) {
+		CharacterType resolved = characterType == null ? CharacterType.ARCHER : characterType;
+		CharacterView view = CharacterView.forType(resolved);
+		return view != null ? view : CharacterView.forType(CharacterType.ARCHER);
 	}
 
 	public void updatePlayerPosition(int playerId, double x, double y) {
-		PlayerState state = players.computeIfAbsent(playerId, PlayerState::new);
+		PlayerInfo info = ensurePlayer(playerId);
+		GameCharacter character = info.getCharacter();
+		if (character == null) return;
 		long now = System.currentTimeMillis();
-		if (state.hasPosition) {
-			double dx = x - state.x;
-			double dy = y - state.y;
-			if (Math.abs(dx) > 0.1) state.facingRight = dx >= 0;
-			if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-				state.lastMoveMs = now;
-			}
+		if (character instanceof CharacterView) {
+			((CharacterView) character).recordPosition(x, y, now);
+		} else {
+			character.setPosition(x, y);
 		}
-		state.x = x;
-		state.y = y;
-		state.hasPosition = true;
 	}
 
 	public void updatePlayerHp(int playerId, int hp) {
-		PlayerState state = players.computeIfAbsent(playerId, PlayerState::new);
-		state.hp = hp;
+		PlayerInfo info = ensurePlayer(playerId);
+		GameCharacter character = info.getCharacter();
+		if (character == null) return;
+		character.setHp(hp);
 	}
 
-	public void recordPlayerAction(int playerId, PlayerAction action) {
-		if (action == null || action == PlayerAction.NONE) return;
-		PlayerState state = players.computeIfAbsent(playerId, PlayerState::new);
+	public void recordPlayerAction(int playerId, CharacterView.Action action) {
+		if (action == null || action == CharacterView.Action.NONE) return;
+		PlayerInfo info = ensurePlayer(playerId);
+		GameCharacter character = info.getCharacter();
+		if (!(character instanceof CharacterView)) return;
 		long now = System.currentTimeMillis();
-		state.action = action;
-		state.actionStartMs = now;
-		if (action == PlayerAction.CHARGE_HOLD) {
-			state.actionEndMs = Long.MAX_VALUE;
-		} else {
-			state.actionEndMs = now + resolveActionDuration(action);
-		}
+		((CharacterView) character).recordAction(action, now);
 	}
 
 	public void updateProjectile(long projectileId, ProjectileType type, double x, double y, double power) {
@@ -202,13 +216,17 @@ public class GamePanel extends BaseBackgroundPanel {
 		projectiles.remove(projectileId);
 	}
 
-	private List<PlayerState> getOrderedPlayers() {
-		List<PlayerState> list = new ArrayList<>(players.values());
-		list.sort(Comparator.comparingInt(state -> state.playerId));
+	private List<PlayerInfo> getOrderedPlayers() {
+		List<PlayerInfo> list = new ArrayList<>(players.values());
+		list.sort(Comparator.comparingInt(PlayerInfo::getId));
 		return list;
 	}
 
-	private Color resolveCharacterColor(CharacterType type) {
+	private Color resolveCharacterColor(GameCharacter character) {
+		if (character instanceof CharacterView) {
+			return ((CharacterView) character).getAccentColor();
+		}
+		CharacterType type = character != null ? character.getType() : null;
 		if (type == null) return Color.BLACK;
 		switch (type) {
 			case ARCHER:
@@ -237,44 +255,49 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private void setupKeyBindings() {
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "move_left_arrow", () -> {
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, false), "move_left_arrow", () -> {
+			leftKeyDown = true;
 			recordLocalMove(-1);
 			if (moveLeftAction != null) moveLeftAction.run();
 		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "move_right_arrow", () -> {
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, true), "move_left_arrow_release", () -> leftKeyDown = false);
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, false), "move_right_arrow", () -> {
+			rightKeyDown = true;
 			recordLocalMove(1);
 			if (moveRightAction != null) moveRightAction.run();
 		});
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, true), "move_right_arrow_release", () -> rightKeyDown = false);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "move_down_arrow", () -> {
 			recordLocalMove(0);
 			if (moveDownAction != null) moveDownAction.run();
 		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0), "move_left", () -> {
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, false), "move_left", () -> {
+			leftKeyDown = true;
 			recordLocalMove(-1);
 			if (moveLeftAction != null) moveLeftAction.run();
 		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0), "move_right", () -> {
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, true), "move_left_release", () -> leftKeyDown = false);
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "move_right", () -> {
+			rightKeyDown = true;
 			recordLocalMove(1);
 			if (moveRightAction != null) moveRightAction.run();
 		});
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "move_right_release", () -> rightKeyDown = false);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "jump_arrow", () -> {
-			recordLocalAction(PlayerAction.JUMP);
-			if (jumpAction != null) jumpAction.run();
+			triggerJump();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0), "jump", () -> {
-			recordLocalAction(PlayerAction.JUMP);
-			if (jumpAction != null) jumpAction.run();
+			triggerJump();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), "move_down", () -> {
 			recordLocalMove(0);
 			if (moveDownAction != null) moveDownAction.run();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "jump", () -> {
-			recordLocalAction(PlayerAction.JUMP);
-			if (jumpAction != null) jumpAction.run();
+			triggerJump();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0), "defend", () -> {
-			recordLocalAction(PlayerAction.DEFEND);
+			recordLocalAction(CharacterView.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resign", () -> {
@@ -284,99 +307,27 @@ public class GamePanel extends BaseBackgroundPanel {
 
 	private void recordLocalMove(int direction) {
 		if (localPlayerId < 0) return;
-		PlayerState state = players.computeIfAbsent(localPlayerId, PlayerState::new);
-		long now = System.currentTimeMillis();
-		state.lastMoveMs = now;
-		if (direction != 0) state.facingRight = direction > 0;
+		PlayerInfo info = ensurePlayer(localPlayerId);
+		GameCharacter character = info.getCharacter();
+		if (character instanceof CharacterView) {
+			((CharacterView) character).recordMove(direction, System.currentTimeMillis());
+		}
 	}
 
-	private void recordLocalAction(PlayerAction action) {
+	private void recordLocalAction(CharacterView.Action action) {
 		if (localPlayerId < 0) return;
 		recordPlayerAction(localPlayerId, action);
 	}
 
-	private long resolveActionDuration(PlayerAction action) {
-		switch (action) {
-			case NORMAL_ATTACK:
-				return NORMAL_ATTACK_MS;
-			case CHARGE_ATTACK:
-				return CHARGE_ATTACK_MS;
-			case CHARGE_HOLD:
-				return 0;
-			case DEFEND:
-				return DEFEND_MS;
-			case JUMP:
-				return JUMP_MS;
-			default:
-				return 0;
-		}
-	}
-
-	private CharacterView.Frame resolveFrame(PlayerState state, long now) {
-		CharacterView.Frame actionFrame = resolveActionFrame(state, now);
-		if (actionFrame != null) return actionFrame;
-		if (state.hasPosition && state.y > WORLD_GROUND_Y + 2) {
-			return CharacterView.Frame.JUMP;
-		}
-		if (now - state.lastMoveMs <= MOVE_ANIM_GRACE_MS) {
-			long phase = (now / RUN_FRAME_MS) % 2;
-			return phase == 0 ? CharacterView.Frame.RUN_1 : CharacterView.Frame.RUN_2;
-		}
-		return CharacterView.Frame.IDLE;
-	}
-
-	private CharacterView.Frame resolveActionFrame(PlayerState state, long now) {
-		if (state.action == PlayerAction.NONE) return null;
-		if (now > state.actionEndMs) {
-			state.action = PlayerAction.NONE;
-			return null;
-		}
-		long elapsed = now - state.actionStartMs;
-		long chargePhase1 = CHARGE_ATTACK_MS * 45 / 100;
-		long chargePhase2 = CHARGE_ATTACK_MS * 70 / 100;
-		switch (state.action) {
-			case NORMAL_ATTACK:
-				return elapsed < NORMAL_ATTACK_MS / 2 ? CharacterView.Frame.ATTACK : CharacterView.Frame.ATTACK_END;
-			case CHARGE_ATTACK:
-				if (elapsed < chargePhase1) return CharacterView.Frame.CHARGE;
-				if (elapsed < chargePhase2) return CharacterView.Frame.ATTACK;
-				return CharacterView.Frame.ATTACK_END;
-			case CHARGE_HOLD:
-				return CharacterView.Frame.CHARGE;
-			case DEFEND:
-				return ((elapsed / 120) % 2 == 0) ? CharacterView.Frame.SHIELD_1 : CharacterView.Frame.SHIELD_2;
-			case JUMP:
-				return CharacterView.Frame.JUMP;
-			default:
-				return null;
-		}
-	}
-
-	public enum PlayerAction {
-		NONE,
-		NORMAL_ATTACK,
-		CHARGE_HOLD,
-		CHARGE_ATTACK,
-		DEFEND,
-		JUMP
-	}
-
-	private static final class PlayerState {
-		private final int playerId;
-		private String name = "";
-		private CharacterType characterType = CharacterType.ARCHER;
-		private int hp = 100;
-		private double x;
-		private double y;
-		private boolean hasPosition;
-		private boolean facingRight = true;
-		private long lastMoveMs;
-		private PlayerAction action = PlayerAction.NONE;
-		private long actionStartMs;
-		private long actionEndMs;
-
-		private PlayerState(int playerId) {
-			this.playerId = playerId;
+	private void triggerJump() {
+		recordLocalAction(CharacterView.Action.JUMP);
+		if (jumpAction != null) jumpAction.run();
+		if (leftKeyDown && moveLeftAction != null) {
+			recordLocalMove(-1);
+			moveLeftAction.run();
+		} else if (rightKeyDown && moveRightAction != null) {
+			recordLocalMove(1);
+			moveRightAction.run();
 		}
 	}
 
@@ -411,11 +362,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mousePressed(MouseEvent e) {
 					requestFocusInWindow();
 					if (SwingUtilities.isLeftMouseButton(e)) {
-						recordLocalAction(PlayerAction.NORMAL_ATTACK);
+						recordLocalAction(CharacterView.Action.NORMAL_ATTACK);
 						if (normalAttackAction != null) normalAttackAction.run();
 					} else if (SwingUtilities.isRightMouseButton(e)) {
 						rightMouseDown = true;
-						recordLocalAction(PlayerAction.CHARGE_HOLD);
+						recordLocalAction(CharacterView.Action.CHARGE_HOLD);
 						if (chargeStartAction != null) chargeStartAction.run();
 					}
 				}
@@ -424,7 +375,7 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mouseReleased(MouseEvent e) {
 					if (SwingUtilities.isRightMouseButton(e) && rightMouseDown) {
 						rightMouseDown = false;
-						recordLocalAction(PlayerAction.CHARGE_ATTACK);
+						recordLocalAction(CharacterView.Action.CHARGE_ATTACK);
 						if (chargeAttackAction != null) chargeAttackAction.run();
 					}
 				}
@@ -439,22 +390,12 @@ public class GamePanel extends BaseBackgroundPanel {
 			int width = getWidth();
 			int height = getHeight();
 
-			g2d.setColor(SKY_COLOR);
-			g2d.fillRect(0, 0, width, height);
-
-			g2d.setColor(CLOUD_COLOR);
-			drawCloud(g2d, width * 0.08, height * 0.08, 120, 48);
-			drawCloud(g2d, width * 0.38, height * 0.22, 140, 54);
-			drawCloud(g2d, width * 0.78, height * 0.12, 120, 46);
-
-			g2d.setColor(PLATFORM_COLOR);
-			drawPlatform(g2d, width * 0.12, height * 0.46, width * 0.32, 10);
-			drawPlatform(g2d, width * 0.52, height * 0.24, width * 0.32, 10);
-			drawPlatform(g2d, width * 0.58, height * 0.52, width * 0.32, 10);
-
-			int groundTop = (int) (height * 0.64);
-			g2d.setColor(GROUND_COLOR);
-			g2d.fillRect(0, groundTop, width, height - groundTop);
+			if (backgroundImage != null) {
+				g2d.drawImage(backgroundImage, 0, 0, width, height, null);
+			} else {
+				g2d.setColor(Color.BLACK);
+				g2d.fillRect(0, 0, width, height);
+			}
 
 			long now = System.currentTimeMillis();
 			drawCharacters(g2d, width, height, now);
@@ -462,7 +403,7 @@ public class GamePanel extends BaseBackgroundPanel {
 		}
 
 		private void drawCharacters(Graphics2D g2d, int width, int height, long now) {
-			List<PlayerState> entries = getOrderedPlayers();
+			List<PlayerInfo> entries = getOrderedPlayers();
 			if (entries.isEmpty()) return;
 
 			double scaleX = width / (double) SCREEN_WIDTH;
@@ -470,24 +411,33 @@ public class GamePanel extends BaseBackgroundPanel {
 			int spriteWidth = (int) Math.round(TILE_SIZE * 3 * scaleX);
 			int spriteHeight = (int) Math.round(TILE_SIZE * 3 * scaleY);
 			int index = 0;
-			for (PlayerState state : entries) {
-				double fallbackX = SCREEN_WIDTH * (0.2 + 0.2 * index);
+			for (PlayerInfo info : entries) {
+				double slotCenter = (index + 0.5) / (double) MAX_PLAYERS;
+				double fallbackX = SCREEN_WIDTH * slotCenter;
 				double fallbackY = SCREEN_HEIGHT * 0.36;
-				double worldX = state.hasPosition ? state.x : fallbackX;
-				double worldY = state.hasPosition ? state.y : fallbackY;
+				double worldX = fallbackX;
+				double worldY = fallbackY;
+				GameCharacter character = info.getCharacter();
+				CharacterView view = character instanceof CharacterView ? (CharacterView) character : null;
+				if (character != null && character.getPosition() != null) {
+					boolean usePosition = view == null || view.hasPosition();
+					if (usePosition) {
+						worldX = character.getPosition().getX();
+						worldY = character.getPosition().getY();
+					}
+				}
 				int x = (int) Math.round(worldX * scaleX);
 				int y = (int) Math.round(height - (worldY * scaleY));
 				int drawX = x - spriteWidth / 2;
 				int drawY = y - spriteHeight;
-				CharacterView view = CharacterView.forType(state.characterType);
 				if (view != null) {
-					CharacterView.Frame frame = resolveFrame(state, now);
-					view.draw(g2d, drawX, drawY, spriteWidth, spriteHeight, frame, state.facingRight);
+					CharacterView.Frame frame = view.resolveFrame(now, worldY, WORLD_GROUND_Y);
+					view.draw(g2d, drawX, drawY, spriteWidth, spriteHeight, frame, view.isFacingRight());
 				} else {
-					g2d.setColor(resolveCharacterColor(state.characterType));
+					g2d.setColor(resolveCharacterColor(character));
 					g2d.fillRoundRect(drawX, drawY, spriteWidth, spriteHeight, 20, 20);
 				}
-				if (state.playerId == localPlayerId) {
+				if (info.getId() == localPlayerId) {
 					drawMarker(g2d, x, drawY - MARKER_SIZE - 6);
 				}
 				index++;
@@ -536,17 +486,6 @@ public class GamePanel extends BaseBackgroundPanel {
 			g2d.fill(path);
 		}
 
-		private void drawCloud(Graphics2D g2d, double x, double y, int width, int height) {
-			int baseX = (int) x;
-			int baseY = (int) y;
-			g2d.fillRoundRect(baseX, baseY + height / 3, width, height / 2, height, height);
-			g2d.fillOval(baseX + width / 8, baseY, width / 3, height / 2);
-			g2d.fillOval(baseX + width / 2, baseY, width / 3, height / 2);
-		}
-
-		private void drawPlatform(Graphics2D g2d, double x, double y, double width, int height) {
-			g2d.fillRect((int) x, (int) y, (int) width, height);
-		}
 	}
 
 	private final class InfoPanel extends JComponent {
@@ -568,21 +507,22 @@ public class GamePanel extends BaseBackgroundPanel {
 			g2d.setColor(PANEL_BG);
 			g2d.fillRoundRect(0, 0, width, height, 24, 24);
 
-			List<PlayerState> entries = getOrderedPlayers();
+			List<PlayerInfo> entries = getOrderedPlayers();
 			int entryWidth = width / MAX_PLAYERS;
 			int iconSize = Math.min(80, height - 40);
 			int iconY = (height - iconSize) / 2 - 8;
 
 			for (int i = 0; i < MAX_PLAYERS; i++) {
-				PlayerState state = i < entries.size() ? entries.get(i) : null;
+				PlayerInfo state = i < entries.size() ? entries.get(i) : null;
 				int entryX = i * entryWidth;
 				int centerX = entryX + entryWidth / 2;
-				g2d.setColor(state != null ? resolveCharacterColor(state.characterType) : Color.BLACK);
+				GameCharacter character = state != null ? state.getCharacter() : null;
+				g2d.setColor(resolveCharacterColor(character));
 				g2d.fillOval(centerX - iconSize / 2, iconY, iconSize, iconSize);
 
 				g2d.setColor(INFO_TEXT);
 				g2d.setFont(NAME_FONT);
-				String name = state != null ? state.name : "-";
+				String name = state != null ? state.getName() : "-";
 				FontMetrics nameMetrics = g2d.getFontMetrics();
 				int nameY = iconY + iconSize + nameMetrics.getAscent() + 8;
 				g2d.drawString(name, centerX - nameMetrics.stringWidth(name) / 2, nameY);
@@ -590,7 +530,8 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.setColor(INFO_SUB_TEXT);
 				g2d.setFont(HP_FONT);
 				if (state != null) {
-					String hpText = "HP" + state.hp + "%";
+					int hp = character != null ? character.getHp() : 0;
+					String hpText = "HP" + hp + "%";
 					FontMetrics hpMetrics = g2d.getFontMetrics();
 					g2d.drawString(hpText, centerX - hpMetrics.stringWidth(hpText) / 2, nameY + hpMetrics.getAscent() + 4);
 				}

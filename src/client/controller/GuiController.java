@@ -8,7 +8,10 @@ import client.view.LoadPanel;
 import client.view.MatchingPanel;
 import client.view.ResultPanel;
 import client.view.TitlePanel;
+import client.view.CharacterView;
 import model.CharacterType;
+import model.GameCharacter;
+import model.PlayerInfo;
 import network.Command;
 import network.CommandType;
 import model.ProjectileType;
@@ -48,7 +51,7 @@ public final class GuiController {
 	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
 	private volatile String playerName = "";
 	private volatile int playerId = 0;
-	private final Map<Integer, PlayerSnapshot> playerSnapshots = new LinkedHashMap<>();
+	private final Map<Integer, PlayerInfo> playerSnapshots = new LinkedHashMap<>();
 
 	/** ネットワークコントローラー */
 	private final NetworkController network;
@@ -180,8 +183,8 @@ public final class GuiController {
 	private void showGame() {
 		SwingUtilities.invokeLater(() -> {
 			gamePanel.clearPlayers();
-			for (PlayerSnapshot snapshot : playerSnapshots.values()) {
-				gamePanel.setPlayerInfo(snapshot.playerId, snapshot.playerName, snapshot.characterType);
+			for (PlayerInfo snapshot : playerSnapshots.values()) {
+				gamePanel.setPlayerInfo(snapshot);
 			}
 			gamePanel.setLocalPlayerId(playerId);
 			cardLayout.show(cardPanel, CARD_GAME);
@@ -326,28 +329,28 @@ public final class GuiController {
 	private void handlePlayerAction(CommandType actionType, String body) {
 		if (body == null || body.isEmpty()) return;
 		int actedPlayerId = Integer.parseInt(body);
-		GamePanel.PlayerAction action;
+		CharacterView.Action action;
 		switch (actionType) {
 			case NORMAL_ATTACK:
-				action = GamePanel.PlayerAction.NORMAL_ATTACK;
+				action = CharacterView.Action.NORMAL_ATTACK;
 				break;
 			case CHARGE_START:
-				action = GamePanel.PlayerAction.CHARGE_HOLD;
+				action = CharacterView.Action.CHARGE_HOLD;
 				break;
 			case CHARGE_ATTACK:
-				action = GamePanel.PlayerAction.CHARGE_ATTACK;
+				action = CharacterView.Action.CHARGE_ATTACK;
 				break;
 			case DEFEND:
-				action = GamePanel.PlayerAction.DEFEND;
+				action = CharacterView.Action.DEFEND;
 				break;
 			case JUMP:
-				action = GamePanel.PlayerAction.JUMP;
+				action = CharacterView.Action.JUMP;
 				break;
 			default:
-				action = GamePanel.PlayerAction.NONE;
+				action = CharacterView.Action.NONE;
 				break;
 		}
-		if (action == GamePanel.PlayerAction.NONE) return;
+		if (action == CharacterView.Action.NONE) return;
 		SwingUtilities.invokeLater(() -> gamePanel.recordPlayerAction(actedPlayerId, action));
 	}
 
@@ -378,9 +381,19 @@ public final class GuiController {
 	}
 
 	private void updatePlayerSnapshot(int playerId, String playerName, CharacterType characterType) {
-		PlayerSnapshot snapshot = playerSnapshots.computeIfAbsent(playerId, PlayerSnapshot::new);
-		if (playerName != null) snapshot.playerName = playerName;
-		if (characterType != null) snapshot.characterType = characterType;
+		PlayerInfo snapshot = playerSnapshots.get(playerId);
+		if (snapshot == null) {
+			GameCharacter character = characterType != null ? CharacterView.forType(characterType) : null;
+			snapshot = new PlayerInfo(playerId, playerName, false, character);
+			playerSnapshots.put(playerId, snapshot);
+		}
+		if (playerName != null) snapshot.setName(playerName);
+		if (characterType != null) {
+			GameCharacter current = snapshot.getCharacter();
+			if (current == null || current.getType() != characterType) {
+				snapshot.setCharacter(CharacterView.forType(characterType));
+			}
+		}
 	}
 
 	private final class GameLoopThread extends Thread {
@@ -412,16 +425,6 @@ public final class GuiController {
 					targetTime -= waitNs;
 				}
 			}
-		}
-	}
-
-	private static final class PlayerSnapshot {
-		private final int playerId;
-		private String playerName = "";
-		private CharacterType characterType = CharacterType.ARCHER;
-
-		private PlayerSnapshot(int playerId) {
-			this.playerId = playerId;
 		}
 	}
 

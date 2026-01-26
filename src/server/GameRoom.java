@@ -1,13 +1,22 @@
 package server;
 
+import model.Archer;
+import model.AttackHitbox;
 import model.BattleField;
 import model.CharacterType;
+import model.Fighter;
 import model.GameCharacter;
+import model.PlayerInfo;
 import model.Projectile;
 import model.ProjectileType;
+import model.Warrior;
+import model.Wizard;
 import network.Protocol;
 
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -25,20 +34,13 @@ class GameRoom extends Thread implements Closeable {
 	private static final int MAX_PLAYERS = 4;
 	private static final int FPS = 60;
 	private static final long FRAME_TIME = 1000_000_000L / FPS;
-	private static final int FIELD_WIDTH = 1000;
-	private static final int FIELD_HEIGHT = 520;
-	private static final double MOVE_STEP = 6.0;
-	private static final double JUMP_VELOCITY = 14.0;
-	private static final double GROUND_Y = FIELD_HEIGHT * 0.36;
-	private static final double GRAVITY = -0.9;
-	private static final double PROJECTILE_SPEED = 9.0;
-	private static final long MAX_CHARGE_MS = 1200;
-	private static final double MAX_CHARGE_MULTIPLIER = 2.5;
 
 	// -------------------- インスタンス定数 --------------------
 	private final int roomId;
 	private final ConcurrentLinkedQueue<ServerCommand> commandQueue;
-	private final ConcurrentHashMap<ClientHandler, Player> playerMap;
+	private final ConcurrentHashMap<ClientHandler, PlayerInfo> playerMap;
+	private final ConcurrentHashMap<Integer, Integer> facingDirections = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Integer, Long> chargeStartTimes = new ConcurrentHashMap<>();
 
 	// -------------------- インスタンス変数 --------------------
 	private volatile Runnable disconnectListener;
@@ -120,7 +122,7 @@ class GameRoom extends Thread implements Closeable {
 			sj.add(playerMap.size() + "").add(battleField.toString());
 		} else {
 			sj.add(roomId + "," + isPublic + "," + playerMap.size());
-			sj.add(playerMap.values().stream().map(Player::toString).collect(Collectors.joining(",")));
+			sj.add(playerMap.values().stream().map(this::formatPlayerEntry).collect(Collectors.joining(",")));
 		}
 		return sj.toString();
 	}
@@ -151,10 +153,11 @@ class GameRoom extends Thread implements Closeable {
 		}
 		handler.setMessageListener(msg -> this.commandQueue.add(new ServerCommand(handler, msg)));
 		handler.setDisconnectListener(() -> handleDisconnect(handler));
-		Player newPlayer = new Player(handler.getConnectionId(), playerName);
+		PlayerInfo newPlayer = new PlayerInfo(handler.getConnectionId(), playerName, false, new Archer());
 		playerMap.put(handler, newPlayer);
+		facingDirections.put(newPlayer.getId(), 1);
 		handler.sendMessage(Protocol.joinSuccess(newPlayer.getId(), toString()));
-		String joinMessage = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getPlayerName());
+		String joinMessage = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getName());
 		playerMap.keySet().forEach(other -> {
 			if (other != handler) other.sendMessage(joinMessage);
 		});
@@ -169,38 +172,38 @@ class GameRoom extends Thread implements Closeable {
 	private synchronized void handleCommand(ServerCommand command) {
 		// TODO: コマンド処理
 		ClientHandler sender = command.getSender();
-		Player player = playerMap.get(sender);
+		PlayerInfo player = playerMap.get(sender);
 		if (player == null) return;
 		String body = command.getBody();
 		switch (command.getCommandType()) {
 			case READY:
 				CharacterType characterType = CharacterType.fromId(Integer.parseInt(body));
-				player.selectCharacter(characterType);
-				player.setReady();
+				player.setCharacter(createCharacter(characterType));
+				player.setReady(true);
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
 				String readyMessage = Protocol.readySuccess(player.getId(), characterType);
 				playerMap.keySet().forEach(handler -> handler.sendMessage(readyMessage));
 				startGame();
 				break;
 			case UNREADY:
-				player.setUnReady();
+				player.setReady(false);
 				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備を解除しました。");
 				String unreadyMessage = Protocol.unreadySuccess(player.getId());
 				playerMap.keySet().forEach(handler -> handler.sendMessage(unreadyMessage));
 				break;
 			case MOVE_LEFT:
-				player.setFacingDirection(-1);
-				applyMove(player, -MOVE_STEP, 0);
+				setFacingDirection(player, -1);
+				applyMove(player, -resolveMoveStepX(player), 0);
 				break;
 			case MOVE_UP:
-				applyMove(player, 0, MOVE_STEP);
+				applyMove(player, 0, resolveMoveStepY(player));
 				break;
 			case MOVE_RIGHT:
-				player.setFacingDirection(1);
-				applyMove(player, MOVE_STEP, 0);
+				setFacingDirection(player, 1);
+				applyMove(player, resolveMoveStepX(player), 0);
 				break;
 			case MOVE_DOWN:
-				applyMove(player, 0, -MOVE_STEP);
+				applyMove(player, 0, -resolveMoveStepY(player));
 				break;
 			case JUMP:
 				if (applyJump(player)) {
@@ -208,7 +211,7 @@ class GameRoom extends Thread implements Closeable {
 				}
 				break;
 			case CHARGE_START:
-				player.startCharge();
+				startCharge(player);
 				broadcastAction(Protocol.chargeStart(player.getId()));
 				break;
 			case NORMAL_ATTACK:
@@ -237,20 +240,25 @@ class GameRoom extends Thread implements Closeable {
 	private synchronized void startGame() {
 		if (isClosed || isStarted) return;
 		if (playerMap.size() < 2) return;
-		for (Player player : playerMap.values()) {
+		for (PlayerInfo player : playerMap.values()) {
 			if (!player.isReady()) return;
 		}
 		isStarted = true;
 		isGameOver = false;
 		alivePlayers = playerMap.size();
 		logger.info("ルーム(ID: " + roomId + ")でゲーム開始");
-		battleField = new BattleField(FIELD_WIDTH, FIELD_HEIGHT, GROUND_Y, GRAVITY);
+		battleField = new BattleField();
+		double fieldWidth = battleField.getWidth();
+		double groundY = battleField.getGroundY();
+		List<PlayerInfo> sortedPlayers = new ArrayList<>(playerMap.values());
+		sortedPlayers.sort(Comparator.comparingInt(PlayerInfo::getId));
 		int index = 0;
-		for (Player player : playerMap.values()) {
+		for (PlayerInfo player : sortedPlayers) {
 			GameCharacter character = player.getCharacter();
 			if (character != null) {
-				double x = FIELD_WIDTH * (0.2 + 0.2 * index);
-				character.setPosition(x, GROUND_Y);
+				double slotCenter = (index + 0.5) / (double) MAX_PLAYERS;
+				double x = fieldWidth * slotCenter;
+				character.setPosition(x, groundY);
 				character.setGrounded(true);
 				character.setOwnerId(player.getId());
 				battleField.addEntity(character);
@@ -290,6 +298,8 @@ class GameRoom extends Thread implements Closeable {
 		synchronized (this) {
 			logger.info("ルーム(ID: " + roomId + ") でプレイヤー(ID: " + handler.getConnectionId() + ")切断しました。");
 			playerMap.remove(handler);
+			facingDirections.remove(handler.getConnectionId());
+			chargeStartTimes.remove(handler.getConnectionId());
 			handler.close();
 			if (isStarted) {
 				alivePlayers--;
@@ -338,73 +348,182 @@ class GameRoom extends Thread implements Closeable {
 		playerMap.keySet().forEach(h -> h.sendMessage(message));
 	}
 
-	private void applyMove(Player player, double dx, double dy) {
+	private void applyMove(PlayerInfo player, double dx, double dy) {
 		GameCharacter character = player.getCharacter();
 		if (character == null || character.getPosition() == null) return;
+		double fieldWidth = getFieldWidth();
+		double fieldHeight = getFieldHeight();
 		double nextX = character.getPosition().getX() + dx;
 		double nextY = character.getPosition().getY() + dy;
 		if (nextX < 0) nextX = 0;
-		if (nextX > FIELD_WIDTH) nextX = FIELD_WIDTH;
+		if (nextX > fieldWidth) nextX = fieldWidth;
 		if (nextY < 0) nextY = 0;
-		if (nextY > FIELD_HEIGHT) nextY = FIELD_HEIGHT;
+		if (nextY > fieldHeight) nextY = fieldHeight;
 		character.setPosition(nextX, nextY);
 	}
 
-	private void applyNormalAttack(Player player) {
+	private void applyNormalAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		if (character == null) return;
 		character.normalAttack();
-		spawnProjectile(player, character, 1.0);
+		if (character.isRanged()) {
+			spawnProjectile(player, character, 1.0);
+		} else {
+			spawnMeleeAttack(player, character, 1.0);
+		}
 	}
 
-	private void applyChargeAttack(Player player) {
+	private void applyChargeAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		if (character == null) return;
 		character.chargeAttack();
-		double power = resolveChargePower(player.stopCharge());
-		spawnProjectile(player, character, power);
+		double power = resolveChargePower(character, stopCharge(player));
+		if (character.isRanged()) {
+			spawnProjectile(player, character, power);
+		} else {
+			spawnMeleeAttack(player, character, power);
+		}
 	}
 
-	private void applyDefend(Player player) {
+	private void applyDefend(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		if (character == null) return;
 		character.defend();
 	}
 
-	private void spawnProjectile(Player player, GameCharacter character, double power) {
+	private void spawnProjectile(PlayerInfo player, GameCharacter character, double power) {
 		if (battleField == null || character.getPosition() == null) return;
-		ProjectileType projectileType;
-		switch (character.getType()) {
-			case ARCHER:
-				projectileType = ProjectileType.ARROW;
-				break;
-			case WIZARD:
-				projectileType = ProjectileType.MAGIC;
-				break;
-			default:
-				return;
-		}
-		int direction = player.getFacingDirection();
-		double speed = PROJECTILE_SPEED * Math.max(1.0, power);
+		ProjectileType projectileType = character.getProjectileType();
+		double maxDistance = character.getProjectileRange();
+		if (projectileType == null || maxDistance <= 0) return;
+		int direction = getFacingDirection(player);
+		double speed = character.getProjectileSpeed() * Math.max(1.0, power);
 		double damage = character.getAttack();
 		double startX = character.getPosition().getX() + (direction * 16);
-		double startY = character.getPosition().getY() + 16;
-		Projectile projectile = new Projectile(projectileType, player.getId(), startX, startY, direction * speed, 0, power, damage);
+		double startY = character.getPosition().getY() - 16;
+		Projectile projectile = new Projectile(
+				projectileType,
+				player.getId(),
+				startX,
+				startY,
+				direction * speed,
+				0,
+				power,
+				damage,
+				maxDistance
+		);
 		battleField.addEntity(projectile);
 	}
 
-	private boolean applyJump(Player player) {
+	private void spawnMeleeAttack(PlayerInfo player, GameCharacter character, double power) {
+		if (battleField == null || character.getPosition() == null) return;
+		double width = character.getMeleeWidth() * Math.min(1.4, power);
+		double height = character.getMeleeHeight() * Math.min(1.3, power);
+		double offset = character.getMeleeOffset();
+		int lifetime = character.getMeleeLifetimeTicks();
+		double damage = character.getAttack() * power;
+		double baseX = character.getPosition().getX();
+		double baseY = character.getPosition().getY();
+		AttackHitbox front = new AttackHitbox(
+				player.getId(),
+				damage,
+				baseX + offset,
+				baseY,
+				width,
+				height,
+				0,
+				0,
+				0,
+				lifetime
+		);
+		AttackHitbox back = new AttackHitbox(
+				player.getId(),
+				damage,
+				baseX - offset,
+				baseY,
+				width,
+				height,
+				0,
+				0,
+				0,
+				lifetime
+		);
+		battleField.addEntity(front);
+		battleField.addEntity(back);
+	}
+
+	private boolean applyJump(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		if (character == null || !character.canJump()) return false;
-		character.setVerticalVelocity(JUMP_VELOCITY);
+		character.setVerticalVelocity(character.getJumpVelocity());
 		character.registerJump();
 		return true;
 	}
 
-	private double resolveChargePower(long chargeMs) {
-		if (chargeMs <= 0) return 1.0;
-		long clamped = Math.min(chargeMs, MAX_CHARGE_MS);
-		double ratio = clamped / (double) MAX_CHARGE_MS;
-		return 1.0 + (MAX_CHARGE_MULTIPLIER - 1.0) * ratio;
+	private GameCharacter createCharacter(CharacterType characterType) {
+		switch (characterType) {
+			case ARCHER:
+				return new Archer();
+			case WARRIOR:
+				return new Warrior();
+			case FIGHTER:
+				return new Fighter();
+			case WIZARD:
+				return new Wizard();
+			default:
+				return new Archer();
+		}
+	}
+
+	private String formatPlayerEntry(PlayerInfo info) {
+		GameCharacter character = info.getCharacter();
+		CharacterType type = character != null ? character.getType() : CharacterType.NONE;
+		return info.getId() + " " + info.getName() + " " + info.isReady() + " " + type.getId();
+	}
+
+	private void setFacingDirection(PlayerInfo player, int direction) {
+		if (direction == 0) return;
+		facingDirections.put(player.getId(), direction > 0 ? 1 : -1);
+	}
+
+	private int getFacingDirection(PlayerInfo player) {
+		return facingDirections.getOrDefault(player.getId(), 1);
+	}
+
+	private void startCharge(PlayerInfo player) {
+		chargeStartTimes.put(player.getId(), System.currentTimeMillis());
+	}
+
+	private long stopCharge(PlayerInfo player) {
+		Long start = chargeStartTimes.remove(player.getId());
+		if (start == null) return 0;
+		return Math.max(0, System.currentTimeMillis() - start);
+	}
+
+	private double resolveMoveStepX(PlayerInfo player) {
+		GameCharacter character = player.getCharacter();
+		return character != null ? character.getMoveStepX() : 0;
+	}
+
+	private double resolveMoveStepY(PlayerInfo player) {
+		GameCharacter character = player.getCharacter();
+		return character != null ? character.getMoveStepY() : 0;
+	}
+
+	private int getFieldWidth() {
+		return battleField != null ? battleField.getWidth() : BattleField.DEFAULT_WIDTH;
+	}
+
+	private int getFieldHeight() {
+		return battleField != null ? battleField.getHeight() : BattleField.DEFAULT_HEIGHT;
+	}
+
+	private double resolveChargePower(GameCharacter character, long chargeMs) {
+		if (chargeMs <= 0 || character == null) return 1.0;
+		long maxCharge = Math.max(1, character.getMaxChargeMs());
+		double maxMultiplier = Math.max(1.0, character.getMaxChargeMultiplier());
+		long clamped = Math.min(chargeMs, maxCharge);
+		double ratio = clamped / (double) maxCharge;
+		return 1.0 + (maxMultiplier - 1.0) * ratio;
 	}
 }

@@ -5,16 +5,34 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class BattleField {
+	public static final int DEFAULT_WIDTH = 1200;
+	public static final int DEFAULT_HEIGHT = 640;
+	public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.2;
 	private final List<Entity> entities = new ArrayList<>();
-	public int width, height;
+	private final int width;
+	private final int height;
 	private final double groundY;
-	private final double gravity;
 
-	public BattleField(int width, int height, double groundY, double gravity) {
+	public BattleField() {
+		this(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_GROUND_Y);
+	}
+
+	public BattleField(int width, int height, double groundY) {
 		this.width = width;
 		this.height = height;
 		this.groundY = groundY;
-		this.gravity = gravity;
+	}
+
+	public int getWidth() {
+		return width;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+
+	public double getGroundY() {
+		return groundY;
 	}
 
 	public void addEntity(Entity entity) {
@@ -39,31 +57,61 @@ public final class BattleField {
 			Entity entity = iterator.next();
 			if (entity instanceof Projectile) {
 				Projectile projectile = (Projectile) entity;
-				if (projectile.isOutOfBounds(width, height)) {
+				if (projectile.isOutOfBounds(width, height) || projectile.isExpired()) {
 					removedProjectiles.add(projectile);
 					iterator.remove();
 				}
 			}
 		}
 		updateCollision(removedProjectiles, damageEvents);
+		removeExpiredHitboxes();
 		return new UpdateResult(removedProjectiles, damageEvents);
 	}
 
 	private void updateCollision(List<Projectile> removedProjectiles, List<DamageEvent> damageEvents) {
 		List<Entity> toRemove = new ArrayList<>();
 		for (Entity entity : entities) {
-			if (!(entity instanceof Projectile)) continue;
-			Projectile projectile = (Projectile) entity;
-			for (Entity other : entities) {
-				if (entity == other || !(other instanceof GameCharacter)) continue;
-				GameCharacter character = (GameCharacter) other;
-				if (character.getOwnerId() == projectile.getOwnerId()) continue;
-				if (!projectile.collidesWith(character)) continue;
-				int newHp = character.applyDamage(projectile.getDamage() * projectile.getPower());
-				damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
-				toRemove.add(projectile);
-				removedProjectiles.add(projectile);
-				break;
+			if (entity instanceof Projectile) {
+				Projectile projectile = (Projectile) entity;
+				for (Entity other : entities) {
+					if (entity == other) continue;
+					if (other instanceof GameCharacter) {
+						GameCharacter character = (GameCharacter) other;
+						if (character.getOwnerId() == projectile.getOwnerId()) continue;
+					}
+					if (!projectile.collidesWith(other)) continue;
+					if (other instanceof Projectile) {
+						toRemove.add(projectile);
+						toRemove.add(other);
+						if (!removedProjectiles.contains(projectile)) removedProjectiles.add(projectile);
+						if (!removedProjectiles.contains(other)) removedProjectiles.add((Projectile) other);
+						break;
+					} else {
+						if (other instanceof GameCharacter) {
+							GameCharacter character = (GameCharacter) other;
+							int newHp = character.applyDamage(projectile.getDamage() * projectile.getPower());
+							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
+						}
+						toRemove.add(projectile);
+						if (!removedProjectiles.contains(projectile)) removedProjectiles.add(projectile);
+						break;
+					}
+				}
+			} else if (entity instanceof AttackHitbox) {
+				AttackHitbox hitbox = (AttackHitbox) entity;
+				boolean hitAny = false;
+				for (Entity other : entities) {
+					if (entity == other || !(other instanceof GameCharacter)) continue;
+					GameCharacter character = (GameCharacter) other;
+					if (character.getOwnerId() == hitbox.getOwnerId()) continue;
+					if (!hitbox.collidesWith(character)) continue;
+					int newHp = character.applyDamage(hitbox.getDamage());
+					damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
+					hitAny = true;
+				}
+				if (hitAny) {
+					toRemove.add(hitbox);
+				}
 			}
 		}
 		if (!toRemove.isEmpty()) {
@@ -83,7 +131,7 @@ public final class BattleField {
 
 	private void applyGravity(GameCharacter character) {
 		if (character.velocity == null) return;
-		character.velocity.setY(character.velocity.getY() + gravity);
+		character.velocity.setY(character.velocity.getY() + character.getGravity());
 	}
 
 	private void clampToGround(GameCharacter character) {
@@ -97,6 +145,19 @@ public final class BattleField {
 			character.resetJumpCount();
 		} else {
 			character.setGrounded(false);
+		}
+	}
+
+	private void removeExpiredHitboxes() {
+		Iterator<Entity> iterator = entities.iterator();
+		while (iterator.hasNext()) {
+			Entity entity = iterator.next();
+			if (entity instanceof AttackHitbox) {
+				AttackHitbox hitbox = (AttackHitbox) entity;
+				if (hitbox.isExpired()) {
+					iterator.remove();
+				}
+			}
 		}
 	}
 

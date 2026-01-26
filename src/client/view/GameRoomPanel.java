@@ -1,6 +1,8 @@
 package client.view;
 
 import model.CharacterType;
+import model.GameCharacter;
+import model.PlayerInfo;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -69,7 +71,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private final JButton readyButton;
 	private final JButton backButton;
 	private final PlayerSlot[] slots;
-	private final Map<Integer, PlayerEntry> players = new LinkedHashMap<>();
+	private final Map<Integer, PlayerInfo> players = new LinkedHashMap<>();
 	private String localPlayerName = "";
 	private int selectedCharacterIndex = 0;
 	private CharacterType selectedCharacter = DEFAULT_CHARACTER;
@@ -177,9 +179,16 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	public void updatePlayerStatus(int playerId, boolean isReady, CharacterType characterType) {
 		SwingUtilities.invokeLater(() -> {
-			PlayerEntry entry = players.get(playerId);
-			entry.setReady(isReady);
-			entry.setCharacter(characterType);
+			PlayerInfo entry = players.get(playerId);
+			if (entry != null) {
+				entry.setReady(isReady);
+				if (characterType != null) {
+					GameCharacter current = entry.getCharacter();
+					if (current == null || current.getType() != characterType) {
+						entry.setCharacter(createCharacterView(characterType));
+					}
+				}
+			}
 			refreshSlots();
 		});
 	}
@@ -187,7 +196,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
 		SwingUtilities.invokeLater(() -> {
 			int key = playerId < 0 ? playerName.hashCode() : playerId;
-			players.put(key, new PlayerEntry(key, playerName, ready, characterType));
+			players.put(key, new PlayerInfo(key, playerName, ready, createCharacterView(characterType)));
 			refreshSlots();
 		});
 	}
@@ -205,16 +214,28 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return selectedCharacter;
 	}
 
+	private static CharacterType resolveCharacterType(PlayerInfo entry) {
+		if (entry == null) return DEFAULT_CHARACTER;
+		GameCharacter character = entry.getCharacter();
+		return character != null ? character.getType() : DEFAULT_CHARACTER;
+	}
+
+	private static CharacterView createCharacterView(CharacterType characterType) {
+		CharacterType resolved = characterType == null ? DEFAULT_CHARACTER : characterType;
+		CharacterView view = CharacterView.forType(resolved);
+		return view != null ? view : CharacterView.forType(DEFAULT_CHARACTER);
+	}
+
 	private void refreshSlots() {
-		List<PlayerEntry> sortedPlayers = new ArrayList<>(players.values());
+		List<PlayerInfo> sortedPlayers = new ArrayList<>(players.values());
 		sortedPlayers.sort(Comparator
-				.comparingInt(PlayerEntry::getId)
-				.thenComparing(PlayerEntry::getName));
+				.comparingInt(PlayerInfo::getId)
+				.thenComparing(PlayerInfo::getName));
 
 		CharacterType localCharacter = DEFAULT_CHARACTER;
-		for (PlayerEntry entry : sortedPlayers) {
+		for (PlayerInfo entry : sortedPlayers) {
 			if (entry.getName().equals(localPlayerName)) {
-				localCharacter = entry.getCharacter();
+				localCharacter = resolveCharacterType(entry);
 				break;
 			}
 		}
@@ -222,7 +243,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			syncSelectedCharacter(localCharacter);
 		}
 		for (int i = 0; i < slots.length; i++) {
-			PlayerEntry entry = i < sortedPlayers.size() ? sortedPlayers.get(i) : null;
+			PlayerInfo entry = i < sortedPlayers.size() ? sortedPlayers.get(i) : null;
 			boolean isLocal = entry != null && entry.getName().equals(localPlayerName);
 			slots[i].setPlayer(entry, isLocal);
 		}
@@ -262,44 +283,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 				selectedCharacter = characterType;
 				return;
 			}
-		}
-	}
-
-	public static final class PlayerEntry {
-		private final int id;
-		private final String name;
-		private boolean ready;
-		private CharacterType character;
-
-		public PlayerEntry(int id, String name, boolean ready, CharacterType character) {
-			this.id = id;
-			this.name = name;
-			this.ready = ready;
-			this.character = character;
-		}
-
-		public int getId() {
-			return id;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public boolean isReady() {
-			return ready;
-		}
-
-		public CharacterType getCharacter() {
-			return character;
-		}
-
-		public void setReady(boolean ready) {
-			this.ready = ready;
-		}
-
-		public void setCharacter(CharacterType character) {
-			this.character = character;
 		}
 	}
 
@@ -445,7 +428,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			return label;
 		}
 
-		private void setPlayer(PlayerEntry entry, boolean isLocal) {
+		private void setPlayer(PlayerInfo entry, boolean isLocal) {
 			isLocalPlayer = isLocal;
 			if (entry == null) {
 				statusLabel.setText("空き");
@@ -463,7 +446,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			nameLabel.setBackground(isLocal ? NAME_BG_LOCAL : NAME_BG);
 			avatarPanel.setActive(true);
 
-			CharacterType characterType = isLocal ? selectedCharacter : entry.getCharacter();
+			CharacterType characterType = isLocal ? selectedCharacter : resolveCharacterType(entry);
 			characterLabel.setText(formatCharacterLabel(characterType));
 			avatarPanel.setCharacter(characterType);
 			leftArrow.setVisible(isLocal);
