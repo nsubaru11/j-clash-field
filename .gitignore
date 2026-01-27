@@ -10,6 +10,7 @@
 # IntelliJ の設定ファイル
 .idea/
 *.iml
+qodana.yaml
 
 # ビルド成果物
 out/
