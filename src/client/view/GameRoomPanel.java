@@ -39,37 +39,11 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private static final Font CHARACTER_FONT = new Font("Meiryo", Font.BOLD, 14);
 	private static final Font DESCRIPTION_FONT = new Font("Meiryo", Font.PLAIN, 11);
 	private static final Font NAME_FONT = new Font("Meiryo", Font.PLAIN, 13);
-	private static final Color TEXT_PRIMARY = new Color(40, 45, 50);
-	private static final Color TEXT_SECONDARY = new Color(90, 95, 100);
-	private static final Color OVERLAY_TOP = new Color(250, 247, 240, 200);
-	private static final Color OVERLAY_BOTTOM = new Color(238, 232, 224, 200);
-	private static final Color BOARD_TOP = new Color(255, 255, 255, 230);
-	private static final Color BOARD_BOTTOM = new Color(244, 238, 230, 230);
-	private static final Color BOARD_BORDER = new Color(210, 200, 190, 180);
-	private static final Color BOARD_SHADOW = new Color(0, 0, 0, 40);
-	private static final Color CARD_TOP = new Color(255, 255, 255, 240);
-	private static final Color CARD_BOTTOM = new Color(244, 240, 233, 240);
-	private static final Color CARD_TOP_LOCAL = new Color(236, 246, 255, 240);
-	private static final Color CARD_BOTTOM_LOCAL = new Color(224, 238, 252, 240);
-	private static final Color CARD_TOP_EMPTY = new Color(250, 248, 245, 210);
-	private static final Color CARD_BOTTOM_EMPTY = new Color(242, 238, 232, 210);
-	private static final Color CARD_BORDER = new Color(210, 202, 193);
-	private static final Color CARD_BORDER_LOCAL = new Color(132, 170, 210);
-	private static final Color CARD_SHADOW = new Color(0, 0, 0, 35);
-	private static final Color STATUS_BG_READY = new Color(186, 226, 202);
-	private static final Color STATUS_BG_WAIT = new Color(233, 214, 183);
-	private static final Color STATUS_BG_EMPTY = new Color(226, 226, 226);
-	private static final Color STATUS_FG = new Color(45, 55, 50);
-	private static final Color NAME_BG = new Color(238, 234, 228);
-	private static final Color NAME_BG_LOCAL = new Color(210, 228, 244);
-	private static final Color NAME_FG = new Color(50, 55, 60);
-	private static final Color BUTTON_NEUTRAL_BG = new Color(232, 227, 220);
-	private static final Color BUTTON_NEUTRAL_BORDER = new Color(186, 178, 168);
-	private static final Color BUTTON_READY_BG = new Color(204, 232, 214);
-	private static final Color BUTTON_READY_BORDER = new Color(155, 195, 170);
-	private static final Color AVATAR_FRAME = new Color(255, 255, 255, 210);
-	private static final Color AVATAR_BORDER = new Color(210, 210, 210, 170);
-	private static final Color SHADOW_COLOR = new Color(0, 0, 0, 55);
+	private static final Color COLOR_LIGHT = new Color(248, 245, 238);
+	private static final Color COLOR_NEUTRAL = new Color(220, 212, 202);
+	private static final Color COLOR_DARK = new Color(50, 55, 60);
+	private static final Color COLOR_MUTED = new Color(100, 105, 110);
+	private static final Color COLOR_ACCENT = new Color(120, 170, 210);
 	private static final CharacterType DEFAULT_CHARACTER = CharacterType.ARCHER;
 	private static final CharacterType[] CHARACTER_OPTIONS = new CharacterType[]{
 			CharacterType.ARCHER,
@@ -97,7 +71,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			throw new RuntimeException("キャラクター画像の読み込みに失敗しました", e);
 		}
 	}
-
 	// --------------- フィールド ---------------
 	private final JLabel roomLabel;
 	private final JButton readyButton;
@@ -108,7 +81,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private int selectedCharacterIndex = 0;
 	private CharacterType selectedCharacter = DEFAULT_CHARACTER;
 	private boolean hasLocalSelectionOverride = false;
-
 	/**
 	 * GameRoomPanelを構築します。
 	 */
@@ -126,16 +98,16 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		roomLabel = new JLabel("ルーム : -");
 		roomLabel.setFont(TITLE_FONT);
-		roomLabel.setForeground(TEXT_PRIMARY);
+		roomLabel.setForeground(COLOR_DARK);
 		header.add(roomLabel, BorderLayout.WEST);
 
 		JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actionPanel.setOpaque(false);
 
-		backButton = createActionButton("ホームへ戻る", BUTTON_NEUTRAL_BG, BUTTON_NEUTRAL_BORDER);
+		backButton = createActionButton("ホームへ戻る", withAlpha(COLOR_NEUTRAL, 220), COLOR_NEUTRAL);
 		actionPanel.add(backButton);
 
-		readyButton = createActionButton("準備完了", BUTTON_READY_BG, BUTTON_READY_BORDER);
+		readyButton = createActionButton("準備完了", withAlpha(COLOR_ACCENT, 170), COLOR_ACCENT);
 		actionPanel.add(readyButton);
 		header.add(actionPanel, BorderLayout.EAST);
 
@@ -156,13 +128,17 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		add(board);
 	}
 
+	private static Color withAlpha(Color base, int alpha) {
+		return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
+	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		Paint originalPaint = g2d.getPaint();
-		g2d.setPaint(new GradientPaint(0, 0, OVERLAY_TOP, 0, getHeight(), OVERLAY_BOTTOM));
+		g2d.setPaint(new GradientPaint(0, 0, withAlpha(COLOR_LIGHT, 200), 0, getHeight(), withAlpha(COLOR_NEUTRAL, 200)));
 		g2d.fillRect(0, 0, getWidth(), getHeight());
 		g2d.setPaint(originalPaint);
 	}
@@ -197,7 +173,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private JButton createActionButton(String text, Color background, Color border) {
 		JButton button = new JButton(text);
 		button.setFont(INFO_FONT);
-		button.setForeground(TEXT_PRIMARY);
+		button.setForeground(COLOR_DARK);
 		button.setBackground(background);
 		button.setFocusPainted(false);
 		button.setBorder(BorderFactory.createCompoundBorder(
@@ -349,15 +325,15 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			int h = height - shadow * 2;
 			if (w <= 0 || h <= 0) return;
 
-			g2d.setColor(BOARD_SHADOW);
+			g2d.setColor(withAlpha(COLOR_DARK, 40));
 			g2d.fillRoundRect(x, y + 3, w, h, BOARD_ARC, BOARD_ARC);
 
 			Paint originalPaint = g2d.getPaint();
-			g2d.setPaint(new GradientPaint(0, y, BOARD_TOP, 0, y + h, BOARD_BOTTOM));
+			g2d.setPaint(new GradientPaint(0, y, withAlpha(COLOR_LIGHT, 230), 0, y + h, withAlpha(COLOR_NEUTRAL, 230)));
 			g2d.fillRoundRect(x, y, w, h, BOARD_ARC, BOARD_ARC);
 			g2d.setPaint(originalPaint);
 
-			g2d.setColor(BOARD_BORDER);
+			g2d.setColor(withAlpha(COLOR_NEUTRAL, 180));
 			g2d.drawRoundRect(x, y, w - 1, h - 1, BOARD_ARC, BOARD_ARC);
 		}
 	}
@@ -398,15 +374,15 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			int frameWidth = width - frameInset * 2;
 			int frameHeight = height - frameInset * 2;
 			if (frameWidth > 0 && frameHeight > 0) {
-				g2d.setColor(AVATAR_FRAME);
+				g2d.setColor(withAlpha(COLOR_LIGHT, 210));
 				g2d.fillRoundRect(frameX, frameY, frameWidth, frameHeight, 28, 28);
 
-				Color accent = characterType.getAccentColor();
+				Color accent = characterType != null ? characterType.getAccentColor() : COLOR_NEUTRAL;
 				int alpha = active ? 90 : 40;
-				g2d.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), alpha));
+				g2d.setColor(withAlpha(accent, alpha));
 				g2d.fillOval(frameX + 10, frameY + 12, frameWidth - 20, frameHeight - 24);
 
-				g2d.setColor(AVATAR_BORDER);
+				g2d.setColor(withAlpha(COLOR_NEUTRAL, 170));
 				g2d.drawRoundRect(frameX, frameY, frameWidth - 1, frameHeight - 1, 28, 28);
 			}
 
@@ -441,6 +417,25 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
+	private static final class ShadowPanel extends JComponent {
+		private ShadowPanel() {
+			setPreferredSize(new Dimension(160, 20));
+			setMinimumSize(new Dimension(160, 20));
+			setOpaque(false);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			int width = getWidth();
+			int height = getHeight();
+			g2d.setColor(withAlpha(COLOR_DARK, 55));
+			g2d.fillOval(20, height / 3, width - 40, height / 3);
+		}
+	}
+
 	private final class PlayerSlot extends JPanel {
 		private final JLabel statusLabel;
 		private final JLabel nameLabel;
@@ -461,11 +456,11 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			statusLabel = new JLabel("準備中", SwingConstants.CENTER);
 			statusLabel.setFont(STATUS_FONT);
 			statusLabel.setOpaque(true);
-			statusLabel.setBackground(STATUS_BG_WAIT);
-			statusLabel.setForeground(STATUS_FG);
+			statusLabel.setBackground(withAlpha(COLOR_NEUTRAL, 170));
+			statusLabel.setForeground(COLOR_DARK);
 			statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			statusLabel.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(4, 12, 4, 12)
 			));
 			add(statusLabel);
@@ -506,14 +501,14 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 			characterLabel = new JLabel(" ", SwingConstants.CENTER);
 			characterLabel.setFont(CHARACTER_FONT);
-			characterLabel.setForeground(TEXT_PRIMARY);
+			characterLabel.setForeground(COLOR_DARK);
 			characterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(characterLabel);
 			add(Box.createVerticalStrut(2));
 
 			descriptionLabel = new JLabel(" ", SwingConstants.CENTER);
 			descriptionLabel.setFont(DESCRIPTION_FONT);
-			descriptionLabel.setForeground(TEXT_SECONDARY);
+			descriptionLabel.setForeground(COLOR_MUTED);
 			descriptionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(descriptionLabel);
 			add(Box.createVerticalStrut(10));
@@ -521,11 +516,11 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			nameLabel = new JLabel("-", SwingConstants.CENTER);
 			nameLabel.setFont(NAME_FONT);
 			nameLabel.setOpaque(true);
-			nameLabel.setBackground(NAME_BG);
-			nameLabel.setForeground(NAME_FG);
+			nameLabel.setBackground(withAlpha(COLOR_NEUTRAL, 170));
+			nameLabel.setForeground(COLOR_DARK);
 			nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			nameLabel.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(205, 198, 190), 1, true),
+					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(6, 16, 6, 16)
 			));
 			add(nameLabel);
@@ -545,28 +540,30 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			int h = height - shadow * 2;
 			if (w <= 0 || h <= 0) return;
 
-			g2d.setColor(CARD_SHADOW);
+			g2d.setColor(withAlpha(COLOR_DARK, 35));
 			g2d.fillRoundRect(x, y + 3, w, h, CARD_ARC, CARD_ARC);
 
-			Color top = hasPlayer ? (isLocalPlayer ? CARD_TOP_LOCAL : CARD_TOP) : CARD_TOP_EMPTY;
-			Color bottom = hasPlayer ? (isLocalPlayer ? CARD_BOTTOM_LOCAL : CARD_BOTTOM) : CARD_BOTTOM_EMPTY;
+			Color top = hasPlayer ? withAlpha(COLOR_LIGHT, 240) : withAlpha(COLOR_LIGHT, 210);
+			Color bottom = hasPlayer
+					? (isLocalPlayer ? withAlpha(COLOR_ACCENT, 120) : withAlpha(COLOR_NEUTRAL, 235))
+					: withAlpha(COLOR_NEUTRAL, 210);
 			Paint originalPaint = g2d.getPaint();
 			g2d.setPaint(new GradientPaint(0, y, top, 0, y + h, bottom));
 			g2d.fillRoundRect(x, y, w, h, CARD_ARC, CARD_ARC);
 			g2d.setPaint(originalPaint);
 
-			g2d.setColor(isLocalPlayer ? CARD_BORDER_LOCAL : CARD_BORDER);
+			g2d.setColor(isLocalPlayer ? COLOR_ACCENT : COLOR_NEUTRAL);
 			g2d.drawRoundRect(x, y, w - 1, h - 1, CARD_ARC, CARD_ARC);
 		}
 
 		private JLabel createArrowLabel(String text) {
 			JLabel label = new JLabel(text, SwingConstants.CENTER);
 			label.setFont(new Font("Meiryo", Font.BOLD, 18));
-			label.setForeground(new Color(90, 100, 110));
+			label.setForeground(COLOR_MUTED);
 			label.setOpaque(true);
-			label.setBackground(new Color(255, 255, 255, 200));
+			label.setBackground(withAlpha(COLOR_LIGHT, 200));
 			label.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(205, 198, 190), 1, true),
+					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(2, 8, 2, 8)
 			));
 			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -579,9 +576,9 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			if (entry == null) {
 				hasPlayer = false;
 				statusLabel.setText("空き");
-				statusLabel.setBackground(STATUS_BG_EMPTY);
+				statusLabel.setBackground(withAlpha(COLOR_NEUTRAL, 120));
 				nameLabel.setText("-");
-				nameLabel.setBackground(NAME_BG);
+				nameLabel.setBackground(withAlpha(COLOR_NEUTRAL, 170));
 				avatarPanel.setActive(false);
 				characterLabel.setText(" ");
 				descriptionLabel.setText(" ");
@@ -593,9 +590,9 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			}
 			hasPlayer = true;
 			statusLabel.setText(entry.isReady() ? "準備完了!" : "準備中");
-			statusLabel.setBackground(entry.isReady() ? STATUS_BG_READY : STATUS_BG_WAIT);
+			statusLabel.setBackground(entry.isReady() ? withAlpha(COLOR_ACCENT, 140) : withAlpha(COLOR_NEUTRAL, 170));
 			nameLabel.setText(entry.getName());
-			nameLabel.setBackground(isLocal ? NAME_BG_LOCAL : NAME_BG);
+			nameLabel.setBackground(isLocal ? withAlpha(COLOR_ACCENT, 120) : withAlpha(COLOR_NEUTRAL, 170));
 			avatarPanel.setActive(true);
 
 			CharacterType characterType = isLocal ? selectedCharacter : resolveCharacterType(entry);
@@ -605,25 +602,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			leftArrow.setVisible(isLocal);
 			rightArrow.setVisible(isLocal);
 			repaint();
-		}
-	}
-
-	private static final class ShadowPanel extends JComponent {
-		private ShadowPanel() {
-			setPreferredSize(new Dimension(160, 20));
-			setMinimumSize(new Dimension(160, 20));
-			setOpaque(false);
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			int width = getWidth();
-			int height = getHeight();
-			g2d.setColor(SHADOW_COLOR);
-			g2d.fillOval(20, height / 3, width - 40, height / 3);
 		}
 	}
 }

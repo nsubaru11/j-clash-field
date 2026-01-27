@@ -2,10 +2,7 @@
 chcp 65001 > nul
 echo Starting Othello Server...
 
-rem ---------------------------------------------------------
-rem JDKの設定 (元のコードを維持)
-rem ---------------------------------------------------------
-rem パスをクォート付きで保持
+rem JDKの設定
 set "CORRETTO_HOME=C:\Program Files\Amazon Corretto\jdk1.8.0_472"
 
 rem Corretto の存在チェック
@@ -21,26 +18,15 @@ if exist "%CORRETTO_HOME%\bin\javac.exe" (
     set "JAVA_CMD=java"
 )
 
-rem ---------------------------------------------------------
 rem ディレクトリ設定と移動
-rem ---------------------------------------------------------
-rem プロジェクトルートディレクトリを取得
 for %%i in ("%~dp0..") do set "REPO_DIR=%%~fi"
-
-rem ★ここが重要: 作業ディレクトリをプロジェクトルートに移動
-rem これにより logs フォルダがルート直下に生成/参照されます
 cd /d "%REPO_DIR%"
-
 set "SRC_DIR=%REPO_DIR%\src"
 set "OUT_DIR=%REPO_DIR%\out\production\online-action-game-netprog"
 
-rem ---------------------------------------------------------
 rem コンパイル
-rem ---------------------------------------------------------
 echo Compiling...
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
-
-rem サーバーに必要なソースファイルをリストアップ (model, network, server)
 dir /s /b "%SRC_DIR%\model\*.java" "%SRC_DIR%\network\*.java" "%SRC_DIR%\server\*.java" > "%REPO_DIR%\sources.txt"
 
 "%JAVAC_CMD%" -encoding UTF-8 -d "%OUT_DIR%" @"%REPO_DIR%\sources.txt"
@@ -54,9 +40,7 @@ if %errorlevel% neq 0 (
 rem 一時ファイルの削除
 del "%REPO_DIR%\sources.txt"
 
-rem ---------------------------------------------------------
 rem 実行
-rem ---------------------------------------------------------
 echo Starting Server Application...
 "%JAVA_CMD%" -cp "%OUT_DIR%" server.controller.GameServer
 

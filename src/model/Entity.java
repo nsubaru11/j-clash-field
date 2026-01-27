@@ -49,13 +49,13 @@ public abstract class Entity {
 
 		double thisMinX = position.getX() - widthValue / 2.0;
 		double thisMaxX = position.getX() + widthValue / 2.0;
-		double thisMinY = position.getY() - heightValue;
-		double thisMaxY = position.getY();
+		double thisMinY = position.getY();
+		double thisMaxY = position.getY() + heightValue;
 
 		double otherMinX = other.position.getX() - otherWidth / 2.0;
 		double otherMaxX = other.position.getX() + otherWidth / 2.0;
-		double otherMinY = other.position.getY() - otherHeight;
-		double otherMaxY = other.position.getY();
+		double otherMinY = other.position.getY();
+		double otherMaxY = other.position.getY() + otherHeight;
 
 		return thisMinX < otherMaxX && thisMaxX > otherMinX
 				&& thisMinY < otherMaxY && thisMaxY > otherMinY;

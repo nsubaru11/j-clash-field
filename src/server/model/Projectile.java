@@ -72,19 +72,16 @@ public final class Projectile extends Entity {
 			otherMinY = other.getPosition().getY() - otherHeight / 2.0;
 			otherMaxY = other.getPosition().getY() + otherHeight / 2.0;
 		} else {
-			otherMinY = other.getPosition().getY() - otherHeight;
-			otherMaxY = other.getPosition().getY();
+			otherMinY = other.getPosition().getY();
+			otherMaxY = other.getPosition().getY() + otherHeight;
 		}
 
-		return thisMinX < otherMaxX && thisMaxX > otherMinX
-				&& thisMinY < otherMaxY && thisMaxY > otherMinY;
+		return thisMinX < otherMaxX && thisMaxX > otherMinX && thisMinY < otherMaxY && thisMaxY > otherMinY;
 	}
 
 	@Override
 	public void update() {
-		if (velocity != null) {
-			traveledDistance += velocity.length();
-		}
+		if (velocity != null) traveledDistance += velocity.length();
 		super.update();
 	}
 

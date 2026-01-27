@@ -44,23 +44,23 @@ public final class CharacterInfo {
 		load();
 	}
 
-	private final String name;
-	private final Color themeColor;
-	private final String description;
-	private final double attackMin;
-	private final double attackMax;
-	private final double attackChargeTimeMs;
-	private final double defense;
-	private final double defenseChargeTimeMs;
-	private final double hp;
-	private final double moveStepX;
-	private final double moveStepY;
-	private final double projectileSpeed;
-	private final double projectileRange;
-	private final double meleeWidth;
-	private final double meleeHeight;
-	private final double meleeOffset;
-	private final int meleeLifetimeTicks;
+	private final String name; // キャラクター名
+	private final Color themeColor; // キャラクターのテーマ色
+	private final String description; // キャラクターの説明文
+	private final double attackMin; // 最低攻撃力
+	private final double attackMax; // 最高攻撃力
+	private final double attackChargeTimeMs; // 攻撃力の充電時間
+	private final double defense; // 防御力
+	private final double defenseChargeTimeMs; // 防御力の持続時間
+	private final double hp; // 最大HP
+	private final double moveStepX; // 横方向移動速度
+	private final double moveStepY; // 縦方向移動速度
+	private final double projectileSpeed; // 射撃速度
+	private final double projectileRange; // 射撃範囲
+	private final double meleeWidth; // 近接攻撃の幅
+	private final double meleeHeight; // 近接攻撃の高さ
+	private final double meleeOffset; // 近接攻撃のオフセット
+	private final int meleeLifetimeTicks; // 近接攻撃の持続時間
 
 	private CharacterInfo(
 			String name,
@@ -101,9 +101,7 @@ public final class CharacterInfo {
 	}
 
 	public static CharacterInfo forType(CharacterType type) {
-		if (type == null) {
-			return FALLBACK;
-		}
+		if (type == null) return FALLBACK;
 		CharacterInfo info = CACHE.get(type);
 		return info != null ? info : FALLBACK;
 	}
@@ -194,16 +192,12 @@ public final class CharacterInfo {
 	}
 
 	private static String asString(Object value, String fallback) {
-		if (value instanceof String) {
-			return ((String) value).trim();
-		}
+		if (value instanceof String) return ((String) value).trim();
 		return fallback;
 	}
 
 	private static double asDouble(Object value, double fallback) {
-		if (value instanceof Number) {
-			return ((Number) value).doubleValue();
-		}
+		if (value instanceof Number) return ((Number) value).doubleValue();
 		if (value instanceof String) {
 			try {
 				return Double.parseDouble(((String) value).trim());
@@ -215,9 +209,7 @@ public final class CharacterInfo {
 	}
 
 	private static int asInt(Object value, int fallback) {
-		if (value instanceof Number) {
-			return ((Number) value).intValue();
-		}
+		if (value instanceof Number) return ((Number) value).intValue();
 		if (value instanceof String) {
 			try {
 				return Integer.parseInt(((String) value).trim());
@@ -229,13 +221,9 @@ public final class CharacterInfo {
 	}
 
 	private static Color parseColor(Object value, Color fallback) {
-		if (!(value instanceof String)) {
-			return fallback;
-		}
+		if (!(value instanceof String)) return fallback;
 		String raw = ((String) value).trim();
-		if (raw.isEmpty()) {
-			return fallback;
-		}
+		if (raw.isEmpty()) return fallback;
 		String hex = raw;
 		if (hex.startsWith("#")) {
 			hex = hex.substring(1);
@@ -257,6 +245,12 @@ public final class CharacterInfo {
 				int b = colorValue & 0xFF;
 				return new Color(r, g, b);
 			}
+			if (hex.length() == 3) {
+				int r = (colorValue >> 8) & 0xF;
+				int g = (colorValue >> 4) & 0xF;
+				int b = colorValue & 0xF;
+				return new Color(r << 4 | r, g << 4 | g, b << 4 | b);
+			}
 		} catch (NumberFormatException ignored) {
 			return fallback;
 		}
@@ -265,9 +259,7 @@ public final class CharacterInfo {
 
 	@SuppressWarnings("unchecked")
 	private static Map<String, Object> asObject(Object value) {
-		if (value instanceof Map) {
-			return (Map<String, Object>) value;
-		}
+		if (value instanceof Map) return (Map<String, Object>) value;
 		return null;
 	}
 
@@ -419,9 +411,7 @@ public final class CharacterInfo {
 			StringBuilder sb = new StringBuilder();
 			while (index < text.length()) {
 				char c = text.charAt(index++);
-				if (c == '"') {
-					break;
-				}
+				if (c == '"') break;
 				if (c == '\\') {
 					if (index >= text.length()) break;
 					char esc = text.charAt(index++);
@@ -486,9 +476,7 @@ public final class CharacterInfo {
 				}
 			}
 			String token = text.substring(start, index).trim();
-			if (token.isEmpty()) {
-				return 0.0;
-			}
+			if (token.isEmpty()) return 0.0;
 			try {
 				return Double.parseDouble(token);
 			} catch (NumberFormatException e) {
@@ -525,9 +513,7 @@ public final class CharacterInfo {
 		}
 
 		private char peek() {
-			if (index >= text.length()) {
-				return '\0';
-			}
+			if (index >= text.length()) return '\0';
 			return text.charAt(index);
 		}
 

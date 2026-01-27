@@ -231,7 +231,7 @@ public abstract class GameCharacter extends Entity {
 
 	private double resolveDefense(long nowMs) {
 		if (defend <= 0.0) return 0.0;
-		if (defendStartMs < 0) return defend;
+		if (defendStartMs < 0) return 0.0;
 		if (defenseChargeTimeMs <= 0.0) return 0.0;
 		long elapsed = Math.max(0L, nowMs - defendStartMs);
 		double ratio = Math.min(1.0, elapsed / defenseChargeTimeMs);

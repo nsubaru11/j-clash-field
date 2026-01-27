@@ -93,7 +93,7 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					} else {
 						if (other instanceof GameCharacter) {
 							GameCharacter character = (GameCharacter) other;
-							int newHp = character.applyDamage(projectile.getDamage() * projectile.getPower());
+							int newHp = character.applyDamage(projectile.getDamage());
 							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
 						}
 						toRemove.add(projectile);
@@ -113,14 +113,10 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
 					hitAny = true;
 				}
-				if (hitAny) {
-					toRemove.add(hitbox);
-				}
+				if (hitAny) toRemove.add(hitbox);
 			}
 		}
-		if (!toRemove.isEmpty()) {
-			entities.removeAll(toRemove);
-		}
+		if (!toRemove.isEmpty()) entities.removeAll(toRemove);
 	}
 
 	public List<Projectile> getProjectiles() {

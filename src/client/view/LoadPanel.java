@@ -123,7 +123,9 @@ public class LoadPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			isLoaded = false;
 			state = State.SLIDE_IN;
-			xPosition = -getWidth();
+			int width = Math.max(1, getWidth());
+			xPosition = -width;
+			setVisible(true);
 			animationTimer.start();
 		});
 	}
