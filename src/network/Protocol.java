@@ -52,8 +52,8 @@ public final class Protocol {
 		return CommandType.JOIN_OPPONENT.getId() + ":" + opponentId + "," + opponentName;
 	}
 
-	public static String readySuccess(int playerId, CharacterType characterType) {
-		return CommandType.READY_SUCCESS.getId() + ":" + playerId + "," + characterType.getId();
+	public static String readySuccess(int playerId, int characterId) {
+		return CommandType.READY_SUCCESS.getId() + ":" + playerId + "," + characterId;
 	}
 
 	public static String unreadySuccess(int playerId) {

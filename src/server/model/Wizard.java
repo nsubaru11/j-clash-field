@@ -6,12 +6,9 @@ import model.ProjectileType;
 
 public class Wizard extends GameCharacter {
 	private static final double GRAVITY = -0.5;
-	private double speedX = 5, speedY = 5;
-	private CharacterType type = CharacterType.WIZARD;
 
-	@Override
-	public CharacterType getType() {
-		return type;
+	public Wizard() {
+		super(CharacterType.WIZARD);
 	}
 
 	@Override
@@ -25,27 +22,7 @@ public class Wizard extends GameCharacter {
 	}
 
 	@Override
-	public double getProjectileRange() {
-		return DEFAULT_MAGIC_RANGE;
-	}
-
-	@Override
-	public void normalAttack() {
-
-	}
-
-	@Override
-	public void chargeAttack() {
-
-	}
-
-	@Override
 	public void specialAttack() {
-
-	}
-
-	@Override
-	public void defend() {
 
 	}
 

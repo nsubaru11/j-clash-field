@@ -1,5 +1,7 @@
 package model;
 
+import java.awt.Color;
+
 public enum CharacterType {
 	NONE(0),
 	ARCHER(1),
@@ -32,5 +34,17 @@ public enum CharacterType {
 
 	public int getId() {
 		return id;
+	}
+
+	public CharacterInfo getInfo() {
+		return CharacterInfo.forType(this);
+	}
+
+	public String getName() {
+		return getInfo().getName();
+	}
+
+	public Color getAccentColor() {
+		return getInfo().getThemeColor();
 	}
 }

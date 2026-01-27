@@ -34,13 +34,9 @@ public final class GuiController {
 	private static final String CARD_RESULT = "result";
 
 	// -------------------- インスタンス定数 --------------------
-	/** ルートパネル */
-	private final JLayeredPane rootPane;
-	/** 画面切り替えレイアウトマネージャ */
-	private final CardLayout cardLayout;
-	/** 各画面パネルを保持する親パネル */
-	private final JPanel cardPanel;
-
+	private final JLayeredPane rootPane; // ルートパネル
+	private final CardLayout cardLayout; // カードレイアウト
+	private final JPanel cardPanel; // 各画面パネルを保持する親パネル
 	private final TitlePanel titlePanel;
 	private final LoadPanel loadPanel;
 	private final HomePanel homePanel;
@@ -48,15 +44,11 @@ public final class GuiController {
 	private final GameRoomPanel gameRoomPanel;
 	private final GamePanel gamePanel;
 	private final ResultPanel resultPanel;
-	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
-	private volatile String playerName = "";
-	private volatile int playerId = 0;
-	private final Map<Integer, PlayerInfo> playerSnapshots = new LinkedHashMap<>();
-
-	/** ネットワークコントローラー */
+	private final Map<Integer, PlayerInfo> playerSnapshots = new LinkedHashMap<>(4, 1.0f);
 	private final NetworkController network;
-	/** コマンドキュー */
 	private final ConcurrentLinkedQueue<Command> commandQueue;
+	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
+	private volatile int playerId = 0;
 
 	public GuiController(NetworkController network) {
 		this.network = network;
@@ -72,6 +64,7 @@ public final class GuiController {
 				System.exit(0);
 			}
 		});
+
 		matchingPanel = new MatchingPanel();
 		matchingPanel.setVisible(false);
 		matchingPanel.setStartGameListener(e -> joinRoom());
@@ -84,6 +77,7 @@ public final class GuiController {
 					JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) showHome();
 		});
+
 		gameRoomPanel.setReadyAction(e -> network.ready(gameRoomPanel.getSelectedCharacterType()));
 		gamePanel = new GamePanel();
 		gamePanel.setInputActions(
@@ -98,6 +92,7 @@ public final class GuiController {
 				network::defend,
 				network::resign
 		);
+
 		resultPanel = new ResultPanel();
 		resultPanel.setBackAction(e -> showGameRoom());
 
@@ -136,7 +131,6 @@ public final class GuiController {
 		String userName = matchingPanel.getUserName();
 		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
 		matchingPanel.setVisible(false);
-		playerName = userName;
 		gameRoomPanel.reset();
 		gameRoomPanel.setLocalPlayerName(userName);
 		showLoad();

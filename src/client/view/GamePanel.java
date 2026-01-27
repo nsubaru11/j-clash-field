@@ -224,23 +224,8 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private Color resolveCharacterColor(GameCharacter character) {
-		if (character instanceof CharacterSprite) {
-			return ((CharacterSprite) character).getAccentColor();
-		}
 		CharacterType type = character != null ? character.getType() : null;
-		if (type == null) return Color.BLACK;
-		switch (type) {
-			case ARCHER:
-				return new Color(40, 110, 200);
-			case WARRIOR:
-				return new Color(235, 77, 71);
-			case FIGHTER:
-				return new Color(178, 100, 218);
-			case WIZARD:
-				return new Color(255, 137, 40);
-			default:
-				return Color.BLACK;
-		}
+		return type != null ? type.getAccentColor() : Color.BLACK;
 	}
 
 	private void bindKey(KeyStroke keyStroke, String actionKey, Runnable action) {

@@ -6,12 +6,9 @@ import model.ProjectileType;
 
 public class Archer extends GameCharacter {
 	private static final double GRAVITY = -0.7;
-	private double speedX = 5, speedY = 5;
-	private CharacterType type = CharacterType.ARCHER;
 
-	@Override
-	public CharacterType getType() {
-		return type;
+	public Archer() {
+		super(CharacterType.ARCHER);
 	}
 
 	@Override
@@ -25,27 +22,7 @@ public class Archer extends GameCharacter {
 	}
 
 	@Override
-	public double getProjectileRange() {
-		return DEFAULT_ARROW_RANGE;
-	}
-
-	@Override
-	public void normalAttack() {
-
-	}
-
-	@Override
-	public void chargeAttack() {
-
-	}
-
-	@Override
 	public void specialAttack() {
-
-	}
-
-	@Override
-	public void defend() {
 
 	}
 

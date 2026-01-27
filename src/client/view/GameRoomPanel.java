@@ -1,6 +1,7 @@
 package client.view;
 
 import client.model.CharacterSprite;
+import model.CharacterInfo;
 import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
@@ -174,50 +175,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return CHARACTER_IMAGES.get(characterType);
 	}
 
-	private static String formatCharacterLabel(CharacterType characterType) {
-		switch (characterType) {
-			case ARCHER:
-				return "Archer";
-			case WARRIOR:
-				return "Warrior";
-			case FIGHTER:
-				return "Fighter";
-			case WIZARD:
-				return "Wizard";
-			default:
-				return " ";
-		}
-	}
-
-	private static String formatCharacterDescription(CharacterType characterType) {
-		switch (characterType) {
-			case ARCHER:
-				return "遠距離で支援する弓使い";
-			case WARRIOR:
-				return "高耐久の前衛アタッカー";
-			case FIGHTER:
-				return "素早い連撃の近接型";
-			case WIZARD:
-				return "範囲魔法のエキスパート";
-			default:
-				return " ";
-		}
-	}
-
-	private static Color resolveCharacterAccent(CharacterType characterType) {
-		if (characterType == null) return new Color(180, 180, 180);
-		switch (characterType) {
-			case ARCHER:
-				return new Color(66, 140, 210);
-			case WARRIOR:
-				return new Color(220, 82, 72);
-			case FIGHTER:
-				return new Color(170, 110, 220);
-			case WIZARD:
-				return new Color(255, 146, 62);
-			default:
-				return new Color(180, 180, 180);
-		}
+	private static String getCharacterDescription(CharacterType characterType) {
+		return CharacterInfo.forType(characterType).getDescription();
 	}
 
 	public void setLocalPlayerName(String playerName) {
@@ -442,7 +401,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 				g2d.setColor(AVATAR_FRAME);
 				g2d.fillRoundRect(frameX, frameY, frameWidth, frameHeight, 28, 28);
 
-				Color accent = resolveCharacterAccent(characterType);
+				Color accent = characterType.getAccentColor();
 				int alpha = active ? 90 : 40;
 				g2d.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), alpha));
 				g2d.fillOval(frameX + 10, frameY + 12, frameWidth - 20, frameHeight - 24);
@@ -640,8 +599,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			avatarPanel.setActive(true);
 
 			CharacterType characterType = isLocal ? selectedCharacter : resolveCharacterType(entry);
-			characterLabel.setText(formatCharacterLabel(characterType));
-			descriptionLabel.setText(formatCharacterDescription(characterType));
+			characterLabel.setText(characterType.getName());
+			descriptionLabel.setText(getCharacterDescription(characterType));
 			avatarPanel.setCharacter(characterType);
 			leftArrow.setVisible(isLocal);
 			rightArrow.setVisible(isLocal);

@@ -1,6 +1,5 @@
 package model;
 
-public  abstract class Block extends Entity {
-
-
+public abstract class Block extends Entity {
+	// TODO:
 }

@@ -27,6 +27,7 @@ public abstract class CharacterSprite extends GameCharacter {
 	private final int sheetRows;
 	private final RenderState renderState = new RenderState();
 	private boolean hasPosition;
+
 	protected CharacterSprite(CharacterType type, String spriteSheetPath) {
 		this(type, spriteSheetPath, DEFAULT_COLUMNS, DEFAULT_ROWS, Color.BLACK);
 	}
@@ -40,7 +41,7 @@ public abstract class CharacterSprite extends GameCharacter {
 	}
 
 	protected CharacterSprite(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows, Color accentColor) {
-		this.type = type == null ? CharacterType.NONE : type;
+		super(type);
 		this.sheetColumns = sheetColumns;
 		this.sheetRows = sheetRows;
 		this.accentColor = accentColor == null ? Color.BLACK : accentColor;
@@ -81,32 +82,12 @@ public abstract class CharacterSprite extends GameCharacter {
 	}
 
 	@Override
-	public CharacterType getType() {
-		return type;
-	}
-
-	@Override
 	public double getGravity() {
 		return 0;
 	}
 
 	@Override
-	public void normalAttack() {
-		// client-side visual only
-	}
-
-	@Override
-	public void chargeAttack() {
-		// client-side visual only
-	}
-
-	@Override
 	public void specialAttack() {
-		// client-side visual only
-	}
-
-	@Override
-	public void defend() {
 		// client-side visual only
 	}
 

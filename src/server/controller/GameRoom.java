@@ -51,10 +51,6 @@ class GameRoom extends Thread implements Closeable {
 	private volatile int alivePlayers;
 	private volatile BattleField battleField;
 
-	public GameRoom() {
-		this(true);
-	}
-
 	public GameRoom(final boolean isPublic) {
 		roomId = ID_GENERATOR.incrementAndGet();
 		commandQueue = new ConcurrentLinkedQueue<>();
@@ -156,11 +152,9 @@ class GameRoom extends Thread implements Closeable {
 		PlayerInfo newPlayer = new PlayerInfo(handler.getConnectionId(), playerName, false, new Archer());
 		playerMap.put(handler, newPlayer);
 		facingDirections.put(newPlayer.getId(), 1);
-		handler.sendMessage(Protocol.joinSuccess(newPlayer.getId(), toString()));
-		String joinMessage = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getName());
-		playerMap.keySet().forEach(other -> {
-			if (other != handler) other.sendMessage(joinMessage);
-		});
+		String joinSuccess = Protocol.joinSuccess(newPlayer.getId(), toString());
+		String joinOpponent = Protocol.joinOpponent(newPlayer.getId(), newPlayer.getName());
+		playerMap.keySet().forEach(clientHandler -> clientHandler.sendMessage(clientHandler != handler ? joinOpponent : joinSuccess));
 		logger.info("ルーム(ID: " + roomId + ")にプレイヤー(ID: " + handler.getConnectionId() + ")を追加しました");
 		return true;
 	}
@@ -170,19 +164,36 @@ class GameRoom extends Thread implements Closeable {
 	}
 
 	private synchronized void handleCommand(ServerCommand command) {
-		// TODO: コマンド処理
 		ClientHandler sender = command.getSender();
 		PlayerInfo player = playerMap.get(sender);
 		if (player == null) return;
 		String body = command.getBody();
 		switch (command.getCommandType()) {
 			case READY:
-				CharacterType characterType = CharacterType.fromId(Integer.parseInt(body));
-				player.setCharacter(createCharacter(characterType));
+				int characterId = Integer.parseInt(body);
+				GameCharacter character;
+				switch (CharacterType.fromId(characterId)) {
+					case ARCHER:
+						character = new Archer();
+						break;
+					case FIGHTER:
+						character = new Fighter();
+						break;
+					case WARRIOR:
+						character = new Warrior();
+						break;
+					case WIZARD:
+						character = new Wizard();
+						break;
+					default:
+						character = new Archer();
+						break;
+				}
+				player.setCharacter(character);
 				player.setReady(true);
-				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
-				String readyMessage = Protocol.readySuccess(player.getId(), characterType);
+				String readyMessage = Protocol.readySuccess(player.getId(), characterId);
 				playerMap.keySet().forEach(handler -> handler.sendMessage(readyMessage));
+				logger.fine(() -> "プレイヤー(ID: " + sender.getConnectionId() + ")が準備完了です。");
 				startGame();
 				break;
 			case UNREADY:
@@ -376,8 +387,9 @@ class GameRoom extends Thread implements Closeable {
 	private void applyChargeAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		if (character == null) return;
-		character.chargeAttack();
-		double power = resolveChargePower(character, stopCharge(player));
+		long chargeMs = stopCharge(player);
+		character.chargeAttack(chargeMs);
+		double power = character.getAttackPowerRatio();
 		if (character.isRanged()) {
 			spawnProjectile(player, character, power);
 		} else {
@@ -421,7 +433,7 @@ class GameRoom extends Thread implements Closeable {
 		double height = character.getMeleeHeight() * Math.min(1.3, power);
 		double offset = character.getMeleeOffset();
 		int lifetime = character.getMeleeLifetimeTicks();
-		double damage = character.getAttack() * power;
+		double damage = character.getAttack();
 		double baseX = character.getPosition().getX();
 		double baseY = character.getPosition().getY();
 		AttackHitbox front = new AttackHitbox(
@@ -458,21 +470,6 @@ class GameRoom extends Thread implements Closeable {
 		character.setVerticalVelocity(character.getJumpVelocity());
 		character.registerJump();
 		return true;
-	}
-
-	private GameCharacter createCharacter(CharacterType characterType) {
-		switch (characterType) {
-			case ARCHER:
-				return new Archer();
-			case WARRIOR:
-				return new Warrior();
-			case FIGHTER:
-				return new Fighter();
-			case WIZARD:
-				return new Wizard();
-			default:
-				return new Archer();
-		}
 	}
 
 	private String formatPlayerEntry(PlayerInfo info) {
@@ -518,12 +515,4 @@ class GameRoom extends Thread implements Closeable {
 		return battleField != null ? battleField.getHeight() : BattleField.DEFAULT_HEIGHT;
 	}
 
-	private double resolveChargePower(GameCharacter character, long chargeMs) {
-		if (chargeMs <= 0 || character == null) return 1.0;
-		long maxCharge = Math.max(1, character.getMaxChargeMs());
-		double maxMultiplier = Math.max(1.0, character.getMaxChargeMultiplier());
-		long clamped = Math.min(chargeMs, maxCharge);
-		double ratio = clamped / (double) maxCharge;
-		return 1.0 + (maxMultiplier - 1.0) * ratio;
-	}
 }

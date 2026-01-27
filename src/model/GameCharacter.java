@@ -1,48 +1,83 @@
 package model;
 
-public  abstract class GameCharacter extends Entity {
-	protected static final double DEFAULT_MOVE_STEP = 6.0;
+public abstract class GameCharacter extends Entity {
 	protected static final double DEFAULT_JUMP_VELOCITY = 14.0;
-	protected static final double DEFAULT_PROJECTILE_SPEED = 9.0;
-	protected static final double DEFAULT_ARROW_RANGE = 520.0;
-	protected static final double DEFAULT_MAGIC_RANGE = 560.0;
-	protected static final double DEFAULT_MELEE_WIDTH = 180.0;
-	protected static final double DEFAULT_MELEE_HEIGHT = 70.0;
-	protected static final double DEFAULT_MELEE_OFFSET = 60.0;
-	protected static final int DEFAULT_MELEE_LIFETIME_TICKS = 2;
-	protected static final long DEFAULT_MAX_CHARGE_MS = 1200;
-	protected static final double DEFAULT_MAX_CHARGE_MULTIPLIER = 2.5;
-	protected double speedX, speedY;
-	protected double hp, attack, defend;
-	protected CharacterType type;
 	protected static final int MAX_JUMPS = 3;
+
+	protected double speedX;
+	protected double speedY;
+	protected double hp;
+	protected double attack;
+	protected double defend;
+	protected double attackMin;
+	protected double attackMax;
+	protected double attackChargeTimeMs;
+	protected double defenseChargeTimeMs;
+	protected double projectileSpeed;
+	protected double projectileRange;
+	protected double meleeWidth;
+	protected double meleeHeight;
+	protected double meleeOffset;
+	protected int meleeLifetimeTicks;
+	protected CharacterType type;
 	protected boolean grounded;
 	protected int ownerId = -1;
 	protected int jumpCount;
 
+	private long defendStartMs = -1;
+
 	protected GameCharacter() {
+		this(CharacterType.NONE);
+	}
+
+	protected GameCharacter(CharacterType type) {
 		position = new Vector2D(0, 0);
 		width = new Vector2D(96, 0);
 		height = new Vector2D(0, 96);
 		velocity = new Vector2D(0, 0);
-		speedX = DEFAULT_MOVE_STEP;
-		speedY = DEFAULT_MOVE_STEP;
-		hp = 100;
-		attack = 10;
-		defend = 0;
+		applyCharacterInfo(type);
 	}
 
-	public abstract CharacterType getType();
+	protected final void applyCharacterInfo(CharacterType type) {
+		this.type = type == null ? CharacterType.NONE : type;
+		CharacterInfo info = CharacterInfo.forType(this.type);
+		attackMin = Math.max(0.0, info.getAttackMin());
+		attackMax = Math.max(attackMin, info.getAttackMax());
+		attackChargeTimeMs = Math.max(0.0, info.getAttackChargeTimeMs());
+		defend = Math.max(0.0, info.getDefense());
+		defenseChargeTimeMs = Math.max(0.0, info.getDefenseChargeTimeMs());
+		hp = Math.max(0.0, info.getHp());
+		speedX = Math.max(0.0, info.getMoveStepX());
+		speedY = Math.max(0.0, info.getMoveStepY());
+		projectileSpeed = Math.max(0.0, info.getProjectileSpeed());
+		projectileRange = Math.max(0.0, info.getProjectileRange());
+		meleeWidth = Math.max(0.0, info.getMeleeWidth());
+		meleeHeight = Math.max(0.0, info.getMeleeHeight());
+		meleeOffset = Math.max(0.0, info.getMeleeOffset());
+		meleeLifetimeTicks = Math.max(0, info.getMeleeLifetimeTicks());
+		attack = resolveNormalAttackValue();
+		defendStartMs = -1;
+	}
+
+	public CharacterType getType() {
+		return type;
+	}
 
 	public abstract double getGravity();
 
-	public abstract void normalAttack();
+	public void normalAttack() {
+		attack = resolveNormalAttackValue();
+	}
 
-	public abstract void chargeAttack();
+	public void chargeAttack(long chargeMs) {
+		attack = resolveChargeAttackValue(chargeMs);
+	}
 
 	public abstract void specialAttack();
 
-	public abstract void defend();
+	public void defend() {
+		defendStartMs = System.currentTimeMillis();
+	}
 
 	public double getMoveStepX() {
 		return speedX;
@@ -57,7 +92,7 @@ public  abstract class GameCharacter extends Entity {
 	}
 
 	public double getProjectileSpeed() {
-		return DEFAULT_PROJECTILE_SPEED;
+		return projectileSpeed;
 	}
 
 	public ProjectileType getProjectileType() {
@@ -65,31 +100,23 @@ public  abstract class GameCharacter extends Entity {
 	}
 
 	public double getProjectileRange() {
-		return 0;
+		return projectileRange;
 	}
 
 	public double getMeleeWidth() {
-		return DEFAULT_MELEE_WIDTH;
+		return meleeWidth;
 	}
 
 	public double getMeleeHeight() {
-		return DEFAULT_MELEE_HEIGHT;
+		return meleeHeight;
 	}
 
 	public double getMeleeOffset() {
-		return DEFAULT_MELEE_OFFSET;
+		return meleeOffset;
 	}
 
 	public int getMeleeLifetimeTicks() {
-		return DEFAULT_MELEE_LIFETIME_TICKS;
-	}
-
-	public long getMaxChargeMs() {
-		return DEFAULT_MAX_CHARGE_MS;
-	}
-
-	public double getMaxChargeMultiplier() {
-		return DEFAULT_MAX_CHARGE_MULTIPLIER;
+		return meleeLifetimeTicks;
 	}
 
 	public boolean isRanged() {
@@ -146,6 +173,20 @@ public  abstract class GameCharacter extends Entity {
 		return attack;
 	}
 
+	public double getAttackMin() {
+		return attackMin;
+	}
+
+	public double getAttackMax() {
+		return attackMax;
+	}
+
+	public double getAttackPowerRatio() {
+		double normal = resolveNormalAttackValue();
+		if (normal <= 0.0) return 1.0;
+		return attack / normal;
+	}
+
 	public int getHp() {
 		return (int) Math.max(0, Math.round(hp));
 	}
@@ -155,24 +196,45 @@ public  abstract class GameCharacter extends Entity {
 	}
 
 	public int applyDamage(double damage) {
-		double mitigated = Math.max(0, damage - defend);
-		hp = Math.max(0, hp - mitigated);
+		double mitigated = Math.max(0.0, damage - resolveDefense(System.currentTimeMillis()));
+		hp = Math.max(0.0, hp - mitigated);
 		return getHp();
 	}
 
 	public void movLeft() {
-		position.moveX(-speedX);
+		position.moveX(-getMoveStepX());
 	}
 
 	public void movRight() {
-		position.moveX(speedX);
+		position.moveX(getMoveStepX());
 	}
 
 	public void movUp() {
-		position.moveY(speedY);
+		position.moveY(getMoveStepY());
 	}
 
 	public void movDown() {
-		position.moveY(-speedY);
+		position.moveY(-getMoveStepY());
+	}
+
+	protected double resolveNormalAttackValue() {
+		return (attackMin + attackMax) / 2.0;
+	}
+
+	protected double resolveChargeAttackValue(long chargeMs) {
+		if (attackMax <= attackMin) return attackMin;
+		if (attackChargeTimeMs <= 0.0) return attackMax;
+		double clamped = Math.max(0.0, Math.min(chargeMs, attackChargeTimeMs));
+		double ratio = clamped / attackChargeTimeMs;
+		return attackMin + (attackMax - attackMin) * ratio;
+	}
+
+	private double resolveDefense(long nowMs) {
+		if (defend <= 0.0) return 0.0;
+		if (defendStartMs < 0) return defend;
+		if (defenseChargeTimeMs <= 0.0) return 0.0;
+		long elapsed = Math.max(0L, nowMs - defendStartMs);
+		double ratio = Math.min(1.0, elapsed / defenseChargeTimeMs);
+		return defend * (1.0 - ratio);
 	}
 }
