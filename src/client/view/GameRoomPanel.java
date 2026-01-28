@@ -34,22 +34,13 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private static final Color COLOR_DARK = new Color(50, 55, 60);
 	private static final Color COLOR_MUTED = new Color(100, 105, 110);
 	private static final Color COLOR_ACCENT = new Color(120, 170, 210);
-	private static final CharacterType[] CHARACTER_OPTIONS = new CharacterType[]{
-			CharacterType.ARCHER,
-			CharacterType.WARRIOR,
-			CharacterType.FIGHTER,
-			CharacterType.WIZARD
-	};
 	private static final Map<CharacterType, BufferedImage> CHARACTER_IMAGES = new EnumMap<>(CharacterType.class);
 
 	static {
-		for (CharacterType type : CHARACTER_OPTIONS) {
+		for (CharacterType type : CharacterType.values()) {
 			CharacterSprite sprite = CharacterSprite.forType(type);
-			if (sprite == null) continue;
 			BufferedImage idleImage = sprite.getIdleImage();
-			if (idleImage != null) {
-				CHARACTER_IMAGES.put(type, idleImage);
-			}
+			CHARACTER_IMAGES.put(type, idleImage);
 		}
 	}
 
@@ -221,7 +212,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			players.clear();
 			roomLabel.setText("ルーム : -");
 			localPlayerId = -1;
-			resetSelectedCharacter();
+			selectedCharacterId = CharacterType.DEFAULT_ID;
+			hasLocalSelectionOverride = false;
 			refreshSlots();
 		});
 	}
@@ -255,17 +247,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private void resetSelectedCharacter() {
-		selectedCharacterId = CharacterType.DEFAULT_ID;
-		hasLocalSelectionOverride = false;
-	}
-
-	private void changeCharacterByDelta(int delta) {
-		updateSelectedCharacter(selectedCharacterId + delta);
-	}
-
 	private void updateSelectedCharacter(int index) {
-		Runnable updater = () -> applySelectedCharacter(index);
+		Runnable updater = () -> applySelectedCharacter(selectedCharacterId + index);
 		if (SwingUtilities.isEventDispatchThread()) {
 			updater.run();
 		} else {
@@ -274,8 +257,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	}
 
 	private void applySelectedCharacter(int index) {
-		int normalized = ((index % CHARACTER_OPTIONS.length) + CHARACTER_OPTIONS.length) % CHARACTER_OPTIONS.length;
-		selectedCharacterId = normalized;
+		int len = CharacterType.values().length;
+		selectedCharacterId = ((index % len) + len) % len;
 		hasLocalSelectionOverride = true;
 		refreshSlots();
 	}
@@ -428,13 +411,13 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			leftArrow.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
-					if (isLocalPlayer) changeCharacterByDelta(-1);
+					if (isLocalPlayer) updateSelectedCharacter(-1);
 				}
 			});
 			rightArrow.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
-					if (isLocalPlayer) changeCharacterByDelta(1);
+					if (isLocalPlayer) updateSelectedCharacter(1);
 				}
 			});
 			avatarPanel = new AvatarPanel();
