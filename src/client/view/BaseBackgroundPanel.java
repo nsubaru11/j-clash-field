@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Objects;
 
+@SuppressWarnings("unused")
 abstract class BaseBackgroundPanel extends JPanel {
 	/** 背景画像のパス（デフォルト） */
 	protected static final String DEFAULT_BACKGROUND_IMAGE_PATH = "/resorces/background.png";

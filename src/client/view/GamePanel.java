@@ -150,7 +150,7 @@ public class GamePanel extends BaseBackgroundPanel {
 	private PlayerInfo ensurePlayer(int playerId) {
 		PlayerInfo info = players.get(playerId);
 		if (info == null) {
-			info = new PlayerInfo(playerId, "", false, createCharacterSprite(CharacterType.ARCHER));
+			info = new PlayerInfo(playerId, "", false, createCharacterSprite(CharacterType.defaultType()));
 			players.put(playerId, info);
 		}
 		ensureCharacter(info);
@@ -160,14 +160,14 @@ public class GamePanel extends BaseBackgroundPanel {
 	private void ensureCharacter(PlayerInfo info) {
 		if (info == null) return;
 		if (info.getCharacter() == null) {
-			info.setCharacter(createCharacterSprite(CharacterType.ARCHER));
+			info.setCharacter(createCharacterSprite(CharacterType.defaultType()));
 		}
 	}
 
 	private CharacterSprite createCharacterSprite(CharacterType characterType) {
-		CharacterType resolved = characterType == null ? CharacterType.ARCHER : characterType;
+		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
 		CharacterSprite sprite = CharacterSprite.forType(resolved);
-		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.ARCHER);
+		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.defaultType());
 	}
 
 	public void updatePlayerPosition(int playerId, double x, double y) {

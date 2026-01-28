@@ -49,7 +49,7 @@ public abstract class CharacterSprite extends GameCharacter {
 	}
 
 	public static CharacterSprite forType(CharacterType type) {
-		if (type == null || type == CharacterType.NONE) return null;
+		if (type == null) return null;
 		return createSprite(type);
 	}
 
@@ -125,6 +125,10 @@ public abstract class CharacterSprite extends GameCharacter {
 
 	public void draw(Graphics2D g2d, int x, int y, int width, int height) {
 		draw(g2d, x, y, width, height, Frame.IDLE, true);
+	}
+
+	public BufferedImage getIdleImage() {
+		return getFrame(Frame.IDLE);
 	}
 
 	public void draw(Graphics2D g2d, int x, int y, int width, int height, Frame frame, boolean facingRight) {

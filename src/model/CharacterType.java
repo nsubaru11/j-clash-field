@@ -3,13 +3,13 @@ package model;
 import java.awt.Color;
 
 public enum CharacterType {
-	NONE(0),
-	ARCHER(1),
-	WARRIOR(2),
-	FIGHTER(3),
-	WIZARD(4);
+	ARCHER(0),
+	WARRIOR(1),
+	FIGHTER(2),
+	WIZARD(3);
 
 	private static final CharacterType[] BY_ID;
+	public static final int DEFAULT_ID = 0;
 
 	static {
 		int maxId = 0;
@@ -30,6 +30,10 @@ public enum CharacterType {
 
 	public static CharacterType fromId(int id) {
 		return BY_ID[id];
+	}
+
+	public static CharacterType defaultType() {
+		return fromId(DEFAULT_ID);
 	}
 
 	public int getId() {

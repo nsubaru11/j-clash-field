@@ -132,7 +132,6 @@ public final class GuiController {
 		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
 		matchingPanel.setVisible(false);
 		gameRoomPanel.reset();
-		gameRoomPanel.setLocalPlayerName(userName);
 		showLoad();
 		loadPanel.setNextScreen(this::showGameRoom);
 		switch (mode) {
@@ -246,7 +245,7 @@ public final class GuiController {
 				updatePlayerSnapshot(playerId, null, characterType);
 				break;
 			case UNREADY_SUCCESS:
-				gameRoomPanel.updatePlayerStatus(Integer.parseInt(body), false, CharacterType.ARCHER);
+				gameRoomPanel.updatePlayerStatus(Integer.parseInt(body), false, CharacterType.defaultType());
 				break;
 			case RESULT:
 				break;
@@ -263,6 +262,7 @@ public final class GuiController {
 		String[] parts = body.split(":", 2);
 		int joinedPlayerId = Integer.parseInt(parts[0]);
 		this.playerId = joinedPlayerId;
+		gameRoomPanel.setLocalPlayerId(joinedPlayerId);
 		playerSnapshots.clear();
 		String roomState = parts[1];
 		String[] roomStateParts = roomState.split(":", 2);
@@ -305,8 +305,8 @@ public final class GuiController {
 		String[] fields = body.split(",", 2);
 		int playerId = Integer.parseInt(fields[0]);
 		String playerName = fields[1];
-		gameRoomPanel.addPlayer(playerId, playerName, false, CharacterType.ARCHER);
-		updatePlayerSnapshot(playerId, playerName, CharacterType.ARCHER);
+		gameRoomPanel.addPlayer(playerId, playerName, false, CharacterType.defaultType());
+		updatePlayerSnapshot(playerId, playerName, CharacterType.defaultType());
 	}
 
 	private void handleMove(String body) {

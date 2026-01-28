@@ -6,7 +6,6 @@ import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -14,14 +13,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * ゲーム部屋の画面を表示するパネルです。
@@ -29,10 +23,6 @@ import java.util.Objects;
 public class GameRoomPanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	private static final int MAX_PLAYERS = 4;
-	private static final int BOARD_ARC = 28;
-	private static final int CARD_ARC = 24;
-	private static final int BOARD_SHADOW_SIZE = 10;
-	private static final int CARD_SHADOW_SIZE = 8;
 	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 30);
 	private static final Font INFO_FONT = new Font("Meiryo", Font.PLAIN, 16);
 	private static final Font STATUS_FONT = new Font("Meiryo", Font.BOLD, 12);
@@ -44,42 +34,33 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private static final Color COLOR_DARK = new Color(50, 55, 60);
 	private static final Color COLOR_MUTED = new Color(100, 105, 110);
 	private static final Color COLOR_ACCENT = new Color(120, 170, 210);
-	private static final CharacterType DEFAULT_CHARACTER = CharacterType.ARCHER;
 	private static final CharacterType[] CHARACTER_OPTIONS = new CharacterType[]{
 			CharacterType.ARCHER,
 			CharacterType.WARRIOR,
 			CharacterType.FIGHTER,
 			CharacterType.WIZARD
 	};
-	private static final String ARCHER_IMAGE_PATH = "/resorces/archer.png";
-	private static final String WARRIOR_IMAGE_PATH = "/resorces/warrior.png";
-	private static final String FIGHTER_IMAGE_PATH = "/resorces/fighter.png";
-	private static final String WIZARD_IMAGE_PATH = "/resorces/wizard.png";
 	private static final Map<CharacterType, BufferedImage> CHARACTER_IMAGES = new EnumMap<>(CharacterType.class);
 
 	static {
-		try {
-			CHARACTER_IMAGES.put(CharacterType.ARCHER,
-					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(ARCHER_IMAGE_PATH))));
-			CHARACTER_IMAGES.put(CharacterType.WARRIOR,
-					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(WARRIOR_IMAGE_PATH))));
-			CHARACTER_IMAGES.put(CharacterType.FIGHTER,
-					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(FIGHTER_IMAGE_PATH))));
-			CHARACTER_IMAGES.put(CharacterType.WIZARD,
-					ImageIO.read(Objects.requireNonNull(GameRoomPanel.class.getResource(WIZARD_IMAGE_PATH))));
-		} catch (IOException | NullPointerException e) {
-			throw new RuntimeException("キャラクター画像の読み込みに失敗しました", e);
+		for (CharacterType type : CHARACTER_OPTIONS) {
+			CharacterSprite sprite = CharacterSprite.forType(type);
+			if (sprite == null) continue;
+			BufferedImage idleImage = sprite.getIdleImage();
+			if (idleImage != null) {
+				CHARACTER_IMAGES.put(type, idleImage);
+			}
 		}
 	}
+
 	// --------------- フィールド ---------------
 	private final JLabel roomLabel;
 	private final JButton readyButton;
 	private final JButton backButton;
 	private final PlayerSlot[] slots;
 	private final Map<Integer, PlayerInfo> players = new LinkedHashMap<>();
-	private String localPlayerName = "";
-	private int selectedCharacterIndex = 0;
-	private CharacterType selectedCharacter = DEFAULT_CHARACTER;
+	private int localPlayerId = -1;
+	private int selectedCharacterId = CharacterType.DEFAULT_ID;
 	private boolean hasLocalSelectionOverride = false;
 	/**
 	 * GameRoomPanelを構築します。
@@ -87,20 +68,25 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	public GameRoomPanel() {
 		setLayout(new GridBagLayout());
 
+		// 白い背景ボード（ヘッダー、プレイヤースロット部分を管理）
 		JPanel board = new BoardPanel();
 		board.setLayout(new BorderLayout());
 		board.setBorder(new EmptyBorder(28, 36, 36, 36));
 		board.setPreferredSize(new Dimension(1200, 620));
 
+		// region ---------- header ----------
+		// ヘッダー管理用パネル（ルーム番号・ホームへ戻るボタン・準備完了ボタン表示用）
 		JPanel header = new JPanel(new BorderLayout());
 		header.setOpaque(false);
-		header.setBorder(new EmptyBorder(0, 0, 18, 0));
+		header.setBorder(new EmptyBorder(0, 0, 18, 0)); // 下側に余白
 
+		// ルーム番号
 		roomLabel = new JLabel("ルーム : -");
 		roomLabel.setFont(TITLE_FONT);
 		roomLabel.setForeground(COLOR_DARK);
-		header.add(roomLabel, BorderLayout.WEST);
+		header.add(roomLabel, BorderLayout.WEST); // ヘッダーの左側に追加
 
+		// ボタン管理用パネル（ホームへ戻るボタン・準備完了ボタン）
 		JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actionPanel.setOpaque(false);
 
@@ -109,10 +95,13 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		readyButton = createActionButton("準備完了", withAlpha(COLOR_ACCENT, 170), COLOR_ACCENT);
 		actionPanel.add(readyButton);
-		header.add(actionPanel, BorderLayout.EAST);
+		header.add(actionPanel, BorderLayout.EAST); // ヘッダーの右側に追加
 
 		board.add(header, BorderLayout.NORTH);
+		// endregion
 
+		// region ---------- playerSlots ----------
+		// プレイヤーのスロット表示（プレイヤーが選択しているキャラの表示など）
 		JPanel slotsPanel = new JPanel(new GridLayout(1, MAX_PLAYERS, 28, 0));
 		slotsPanel.setOpaque(false);
 		slotsPanel.setBorder(new EmptyBorder(24, 6, 6, 6));
@@ -125,9 +114,11 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 
 		board.add(slotsPanel, BorderLayout.CENTER);
+		// endregion
 		add(board);
 	}
 
+	// 透明化するヘルパー
 	private static Color withAlpha(Color base, int alpha) {
 		return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
 	}
@@ -143,8 +134,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		g2d.setPaint(originalPaint);
 	}
 
-	public void setRoomInfo(int roomId, boolean isPublic) {
-		SwingUtilities.invokeLater(() -> roomLabel.setText("ルーム : " + roomId));
+	private static CharacterSprite createCharacterSprite(CharacterType characterType) {
+		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
+		CharacterSprite sprite = CharacterSprite.forType(resolved);
+		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.defaultType());
 	}
 
 	private static BufferedImage resolveCharacterImage(CharacterType characterType) {
@@ -155,11 +148,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return CharacterInfo.forType(characterType).getDescription();
 	}
 
-	public void setLocalPlayerName(String playerName) {
-		SwingUtilities.invokeLater(() -> {
-			localPlayerName = playerName == null ? "" : playerName;
-			refreshSlots();
-		});
+	private static CharacterType resolveCharacterType(PlayerInfo entry) {
+		if (entry == null) return CharacterType.defaultType();
+		GameCharacter character = entry.getCharacter();
+		return character != null ? character.getType() : CharacterType.defaultType();
 	}
 
 	public void setReadyAction(ActionListener listener) {
@@ -197,10 +189,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return button;
 	}
 
-	private static CharacterSprite createCharacterSprite(CharacterType characterType) {
-		CharacterType resolved = characterType == null ? DEFAULT_CHARACTER : characterType;
-		CharacterSprite sprite = CharacterSprite.forType(resolved);
-		return sprite != null ? sprite : CharacterSprite.forType(DEFAULT_CHARACTER);
+	public void setRoomInfo(int roomId, boolean isPublic) {
+		SwingUtilities.invokeLater(() -> roomLabel.setText((isPublic ? "" : "非") + "公開ルーム : " + roomId));
 	}
 
 	public void updatePlayerStatus(int playerId, boolean isReady, CharacterType characterType) {
@@ -219,23 +209,25 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		});
 	}
 
+	public void setLocalPlayerId(int playerId) {
+		SwingUtilities.invokeLater(() -> {
+			localPlayerId = playerId;
+			refreshSlots();
+		});
+	}
+
 	public void reset() {
 		SwingUtilities.invokeLater(() -> {
 			players.clear();
 			roomLabel.setText("ルーム : -");
+			localPlayerId = -1;
 			resetSelectedCharacter();
 			refreshSlots();
 		});
 	}
 
 	public CharacterType getSelectedCharacterType() {
-		return selectedCharacter;
-	}
-
-	private static CharacterType resolveCharacterType(PlayerInfo entry) {
-		if (entry == null) return DEFAULT_CHARACTER;
-		GameCharacter character = entry.getCharacter();
-		return character != null ? character.getType() : DEFAULT_CHARACTER;
+		return CharacterType.fromId(selectedCharacterId);
 	}
 
 	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
@@ -247,36 +239,29 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	}
 
 	private void refreshSlots() {
-		List<PlayerInfo> sortedPlayers = new ArrayList<>(players.values());
-		sortedPlayers.sort(Comparator
-				.comparingInt(PlayerInfo::getId)
-				.thenComparing(PlayerInfo::getName));
-
-		CharacterType localCharacter = DEFAULT_CHARACTER;
-		for (PlayerInfo entry : sortedPlayers) {
-			if (entry.getName().equals(localPlayerName)) {
-				localCharacter = resolveCharacterType(entry);
-				break;
+		int index = 0;
+		for (PlayerInfo entry : players.values()) {
+			if (index >= slots.length) break;
+			boolean isLocal = entry != null && entry.getId() == localPlayerId;
+			if (isLocal && !hasLocalSelectionOverride) {
+				selectedCharacterId = resolveCharacterType(entry).getId();
 			}
+			slots[index].setPlayer(entry, isLocal);
+			index++;
 		}
-		if (!hasLocalSelectionOverride) {
-			syncSelectedCharacter(localCharacter);
-		}
-		for (int i = 0; i < slots.length; i++) {
-			PlayerInfo entry = i < sortedPlayers.size() ? sortedPlayers.get(i) : null;
-			boolean isLocal = entry != null && entry.getName().equals(localPlayerName);
-			slots[i].setPlayer(entry, isLocal);
+		while (index < slots.length) {
+			slots[index].setPlayer(null, false);
+			index++;
 		}
 	}
 
 	private void resetSelectedCharacter() {
-		selectedCharacterIndex = 0;
-		selectedCharacter = DEFAULT_CHARACTER;
+		selectedCharacterId = CharacterType.DEFAULT_ID;
 		hasLocalSelectionOverride = false;
 	}
 
 	private void changeCharacterByDelta(int delta) {
-		updateSelectedCharacter(selectedCharacterIndex + delta);
+		updateSelectedCharacter(selectedCharacterId + delta);
 	}
 
 	private void updateSelectedCharacter(int index) {
@@ -290,55 +275,33 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	private void applySelectedCharacter(int index) {
 		int normalized = ((index % CHARACTER_OPTIONS.length) + CHARACTER_OPTIONS.length) % CHARACTER_OPTIONS.length;
-		selectedCharacterIndex = normalized;
-		selectedCharacter = CHARACTER_OPTIONS[normalized];
+		selectedCharacterId = normalized;
 		hasLocalSelectionOverride = true;
 		refreshSlots();
 	}
 
-	private void syncSelectedCharacter(CharacterType characterType) {
-		for (int i = 0; i < CHARACTER_OPTIONS.length; i++) {
-			if (CHARACTER_OPTIONS[i] == characterType) {
-				selectedCharacterIndex = i;
-				selectedCharacter = characterType;
-				return;
-			}
-		}
-	}
-
-	private static final class BoardPanel extends JPanel {
+	private static final class BoardPanel extends BaseDecoratedPanel {
 		private BoardPanel() {
-			setOpaque(false);
 		}
 
 		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		protected void paintPanel(Graphics2D g2d) {
 			int width = getWidth();
 			int height = getHeight();
-			int shadow = BOARD_SHADOW_SIZE;
-			int x = shadow;
-			int y = shadow;
-			int w = width - shadow * 2;
-			int h = height - shadow * 2;
-			if (w <= 0 || h <= 0) return;
-
-			g2d.setColor(withAlpha(COLOR_DARK, 40));
-			g2d.fillRoundRect(x, y + 3, w, h, BOARD_ARC, BOARD_ARC);
-
-			Paint originalPaint = g2d.getPaint();
-			g2d.setPaint(new GradientPaint(0, y, withAlpha(COLOR_LIGHT, 230), 0, y + h, withAlpha(COLOR_NEUTRAL, 230)));
-			g2d.fillRoundRect(x, y, w, h, BOARD_ARC, BOARD_ARC);
-			g2d.setPaint(originalPaint);
-
-			g2d.setColor(withAlpha(COLOR_NEUTRAL, 180));
-			g2d.drawRoundRect(x, y, w - 1, h - 1, BOARD_ARC, BOARD_ARC);
+			paintShadowedRoundedRect(
+					g2d,
+					0,
+					0,
+					width,
+					height,
+					withAlpha(COLOR_LIGHT, 230),
+					withAlpha(COLOR_NEUTRAL, 230),
+					withAlpha(COLOR_NEUTRAL, 180)
+			);
 		}
 	}
 
-	private static final class AvatarPanel extends JComponent {
+	private static final class AvatarPanel extends BaseDecoratedPanel {
 		private boolean active = false;
 		private CharacterType characterType;
 		private BufferedImage characterImage;
@@ -346,7 +309,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		private AvatarPanel() {
 			setPreferredSize(new Dimension(150, 180));
 			setMinimumSize(new Dimension(150, 180));
-			setOpaque(false);
 		}
 
 		private void setActive(boolean active) {
@@ -361,10 +323,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 
 		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		protected void paintPanel(Graphics2D g2d) {
 			int width = getWidth();
 			int height = getHeight();
 
@@ -417,18 +376,14 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private static final class ShadowPanel extends JComponent {
+	private static final class ShadowPanel extends BaseDecoratedPanel {
 		private ShadowPanel() {
 			setPreferredSize(new Dimension(160, 20));
 			setMinimumSize(new Dimension(160, 20));
-			setOpaque(false);
 		}
 
 		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		protected void paintPanel(Graphics2D g2d) {
 			int width = getWidth();
 			int height = getHeight();
 			g2d.setColor(withAlpha(COLOR_DARK, 55));
@@ -436,7 +391,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private final class PlayerSlot extends JPanel {
+	private final class PlayerSlot extends BaseDecoratedPanel {
 		private final JLabel statusLabel;
 		private final JLabel nameLabel;
 		private final JLabel characterLabel;
@@ -449,7 +404,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		private boolean hasPlayer;
 
 		private PlayerSlot() {
-			setOpaque(false);
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			setBorder(new EmptyBorder(18, 16, 16, 16));
 
@@ -527,33 +481,23 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		}
 
 		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		protected void paintPanel(Graphics2D g2d) {
 			int width = getWidth();
 			int height = getHeight();
-			int shadow = CARD_SHADOW_SIZE;
-			int x = shadow;
-			int y = shadow;
-			int w = width - shadow * 2;
-			int h = height - shadow * 2;
-			if (w <= 0 || h <= 0) return;
-
-			g2d.setColor(withAlpha(COLOR_DARK, 35));
-			g2d.fillRoundRect(x, y + 3, w, h, CARD_ARC, CARD_ARC);
-
 			Color top = hasPlayer ? withAlpha(COLOR_LIGHT, 240) : withAlpha(COLOR_LIGHT, 210);
 			Color bottom = hasPlayer
 					? (isLocalPlayer ? withAlpha(COLOR_ACCENT, 120) : withAlpha(COLOR_NEUTRAL, 235))
 					: withAlpha(COLOR_NEUTRAL, 210);
-			Paint originalPaint = g2d.getPaint();
-			g2d.setPaint(new GradientPaint(0, y, top, 0, y + h, bottom));
-			g2d.fillRoundRect(x, y, w, h, CARD_ARC, CARD_ARC);
-			g2d.setPaint(originalPaint);
-
-			g2d.setColor(isLocalPlayer ? COLOR_ACCENT : COLOR_NEUTRAL);
-			g2d.drawRoundRect(x, y, w - 1, h - 1, CARD_ARC, CARD_ARC);
+			paintShadowedRoundedRect(
+					g2d,
+					0,
+					0,
+					width,
+					height,
+					top,
+					bottom,
+					isLocalPlayer ? COLOR_ACCENT : COLOR_NEUTRAL
+			);
 		}
 
 		private JLabel createArrowLabel(String text) {
@@ -595,7 +539,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			nameLabel.setBackground(isLocal ? withAlpha(COLOR_ACCENT, 120) : withAlpha(COLOR_NEUTRAL, 170));
 			avatarPanel.setActive(true);
 
-			CharacterType characterType = isLocal ? selectedCharacter : resolveCharacterType(entry);
+			CharacterType characterType = isLocal ? CharacterType.fromId(selectedCharacterId) : resolveCharacterType(entry);
 			characterLabel.setText(characterType.getName());
 			descriptionLabel.setText(getCharacterDescription(characterType));
 			avatarPanel.setCharacter(characterType);

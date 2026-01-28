@@ -27,7 +27,7 @@ public abstract class GameCharacter extends Entity {
 	private long defendStartMs = -1;
 
 	protected GameCharacter() {
-		this(CharacterType.NONE);
+		this(CharacterType.defaultType());
 	}
 
 	protected GameCharacter(CharacterType type) {
@@ -39,7 +39,7 @@ public abstract class GameCharacter extends Entity {
 	}
 
 	protected final void applyCharacterInfo(CharacterType type) {
-		this.type = type == null ? CharacterType.NONE : type;
+		this.type = type == null ? CharacterType.defaultType() : type;
 		CharacterInfo info = CharacterInfo.forType(this.type);
 		attackMin = Math.max(0.0, info.getAttackMin());
 		attackMax = Math.max(attackMin, info.getAttackMax());

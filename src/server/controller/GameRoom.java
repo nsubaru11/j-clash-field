@@ -474,7 +474,7 @@ class GameRoom extends Thread implements Closeable {
 
 	private String formatPlayerEntry(PlayerInfo info) {
 		GameCharacter character = info.getCharacter();
-		CharacterType type = character != null ? character.getType() : CharacterType.NONE;
+		CharacterType type = character != null ? character.getType() : CharacterType.defaultType();
 		return info.getId() + " " + info.getName() + " " + info.isReady() + " " + type.getId();
 	}
 
