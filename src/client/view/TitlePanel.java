@@ -11,7 +11,7 @@ import java.awt.event.MouseEvent;
  */
 public class TitlePanel extends BaseBackgroundPanel {
 
-	private static final String TITLE_TEXT = "Online Action Game";
+	private static final String TITLE_TEXT = "J-Clash Field";
 	private static final String PRESS_START_TEXT = "- Click to Start -";
 	private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 64);
 	private static final Font SUB_FONT = new Font("Arial", Font.BOLD, 32);

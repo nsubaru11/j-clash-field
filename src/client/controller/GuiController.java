@@ -75,10 +75,20 @@ public final class GuiController {
 					"接続を切断し、ホームに戻ります。よろしいですか？",
 					"確認",
 					JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) showHome();
+			if (result == JOptionPane.YES_OPTION) {
+				network.disconnect();
+				gameRoomPanel.removePlayer(playerId);
+				showHome();
+			}
+		});
+		gameRoomPanel.setReadyAction(e -> {
+			if (gameRoomPanel.isReady()) {
+				network.unready();
+			} else {
+				network.ready(gameRoomPanel.getSelectedCharacterType());
+			}
 		});
 
-		gameRoomPanel.setReadyAction(e -> network.ready(gameRoomPanel.getSelectedCharacterType()));
 		gamePanel = new GamePanel();
 		gamePanel.setInputActions(
 				network::moveLeft,
@@ -226,6 +236,7 @@ public final class GuiController {
 			case OPPONENT_RESIGNED:
 				break;
 			case OPPONENT_DISCONNECTED:
+				gameRoomPanel.removePlayer(Integer.parseInt(body));
 				break;
 			case JOIN_SUCCESS:
 				handleJoinSuccess(body);
@@ -240,12 +251,11 @@ public final class GuiController {
 				String[] playerInfo = body.split(",");
 				int playerId = Integer.parseInt(playerInfo[0]);
 				int characterId = Integer.parseInt(playerInfo[1]);
-				CharacterType characterType = CharacterType.fromId(characterId);
-				gameRoomPanel.updatePlayerStatus(playerId, true, characterType);
-				updatePlayerSnapshot(playerId, null, characterType);
+				gameRoomPanel.setReady(playerId, characterId);
+				updatePlayerSnapshot(playerId, null, CharacterType.fromId(characterId));
 				break;
 			case UNREADY_SUCCESS:
-				gameRoomPanel.updatePlayerStatus(Integer.parseInt(body), false, CharacterType.defaultType());
+				gameRoomPanel.setUnready(Integer.parseInt(body));
 				break;
 			case RESULT:
 				break;
@@ -262,7 +272,6 @@ public final class GuiController {
 		String[] parts = body.split(":", 2);
 		int joinedPlayerId = Integer.parseInt(parts[0]);
 		this.playerId = joinedPlayerId;
-		gameRoomPanel.setLocalPlayerId(joinedPlayerId);
 		playerSnapshots.clear();
 		String roomState = parts[1];
 		String[] roomStateParts = roomState.split(":", 2);
@@ -287,6 +296,7 @@ public final class GuiController {
 			updatePlayerSnapshot(playerId, playerName, characterType);
 		}
 
+		gameRoomPanel.setLocalPlayerId(joinedPlayerId);
 		gameRoomPanel.setRoomInfo(roomId, isPublic);
 		loadPanel.setNextScreen(this::showGameRoom);
 		completeLoad();
@@ -311,17 +321,14 @@ public final class GuiController {
 
 	private void handleMove(String body) {
 		String[] parts = body.split(":", 2);
-		if (parts.length < 2) return;
 		int movedPlayerId = Integer.parseInt(parts[0]);
 		String[] coords = parts[1].split(",", 2);
-		if (coords.length < 2) return;
 		double x = Double.parseDouble(coords[0]);
 		double y = Double.parseDouble(coords[1]);
 		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerPosition(movedPlayerId, x, y));
 	}
 
 	private void handlePlayerAction(CommandType actionType, String body) {
-		if (body == null || body.isEmpty()) return;
 		int actedPlayerId = Integer.parseInt(body);
 		CharacterSprite.Action action;
 		switch (actionType) {
@@ -350,25 +357,22 @@ public final class GuiController {
 
 	private void handleProjectile(String body) {
 		String[] parts = body.split(",", 5);
-		if (parts.length < 4) return;
 		long projectileId = Long.parseLong(parts[0]);
 		int typeId = Integer.parseInt(parts[1]);
 		double x = Double.parseDouble(parts[2]);
 		double y = Double.parseDouble(parts[3]);
-		double power = parts.length >= 5 ? Double.parseDouble(parts[4]) : 1.0;
+		double power = Double.parseDouble(parts[4]);
 		ProjectileType type = ProjectileType.fromId(typeId);
 		SwingUtilities.invokeLater(() -> gamePanel.updateProjectile(projectileId, type, x, y, power));
 	}
 
 	private void handleProjectileRemove(String body) {
-		if (body == null || body.isEmpty()) return;
 		long projectileId = Long.parseLong(body);
 		SwingUtilities.invokeLater(() -> gamePanel.removeProjectile(projectileId));
 	}
 
 	private void handleDamage(String body) {
 		String[] parts = body.split(",", 2);
-		if (parts.length < 2) return;
 		int targetId = Integer.parseInt(parts[0]);
 		int hp = Integer.parseInt(parts[1]);
 		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerHp(targetId, hp));

@@ -13,8 +13,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.BitSet;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -49,10 +50,13 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private final JButton readyButton;
 	private final JButton backButton;
 	private final PlayerSlot[] slots;
-	private final Map<Integer, PlayerInfo> players = new LinkedHashMap<>();
+	private final PlayerInfo[] slotPlayers = new PlayerInfo[MAX_PLAYERS];
+	private final Map<Integer, Integer> playerSlotIndex = new HashMap<>(MAX_PLAYERS, 1.0f);
+	private final BitSet occupiedSlots = new BitSet(MAX_PLAYERS);
 	private int localPlayerId = -1;
 	private int selectedCharacterId = CharacterType.DEFAULT_ID;
 	private boolean hasLocalSelectionOverride = false;
+
 	/**
 	 * GameRoomPanelを構築します。
 	 */
@@ -112,6 +116,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	// 透明化するヘルパー
 	private static Color withAlpha(Color base, int alpha) {
 		return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
+	}
+
+	public boolean isReady() {
+		return slotPlayers[playerSlotIndex.get(localPlayerId)].isReady();
 	}
 
 	@Override
@@ -184,37 +192,33 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		SwingUtilities.invokeLater(() -> roomLabel.setText((isPublic ? "" : "非") + "公開ルーム : " + roomId));
 	}
 
-	public void updatePlayerStatus(int playerId, boolean isReady, CharacterType characterType) {
-		SwingUtilities.invokeLater(() -> {
-			PlayerInfo entry = players.get(playerId);
-			if (entry != null) {
-				entry.setReady(isReady);
-				if (characterType != null) {
-					GameCharacter current = entry.getCharacter();
-					if (current == null || current.getType() != characterType) {
-						entry.setCharacter(createCharacterSprite(characterType));
-					}
-				}
-			}
-			refreshSlots();
-		});
+	public void setReady(int playerId, int characterId) {
+		updateReadyStatus(playerId, true, true, characterId);
+	}
+
+	public void setUnready(int playerId) {
+		updateReadyStatus(playerId, false, false, CharacterType.DEFAULT_ID);
 	}
 
 	public void setLocalPlayerId(int playerId) {
 		SwingUtilities.invokeLater(() -> {
 			localPlayerId = playerId;
-			refreshSlots();
+			updateSlotForPlayer(localPlayerId);
 		});
 	}
 
 	public void reset() {
 		SwingUtilities.invokeLater(() -> {
-			players.clear();
+			playerSlotIndex.clear();
+			occupiedSlots.clear();
+			for (int i = 0; i < slots.length; i++) {
+				slotPlayers[i] = null;
+				slots[i].setPlayer(null, false);
+			}
 			roomLabel.setText("ルーム : -");
 			localPlayerId = -1;
 			selectedCharacterId = CharacterType.DEFAULT_ID;
 			hasLocalSelectionOverride = false;
-			refreshSlots();
 		});
 	}
 
@@ -224,27 +228,32 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	public void addPlayer(int playerId, String playerName, boolean ready, CharacterType characterType) {
 		SwingUtilities.invokeLater(() -> {
-			int key = playerId < 0 ? playerName.hashCode() : playerId;
-			players.put(key, new PlayerInfo(key, playerName, ready, createCharacterSprite(characterType)));
-			refreshSlots();
+			int slotIndex = ensureSlot(playerId);
+			PlayerInfo entry = slotPlayers[slotIndex];
+			if (entry == null) {
+				entry = new PlayerInfo(playerId, playerName, ready, createCharacterSprite(characterType));
+				slotPlayers[slotIndex] = entry;
+			} else {
+				entry.setName(playerName);
+				entry.setReady(ready);
+				updateEntryCharacter(entry, characterType);
+			}
+			updateSlotView(slotIndex);
 		});
 	}
 
-	private void refreshSlots() {
-		int index = 0;
-		for (PlayerInfo entry : players.values()) {
-			if (index >= slots.length) break;
-			boolean isLocal = entry != null && entry.getId() == localPlayerId;
-			if (isLocal && !hasLocalSelectionOverride) {
-				selectedCharacterId = resolveCharacterType(entry).getId();
+	public void removePlayer(int playerId) {
+		SwingUtilities.invokeLater(() -> {
+			int slotIndex = playerSlotIndex.remove(playerId);
+			occupiedSlots.clear(slotIndex);
+			slotPlayers[slotIndex] = null;
+			slots[slotIndex].setPlayer(null, false);
+			if (playerId == localPlayerId) {
+				localPlayerId = -1;
+				selectedCharacterId = CharacterType.DEFAULT_ID;
+				hasLocalSelectionOverride = false;
 			}
-			slots[index].setPlayer(entry, isLocal);
-			index++;
-		}
-		while (index < slots.length) {
-			slots[index].setPlayer(null, false);
-			index++;
-		}
+		});
 	}
 
 	private void updateSelectedCharacter(int index) {
@@ -260,7 +269,60 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		int len = CharacterType.values().length;
 		selectedCharacterId = ((index % len) + len) % len;
 		hasLocalSelectionOverride = true;
-		refreshSlots();
+		updateLocalSlot();
+	}
+
+	private void updateEntryCharacter(PlayerInfo entry, CharacterType characterType) {
+		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
+		GameCharacter current = entry.getCharacter();
+		if (current == null || current.getType() != resolved) {
+			entry.setCharacter(createCharacterSprite(resolved));
+		}
+	}
+
+	private void updateReadyStatus(int playerId, boolean isReady, boolean updateCharacter, int characterId) {
+		SwingUtilities.invokeLater(() -> {
+			int slotIndex = ensureSlot(playerId);
+			PlayerInfo entry = slotPlayers[slotIndex];
+			if (entry == null) {
+				CharacterType characterType = CharacterType.fromId(characterId);
+				entry = new PlayerInfo(playerId, "", isReady, createCharacterSprite(characterType));
+				slotPlayers[slotIndex] = entry;
+			} else {
+				entry.setReady(isReady);
+				if (updateCharacter) {
+					updateEntryCharacter(entry, CharacterType.fromId(characterId));
+				}
+			}
+			updateSlotView(slotIndex);
+		});
+	}
+
+	private int ensureSlot(int playerId) {
+		Integer existing = playerSlotIndex.get(playerId);
+		if (existing != null) return existing;
+		int slotIndex = occupiedSlots.nextClearBit(0);
+		occupiedSlots.set(slotIndex);
+		playerSlotIndex.put(playerId, slotIndex);
+		return slotIndex;
+	}
+
+	private void updateSlotForPlayer(int playerId) {
+		int slotIndex = playerSlotIndex.get(playerId);
+		updateSlotView(slotIndex);
+	}
+
+	private void updateLocalSlot() {
+		updateSlotForPlayer(localPlayerId);
+	}
+
+	private void updateSlotView(int slotIndex) {
+		PlayerInfo entry = slotPlayers[slotIndex];
+		boolean isLocal = entry != null && entry.getId() == localPlayerId;
+		if (isLocal && !hasLocalSelectionOverride) {
+			selectedCharacterId = resolveCharacterType(entry).getId();
+		}
+		slots[slotIndex].setPlayer(entry, isLocal);
 	}
 
 	private static final class BoardPanel extends BaseDecoratedPanel {

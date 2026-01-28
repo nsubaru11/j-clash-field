@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 public class HomePanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	/** タイトルテキスト */
-	private static final String TITLE_TEXT = "Online Action Game";
+	private static final String TITLE_TEXT = "J-Clash Field";
 	/** タイトルフォント */
 	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 64);
 	/** バージョン情報 */

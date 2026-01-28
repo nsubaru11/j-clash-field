@@ -308,9 +308,12 @@ class GameRoom extends Thread implements Closeable {
 		// 接続が切れたプレイヤーはゲームルームからも追い出す。
 		synchronized (this) {
 			logger.info("ルーム(ID: " + roomId + ") でプレイヤー(ID: " + handler.getConnectionId() + ")切断しました。");
-			playerMap.remove(handler);
-			facingDirections.remove(handler.getConnectionId());
-			chargeStartTimes.remove(handler.getConnectionId());
+			PlayerInfo removedPlayer = playerMap.remove(handler);
+			int removedPlayerId = removedPlayer != null ? removedPlayer.getId() : handler.getConnectionId();
+			facingDirections.remove(removedPlayerId);
+			chargeStartTimes.remove(removedPlayerId);
+			String disconnectMessage = Protocol.opponentDisconnected(removedPlayerId);
+			playerMap.keySet().forEach(h -> h.sendMessage(disconnectMessage));
 			handler.close();
 			if (isStarted) {
 				alivePlayers--;

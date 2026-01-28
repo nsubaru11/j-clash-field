@@ -36,8 +36,8 @@ public final class Protocol {
 		return CommandType.OPPONENT_RESIGNED.getId() + "";
 	}
 
-	public static String opponentDisconnected() {
-		return CommandType.OPPONENT_DISCONNECTED.getId() + "";
+	public static String opponentDisconnected(int playerId) {
+		return CommandType.OPPONENT_DISCONNECTED.getId() + ":" + playerId;
 	}
 
 	public static String joinSuccess(int playerId, String roomState) {

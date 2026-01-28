@@ -89,6 +89,10 @@ class NetworkController implements Closeable {
 		sendQueue.offer(Protocol.ready(characterType));
 	}
 
+	public void unready() {
+		sendQueue.offer(Protocol.unready());
+	}
+
 	public void moveLeft() {
 		sendQueue.offer(Protocol.moveLeft());
 	}
