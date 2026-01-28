@@ -39,7 +39,7 @@ public class GameGUI extends JFrame {
 		this.rootPane = rootPane;
 
 		// フレームの基本設定
-		setTitle("Game");
+		setTitle("J-Clash Field");
 		if (ICON_IMAGE != null) setIconImage(ICON_IMAGE);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
