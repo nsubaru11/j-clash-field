@@ -270,8 +270,7 @@ public class GamePanel extends BaseBackgroundPanel {
 			recordLocalAction(CharacterSprite.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
 		};
-		bindKey(KeyStroke.getKeyStroke("pressed SHIFT"), "defend", defendRunnable);
-		bindKey(KeyStroke.getKeyStroke("shift pressed SHIFT"), "defend", defendRunnable);
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, false), "defend", defendRunnable);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resign", () -> {
 			if (resignAction != null) resignAction.run();
 		});
@@ -392,6 +391,10 @@ public class GamePanel extends BaseBackgroundPanel {
 				double worldX = fallbackX;
 				double worldY = fallbackY;
 				GameCharacter character = info.getCharacter();
+				if (character != null && character.getHp() <= 0) {
+					index++;
+					continue;
+				}
 				CharacterSprite view = character instanceof CharacterSprite ? (CharacterSprite) character : null;
 				if (character != null && character.getPosition() != null) {
 					boolean usePosition = view == null || view.hasPosition();

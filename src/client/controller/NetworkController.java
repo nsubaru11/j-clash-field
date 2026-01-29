@@ -36,7 +36,14 @@ class NetworkController implements Closeable {
 		this.port = port;
 	}
 
+	public boolean isConnected() {
+		return isConnected;
+	}
+
 	public void close() {
+		isConnected = false;
+		if (senderThread != null) senderThread.interrupt();
+		if (receiverThread != null) receiverThread.interrupt();
 		try {
 			socket.close();
 			logger.fine(() -> "ソケットをクローズしました");
@@ -130,7 +137,9 @@ class NetworkController implements Closeable {
 	}
 
 	public void disconnect() {
+		if (!isConnected) return;
 		sendQueue.offer(Protocol.disconnect());
+		close();
 	}
 
 	public void setMessageListener(Consumer<String> messageListener) {

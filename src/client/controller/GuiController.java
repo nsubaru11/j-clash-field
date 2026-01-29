@@ -145,17 +145,28 @@ public final class GuiController {
 		gameRoomPanel.reset();
 		showLoad();
 		loadPanel.setNextScreen(this::showGameRoom);
-		switch (mode) {
-			case CREATE:
-				network.createRoom(userName);
-				break;
-			case JOIN:
-				network.joinRoom(userName, matchConfigPanel.getRoomId());
-				break;
-			case RANDOM:
-			default:
-				network.joinRoom(userName, -1);
-				break;
+		Runnable sendJoin = () -> {
+			switch (mode) {
+				case CREATE:
+					network.createRoom(userName);
+					break;
+				case JOIN:
+					network.joinRoom(userName, matchConfigPanel.getRoomId());
+					break;
+				case RANDOM:
+				default:
+					network.joinRoom(userName, -1);
+					break;
+			}
+		};
+		if (network.isConnected()) {
+			sendJoin.run();
+		} else {
+			network.connect(sendJoin, () -> SwingUtilities.invokeLater(() -> {
+				JOptionPane.showMessageDialog(cardPanel, "サーバーに接続できませんでした。", "接続エラー", JOptionPane.ERROR_MESSAGE);
+				loadPanel.setNextScreen(() -> showMatchConfig(lastMatchMode));
+				completeLoad();
+			}));
 		}
 	}
 
