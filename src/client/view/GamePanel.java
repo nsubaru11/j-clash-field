@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -220,7 +221,10 @@ public class GamePanel extends BaseBackgroundPanel {
 		ProjectileState state = projectiles.computeIfAbsent(projectileId, ProjectileState::new);
 		if (state.hasPosition) {
 			double dx = x - state.x;
-			if (Math.abs(dx) > 0.1) state.facingRight = dx >= 0;
+			double dy = y - state.y;
+			if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+				state.angle = Math.atan2(-dy, dx);
+			}
 		}
 		state.type = type;
 		state.x = x;
@@ -330,7 +334,7 @@ public class GamePanel extends BaseBackgroundPanel {
 		private double y;
 		private double power = 1.0;
 		private boolean hasPosition;
-		private boolean facingRight = true;
+		private double angle;
 		private long lastSeenMs;
 
 		private ProjectileState(long projectileId) {
@@ -462,13 +466,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				int y = (int) Math.round(height - (projectile.y * scaleY));
 				double scale = Math.min(1.4, 0.8 + 0.2 * projectile.power);
 				int projectileSize = (int) Math.round(baseSize * scale);
-				int drawX = x - projectileSize / 2;
-				int drawY = y - projectileSize / 2;
-				if (projectile.facingRight) {
-					g2d.drawImage(image, drawX, drawY, projectileSize, projectileSize, null);
-				} else {
-					g2d.drawImage(image, drawX + projectileSize, drawY, -projectileSize, projectileSize, null);
-				}
+				AffineTransform original = g2d.getTransform();
+				g2d.translate(x, y);
+				g2d.rotate(projectile.angle);
+				g2d.drawImage(image, -projectileSize / 2, -projectileSize / 2, projectileSize, projectileSize, null);
+				g2d.setTransform(original);
 			}
 			for (Long projectileId : stale) {
 				projectiles.remove(projectileId);
