@@ -44,7 +44,7 @@ del "%REPO_DIR%\sources.txt"
 
 rem 画像ファイル(assets)のコピー
 echo Copying resources...
-xcopy /E /I /Y "%SRC_DIR%\resorces" "%OUT_DIR%\resorces" > nul
+xcopy /E /I /Y "%SRC_DIR%\resources" "%OUT_DIR%\resources" > nul
 
 if %errorlevel% neq 0 (
     echo [Warning] Failed to copy resources.

@@ -15,7 +15,7 @@ public class GameGUI extends JFrame {
 	/** アプリケーションアイコンの画像 */
 	private static final Image ICON_IMAGE;
 	/** アプリケーションアイコンの画像パス */
-	private static final String ICON_IMAGE_PATH = "/resorces/icon.png";
+	private static final String ICON_IMAGE_PATH = "/resources/icon.png";
 
 	static {
 		// アイコンは読み込み失敗してもアプリ動作には影響しないため、ログ出力のみで続行

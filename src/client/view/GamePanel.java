@@ -40,9 +40,9 @@ public class GamePanel extends BaseBackgroundPanel {
 	private static final Font HP_FONT = new Font("Meiryo", Font.PLAIN, 14);
 	private static final double WORLD_GROUND_Y = SCREEN_HEIGHT * 0.255;
 	private static final long PROJECTILE_TTL_MS = 600;
-	private static final String ARROW_IMAGE = "/resorces/arrow.png";
-	private static final String MAGIC_IMAGE = "/resorces/magic.png";
-	private static final String BACKGROUND_IMAGE = "/resorces/gameBackGround.png";
+	private static final String ARROW_IMAGE = "/resources/arrow.png";
+	private static final String MAGIC_IMAGE = "/resources/magic.png";
+	private static final String BACKGROUND_IMAGE = "/resources/gameBackGround.png";
 	private static final Map<ProjectileType, BufferedImage> PROJECTILE_IMAGES = new EnumMap<>(ProjectileType.class);
 	private static BufferedImage backgroundImage;
 

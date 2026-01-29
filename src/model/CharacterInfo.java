@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class CharacterInfo {
-	private static final String RESOURCE_PATH = "/resorces/character_info.json";
+	private static final String RESOURCE_PATH = "/resources/character_info.json";
 	private static final double DEFAULT_MOVE_STEP = 6.0;
 	private static final double DEFAULT_PROJECTILE_SPEED = 9.0;
 	private static final double DEFAULT_MELEE_WIDTH = 180.0;
