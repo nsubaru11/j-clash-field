@@ -133,6 +133,14 @@ public final class GameSession {
 		return new ArrayList<>(finalResults);
 	}
 
+	public void clearGameOver() {
+		gameOver = false;
+		started = false;
+		battleField = null;
+		resultReady = false;
+		finalResults = new ArrayList<>();
+	}
+
 	private boolean canAct(PlayerInfo player) {
 		return started && !gameOver && aliveIds.contains(player.getId());
 	}

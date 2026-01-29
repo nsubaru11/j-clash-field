@@ -148,6 +148,7 @@ class GameRoom extends Thread implements Closeable {
 				target.sendMessage(Protocol.unreadySuccess(handler.getConnectionId()));
 			}
 		}
+		gameSession.clearGameOver();
 	}
 
 	public synchronized boolean join(final ClientHandler handler, final String playerName) {
