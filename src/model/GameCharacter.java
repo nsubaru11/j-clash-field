@@ -24,7 +24,9 @@ public abstract class GameCharacter extends Entity {
 	protected int ownerId = -1;
 	protected int jumpCount;
 
-	private long defendStartMs = -1;
+	private boolean defending;
+	private long defenseRemainingMs;
+	private long lastDefenseTickMs = -1;
 
 	protected GameCharacter() {
 		this(CharacterType.defaultType());
@@ -56,7 +58,9 @@ public abstract class GameCharacter extends Entity {
 		meleeOffset = Math.max(0.0, info.getMeleeOffset());
 		meleeLifetimeTicks = Math.max(0, info.getMeleeLifetimeTicks());
 		attack = resolveNormalAttackValue();
-		defendStartMs = -1;
+		defenseRemainingMs = (long) defenseChargeTimeMs;
+		defending = false;
+		lastDefenseTickMs = -1;
 	}
 
 	public CharacterType getType() {
@@ -76,7 +80,38 @@ public abstract class GameCharacter extends Entity {
 	public abstract void specialAttack();
 
 	public void defend() {
-		defendStartMs = System.currentTimeMillis();
+		startDefend(System.currentTimeMillis());
+	}
+
+	public void startDefend(long nowMs) {
+		if (defend <= 0.0 || defenseChargeTimeMs <= 0.0) return;
+		if (defenseRemainingMs <= 0) return;
+		if (!defending) {
+			defending = true;
+			lastDefenseTickMs = nowMs;
+		}
+	}
+
+	public void stopDefend() {
+		defending = false;
+		lastDefenseTickMs = -1;
+	}
+
+	public void recoverDefense() {
+		defenseRemainingMs = (long) defenseChargeTimeMs;
+	}
+
+	public void updateDefense(long nowMs) {
+		if (!defending) return;
+		if (lastDefenseTickMs < 0) {
+			lastDefenseTickMs = nowMs;
+			return;
+		}
+		long elapsed = Math.max(0L, nowMs - lastDefenseTickMs);
+		if (elapsed <= 0) return;
+		defenseRemainingMs = Math.max(0L, defenseRemainingMs - elapsed);
+		lastDefenseTickMs = nowMs;
+		if (defenseRemainingMs <= 0) defending = false;
 	}
 
 	public double getMoveStepX() {
@@ -191,7 +226,7 @@ public abstract class GameCharacter extends Entity {
 	}
 
 	public int applyDamage(double damage) {
-		double mitigated = Math.max(0.0, damage - resolveDefense(System.currentTimeMillis()));
+		double mitigated = Math.max(0.0, damage - resolveDefense());
 		hp = Math.max(0.0, hp - mitigated);
 		return getHp();
 	}
@@ -224,12 +259,12 @@ public abstract class GameCharacter extends Entity {
 		return attackMin + (attackMax - attackMin) * ratio;
 	}
 
-	private double resolveDefense(long nowMs) {
+	private double resolveDefense() {
 		if (defend <= 0.0) return 0.0;
-		if (defendStartMs < 0) return 0.0;
 		if (defenseChargeTimeMs <= 0.0) return 0.0;
-		long elapsed = Math.max(0L, nowMs - defendStartMs);
-		double ratio = Math.min(1.0, elapsed / defenseChargeTimeMs);
-		return defend * (1.0 - ratio);
+		if (!defending) return 0.0;
+		if (defenseRemainingMs <= 0) return 0.0;
+		double ratio = Math.min(1.0, defenseRemainingMs / defenseChargeTimeMs);
+		return defend * ratio;
 	}
 }

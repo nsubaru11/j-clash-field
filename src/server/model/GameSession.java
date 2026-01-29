@@ -21,6 +21,8 @@ public final class GameSession {
 	private final Map<Integer, ResultData> resultMap = new HashMap<>();
 	private final Set<Integer> aliveIds = new HashSet<>();
 	private final Map<Integer, Long> chargeStartTimes = new HashMap<>();
+	private static final long DEFEND_HOLD_TIMEOUT_MS = 250L;
+	private final Map<Integer, Long> defendInputTimes = new HashMap<>();
 
 	private BattleField battleField;
 	private boolean started;
@@ -49,6 +51,7 @@ public final class GameSession {
 		resultMap.clear();
 		aliveIds.clear();
 		chargeStartTimes.clear();
+		defendInputTimes.clear();
 		finalResults = new ArrayList<>();
 		resultReady = false;
 		gameOver = false;
@@ -69,6 +72,8 @@ public final class GameSession {
 			double x = fieldWidth * slotCenter;
 			character.setPosition(x, groundY);
 			character.setGrounded(true);
+			character.stopDefend();
+			character.recoverDefense();
 			character.setOwnerId(playerId);
 			battleField.addEntity(character);
 			index++;
@@ -77,33 +82,57 @@ public final class GameSession {
 
 	public CommandType handleAction(CommandType actionType, PlayerInfo player) {
 		if (!canAct(player)) return null;
+		long now = System.currentTimeMillis();
+		GameCharacter character = player.getCharacter();
 		switch (actionType) {
 			case MOVE_LEFT:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				setFacingDirection(player, -1, 0);
 				applyMove(player, -resolveMoveStepX(player), 0);
 				return null;
 			case MOVE_RIGHT:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				setFacingDirection(player, 1, 0);
 				applyMove(player, resolveMoveStepX(player), 0);
 				return null;
 			case MOVE_UP:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				setFacingDirection(player, 0, 1);
 				return applyJump(player) ? CommandType.MOVE_UP : null;
 			case MOVE_DOWN:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				setFacingDirection(player, 0, -1);
 				applyMove(player, 0, -resolveMoveStepY(player));
 				return null;
 			case CHARGE_START:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				startCharge(player);
 				return CommandType.CHARGE_START;
 			case NORMAL_ATTACK:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				applyNormalAttack(player);
 				return CommandType.NORMAL_ATTACK;
 			case CHARGE_ATTACK:
+				character.stopDefend();
+				character.recoverDefense();
+				defendInputTimes.remove(player.getId());
 				applyChargeAttack(player);
 				return CommandType.CHARGE_ATTACK;
 			case DEFEND:
-				applyDefend(player);
+				defendInputTimes.put(player.getId(), now);
+				character.startDefend(now);
 				return CommandType.DEFEND;
 			default:
 				return null;
@@ -113,6 +142,7 @@ public final class GameSession {
 	public BattleField.UpdateResult update() {
 		if (!started || gameOver) return null;
 		BattleField.UpdateResult result = battleField.update();
+		updateDefenseStates();
 		processDamage(result.getDamageEvents());
 		return result;
 	}
@@ -255,11 +285,6 @@ public final class GameSession {
 		}
 	}
 
-	private void applyDefend(PlayerInfo player) {
-		GameCharacter character = player.getCharacter();
-		character.defend();
-	}
-
 	private void spawnProjectile(PlayerInfo player, GameCharacter character, double power) {
 		ProjectileType projectileType = character.getProjectileType();
 		double maxDistance = character.getProjectileRange();
@@ -333,6 +358,19 @@ public final class GameSession {
 	private void setFacingDirection(PlayerInfo player, double x, double y) {
 		GameCharacter character = player.getCharacter();
 		character.setFacingDirection(x, y);
+	}
+
+	private void updateDefenseStates() {
+		long now = System.currentTimeMillis();
+		for (PlayerInfo player : playersById.values()) {
+			GameCharacter character = player.getCharacter();
+			character.updateDefense(now);
+			Long lastInput = defendInputTimes.get(player.getId());
+			if (lastInput != null && now - lastInput > DEFEND_HOLD_TIMEOUT_MS) {
+				character.stopDefend();
+				defendInputTimes.remove(player.getId());
+			}
+		}
 	}
 
 	private Vector2D getFacingDirection(GameCharacter character) {

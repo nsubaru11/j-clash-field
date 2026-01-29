@@ -40,6 +40,7 @@ public class GamePanel extends BaseBackgroundPanel {
 	private static final Font HP_FONT = new Font("Meiryo", Font.PLAIN, 14);
 	private static final double WORLD_GROUND_Y = SCREEN_HEIGHT * 0.255;
 	private static final long PROJECTILE_TTL_MS = 600;
+	private static final int DEFEND_HOLD_INTERVAL_MS = 120;
 	private static final String ARROW_IMAGE = "/resources/arrow.png";
 	private static final String MAGIC_IMAGE = "/resources/magic.png";
 	private static final String BACKGROUND_IMAGE = "/resources/gameBackGround.png";
@@ -63,6 +64,7 @@ public class GamePanel extends BaseBackgroundPanel {
 	private final Map<Integer, PlayerInfo> players = new LinkedHashMap<>();
 	private final Map<Long, ProjectileState> projectiles = new LinkedHashMap<>();
 	private final Timer repaintTimer;
+	private final Timer defendTimer;
 	private int localPlayerId = -1;
 	private Runnable moveLeftAction;
 	private Runnable moveRightAction;
@@ -75,6 +77,7 @@ public class GamePanel extends BaseBackgroundPanel {
 	private Runnable resignAction;
 	private boolean leftKeyDown;
 	private boolean rightKeyDown;
+	private boolean defendKeyDown;
 
 	/**
 	 * GamePanelを構築します。
@@ -104,6 +107,13 @@ public class GamePanel extends BaseBackgroundPanel {
 			infoPanel.repaint();
 		});
 		repaintTimer.start();
+
+		defendTimer = new Timer(DEFEND_HOLD_INTERVAL_MS, e -> {
+			if (!defendKeyDown) return;
+			recordLocalAction(CharacterSprite.Action.DEFEND);
+			if (defendAction != null) defendAction.run();
+		});
+		defendTimer.setRepeats(true);
 	}
 
 	@Override
@@ -266,11 +276,21 @@ public class GamePanel extends BaseBackgroundPanel {
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "jump", () -> {
 			triggerJump();
 		});
-		Runnable defendRunnable = () -> {
+		Runnable defendPress = () -> {
+			if (defendKeyDown) return;
+			defendKeyDown = true;
 			recordLocalAction(CharacterSprite.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
+			defendTimer.start();
 		};
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, false), "defend", defendRunnable);
+		Runnable defendRelease = () -> {
+			defendKeyDown = false;
+			defendTimer.stop();
+		};
+		bindKey(KeyStroke.getKeyStroke("pressed SHIFT"), "defend_press", defendPress);
+		bindKey(KeyStroke.getKeyStroke("shift pressed SHIFT"), "defend_press_shift", defendPress);
+		bindKey(KeyStroke.getKeyStroke("released SHIFT"), "defend_release", defendRelease);
+		bindKey(KeyStroke.getKeyStroke("shift released SHIFT"), "defend_release_shift", defendRelease);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "resign", () -> {
 			if (resignAction != null) resignAction.run();
 		});
