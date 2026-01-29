@@ -17,7 +17,6 @@ public class Warrior extends GameCharacter {
 
 	@Override
 	public void specialAttack() {
-
 	}
 
 }

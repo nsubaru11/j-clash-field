@@ -13,12 +13,14 @@ import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
 import model.ProjectileType;
+import model.ResultData;
 import network.Command;
 import network.CommandType;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
@@ -184,6 +186,7 @@ public final class GuiController {
 
 	private void showGame() {
 		SwingUtilities.invokeLater(() -> {
+			resultPanel.reset();
 			gamePanel.clearPlayers();
 			for (PlayerInfo snapshot : playerSnapshots.values()) {
 				gamePanel.setPlayerInfo(snapshot);
@@ -194,8 +197,11 @@ public final class GuiController {
 		});
 	}
 
-	private void showResult() {
-		SwingUtilities.invokeLater(() -> cardLayout.show(cardPanel, CARD_RESULT));
+	private void showResultWithData(List<ResultData> results) {
+		SwingUtilities.invokeLater(() -> {
+			resultPanel.setResults(playerSnapshots, results, playerId);
+			cardLayout.show(cardPanel, CARD_RESULT);
+		});
 	}
 
 	private void completeLoad() {
@@ -257,6 +263,7 @@ public final class GuiController {
 				gameRoomPanel.setUnready(Integer.parseInt(body));
 				break;
 			case RESULT:
+				showResultWithData(ResultData.parseList(body));
 				break;
 			case GAME_ROOM_CLOSED:
 				break;

@@ -23,7 +23,6 @@ public class Wizard extends GameCharacter {
 
 	@Override
 	public void specialAttack() {
-
 	}
 
 }

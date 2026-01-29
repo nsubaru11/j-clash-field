@@ -93,8 +93,10 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					} else {
 						if (other instanceof GameCharacter) {
 							GameCharacter character = (GameCharacter) other;
+							int oldHp = character.getHp();
 							int newHp = character.applyDamage(projectile.getDamage());
-							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
+							double dealt = Math.max(0, oldHp - newHp);
+							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp, projectile.getOwnerId(), dealt));
 						}
 						toRemove.add(projectile);
 						if (!removedProjectiles.contains(projectile)) removedProjectiles.add(projectile);
@@ -109,8 +111,10 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					GameCharacter character = (GameCharacter) other;
 					if (character.getOwnerId() == hitbox.getOwnerId()) continue;
 					if (!hitbox.collidesWith(character)) continue;
+					int oldHp = character.getHp();
 					int newHp = character.applyDamage(hitbox.getDamage());
-					damageEvents.add(new DamageEvent(character.getOwnerId(), newHp));
+					double dealt = Math.max(0, oldHp - newHp);
+					damageEvents.add(new DamageEvent(character.getOwnerId(), newHp, hitbox.getOwnerId(), dealt));
 					hitAny = true;
 				}
 				if (hitAny) toRemove.add(hitbox);
@@ -186,10 +190,14 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 	public static final class DamageEvent {
 		private final int targetId;
 		private final int hp;
+		private final int sourceId;
+		private final double damage;
 
-		public DamageEvent(int targetId, int hp) {
+		public DamageEvent(int targetId, int hp, int sourceId, double damage) {
 			this.targetId = targetId;
 			this.hp = hp;
+			this.sourceId = sourceId;
+			this.damage = damage;
 		}
 
 		public int getTargetId() {
@@ -198,6 +206,14 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 
 		public int getHp() {
 			return hp;
+		}
+
+		public int getSourceId() {
+			return sourceId;
+		}
+
+		public double getDamage() {
+			return damage;
 		}
 	}
 }
