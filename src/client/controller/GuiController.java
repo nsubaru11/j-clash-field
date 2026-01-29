@@ -376,14 +376,16 @@ public final class GuiController {
 	}
 
 	private void handleProjectile(String body) {
-		String[] parts = body.split(",", 5);
+		String[] parts = body.split(",", 7);
 		long projectileId = Long.parseLong(parts[0]);
 		int typeId = Integer.parseInt(parts[1]);
 		double x = Double.parseDouble(parts[2]);
 		double y = Double.parseDouble(parts[3]);
 		double power = Double.parseDouble(parts[4]);
+		double vx = Double.parseDouble(parts[5]);
+		double vy = Double.parseDouble(parts[6]);
 		ProjectileType type = ProjectileType.fromId(typeId);
-		SwingUtilities.invokeLater(() -> gamePanel.updateProjectile(projectileId, type, x, y, power));
+		SwingUtilities.invokeLater(() -> gamePanel.updateProjectile(projectileId, type, x, y, power, vx, vy));
 	}
 
 	private void handleProjectileRemove(String body) {

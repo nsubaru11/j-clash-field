@@ -61,7 +61,9 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 			Entity entity = iterator.next();
 			if (entity instanceof Projectile) {
 				Projectile projectile = (Projectile) entity;
-				if (projectile.isOutOfBounds(width, height) || projectile.isExpired()) {
+				if (projectile.getPosition().getY() <= groundY
+						|| projectile.isOutOfBounds(width, height)
+						|| projectile.isExpired()) {
 					removedProjectiles.add(projectile);
 					iterator.remove();
 				}

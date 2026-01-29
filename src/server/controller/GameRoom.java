@@ -295,7 +295,8 @@ class GameRoom extends Thread implements Closeable {
 
 		for (Projectile projectile : field.getProjectiles()) {
 			String msg = Protocol.projectile(projectile.getId(), projectile.getType(),
-					projectile.getPosition().getX(), projectile.getPosition().getY(), projectile.getPower());
+					projectile.getPosition().getX(), projectile.getPosition().getY(), projectile.getPower(),
+					projectile.getVelocity().getX(), projectile.getVelocity().getY());
 			playerMap.keySet().forEach(h -> h.sendMessage(msg));
 		}
 

@@ -216,10 +216,12 @@ public class GamePanel extends BaseBackgroundPanel {
 		((CharacterSprite) character).recordAction(action, now);
 	}
 
-	public void updateProjectile(long projectileId, ProjectileType type, double x, double y, double power) {
+	public void updateProjectile(long projectileId, ProjectileType type, double x, double y, double power, double vx, double vy) {
 		long now = System.currentTimeMillis();
 		ProjectileState state = projectiles.computeIfAbsent(projectileId, ProjectileState::new);
-		if (state.hasPosition) {
+		if (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) {
+			state.angle = Math.atan2(-vy, vx);
+		} else if (state.hasPosition) {
 			double dx = x - state.x;
 			double dy = y - state.y;
 			if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {

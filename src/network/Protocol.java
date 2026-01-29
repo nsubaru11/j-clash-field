@@ -76,8 +76,8 @@ public final class Protocol {
 		return CommandType.SERVER_CLOSED.getId() + "";
 	}
 
-	public static String projectile(long projectileId, ProjectileType type, double x, double y, double power) {
-		return CommandType.PROJECTILE.getId() + ":" + projectileId + "," + type.getId() + "," + x + "," + y + "," + power;
+	public static String projectile(long projectileId, ProjectileType type, double x, double y, double power, double vx, double vy) {
+		return CommandType.PROJECTILE.getId() + ":" + projectileId + "," + type.getId() + "," + x + "," + y + "," + power + "," + vx + "," + vy;
 	}
 
 	public static String projectileRemove(long projectileId) {

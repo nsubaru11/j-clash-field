@@ -92,8 +92,8 @@ public final class Projectile extends Entity {
 		return maxDistance > 0 && traveledDistance >= maxDistance;
 	}
 
-	public boolean isOutOfBounds(int fieldWidth, int fieldHeight) {
+	public boolean isOutOfBounds(double fieldWidth, double fieldHeight) {
 		return position.getX() < -20 || position.getX() > fieldWidth + 20
-				|| position.getY() < -20 || position.getY() > fieldHeight + 20;
+				|| position.getY() < 0 || position.getY() > fieldHeight + 20;
 	}
 }
