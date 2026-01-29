@@ -108,6 +108,14 @@ public class GamePanel extends BaseBackgroundPanel {
 		repaintTimer.start();
 	}
 
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setColor(new Color(0, 0, 0, 90));
+		g2d.fillRect(0, 0, getWidth(), getHeight());
+	}
+
 	public void setInputActions(
 			Runnable moveLeft,
 			Runnable moveRight,
@@ -366,6 +374,10 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.fillRect(0, 0, width, height);
 			}
 
+			g2d.setColor(new Color(240, 240, 240, 180));
+			g2d.setStroke(new BasicStroke(3));
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, 24, 24);
+
 			long now = System.currentTimeMillis();
 			drawCharacters(g2d, width, height, now);
 			drawProjectiles(g2d, width, height, now);
@@ -505,6 +517,10 @@ public class GamePanel extends BaseBackgroundPanel {
 					g2d.drawString(hpText, centerX - hpMetrics.stringWidth(hpText) / 2, nameY + hpMetrics.getAscent() + 4);
 				}
 			}
+
+			g2d.setColor(new Color(240, 240, 240, 180));
+			g2d.setStroke(new BasicStroke(3));
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, 24, 24);
 		}
 	}
 }

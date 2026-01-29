@@ -26,7 +26,7 @@ public class HomePanel extends BaseBackgroundPanel {
 	/**
 	 * HomePanelを構築します。
 	 */
-	public HomePanel(Consumer<MatchingPanel.MatchingMode> onMatchAction, ActionListener exitListener) {
+	public HomePanel(Consumer<MatchConfigPanel.MatchMode> onMatchAction, ActionListener exitListener) {
 		setLayout(new BorderLayout());
 
 		JPanel leftPanel = new JPanel();
@@ -38,10 +38,10 @@ public class HomePanel extends BaseBackgroundPanel {
 		Dimension smallButtonSize = new Dimension(245, 50);
 
 		// ランダム参加ボタン
-		JButton matchingButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
-		matchingButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.RANDOM));
-		matchingButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		leftPanel.add(matchingButton);
+		JButton randomMatchButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
+		randomMatchButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.RANDOM));
+		randomMatchButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		leftPanel.add(randomMatchButton);
 		leftPanel.add(Box.createVerticalStrut(20));
 
 		// ルーム作成・参加ボタン
@@ -51,12 +51,12 @@ public class HomePanel extends BaseBackgroundPanel {
 		subPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JButton createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(27, 110, 80));
-		createRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.CREATE));
+		createRoomButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.CREATE));
 		subPanel.add(createRoomButton);
 		subPanel.add(Box.createHorizontalStrut(10));
 
 		JButton joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(24, 102, 74));
-		joinRoomButton.addActionListener(e -> onMatchAction.accept(MatchingPanel.MatchingMode.JOIN));
+		joinRoomButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.JOIN));
 		subPanel.add(joinRoomButton);
 
 		leftPanel.add(subPanel);

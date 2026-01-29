@@ -6,7 +6,7 @@ import client.view.GamePanel;
 import client.view.GameRoomPanel;
 import client.view.HomePanel;
 import client.view.LoadPanel;
-import client.view.MatchingPanel;
+import client.view.MatchConfigPanel;
 import client.view.ResultPanel;
 import client.view.TitlePanel;
 import model.CharacterType;
@@ -40,14 +40,14 @@ public final class GuiController {
 	private final TitlePanel titlePanel;
 	private final LoadPanel loadPanel;
 	private final HomePanel homePanel;
-	private final MatchingPanel matchingPanel;
+	private final MatchConfigPanel matchConfigPanel;
 	private final GameRoomPanel gameRoomPanel;
 	private final GamePanel gamePanel;
 	private final ResultPanel resultPanel;
 	private final Map<Integer, PlayerInfo> playerSnapshots = new LinkedHashMap<>(4, 1.0f);
 	private final NetworkController network;
 	private final ConcurrentLinkedQueue<Command> commandQueue;
-	private volatile MatchingPanel.MatchingMode lastMatchingMode = MatchingPanel.MatchingMode.RANDOM;
+	private volatile MatchConfigPanel.MatchMode lastMatchMode = MatchConfigPanel.MatchMode.RANDOM;
 	private volatile int playerId = 0;
 
 	public GuiController(NetworkController network) {
@@ -57,7 +57,7 @@ public final class GuiController {
 
 		titlePanel = new TitlePanel(this::startConnection);
 		loadPanel = new LoadPanel();
-		homePanel = new HomePanel(this::showMatching, e -> {
+		homePanel = new HomePanel(this::showMatchConfig, e -> {
 			int result = JOptionPane.showConfirmDialog(cardPanel, "終了します。よろしいですか？", "終了確認", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
 				network.disconnect();
@@ -65,10 +65,10 @@ public final class GuiController {
 			}
 		});
 
-		matchingPanel = new MatchingPanel();
-		matchingPanel.setVisible(false);
-		matchingPanel.setStartGameListener(e -> joinRoom());
-		matchingPanel.setCancelListener(e -> showHome());
+		matchConfigPanel = new MatchConfigPanel();
+		matchConfigPanel.setVisible(false);
+		matchConfigPanel.setStartGameListener(e -> joinRoom());
+		matchConfigPanel.setCancelListener(e -> showHome());
 		gameRoomPanel = new GameRoomPanel();
 		gameRoomPanel.setBackAction(e -> {
 			int result = JOptionPane.showConfirmDialog(cardPanel,
@@ -109,7 +109,7 @@ public final class GuiController {
 		rootPane = new JLayeredPane();
 		rootPane.setLayout(new OverlayLayout(rootPane));
 		rootPane.add(cardPanel, JLayeredPane.DEFAULT_LAYER);
-		rootPane.add(matchingPanel, JLayeredPane.PALETTE_LAYER);
+		rootPane.add(matchConfigPanel, JLayeredPane.PALETTE_LAYER);
 		rootPane.add(loadPanel, JLayeredPane.MODAL_LAYER);
 
 		cardPanel.add(titlePanel, CARD_TITLE);
@@ -138,9 +138,9 @@ public final class GuiController {
 	}
 
 	private synchronized void joinRoom() {
-		String userName = matchingPanel.getUserName();
-		MatchingPanel.MatchingMode mode = matchingPanel.getCurrentMode();
-		matchingPanel.setVisible(false);
+		String userName = matchConfigPanel.getUserName();
+		MatchConfigPanel.MatchMode mode = matchConfigPanel.getCurrentMode();
+		matchConfigPanel.setVisible(false);
 		gameRoomPanel.reset();
 		showLoad();
 		loadPanel.setNextScreen(this::showGameRoom);
@@ -149,7 +149,7 @@ public final class GuiController {
 				network.createRoom(userName);
 				break;
 			case JOIN:
-				network.joinRoom(userName, matchingPanel.getRoomId());
+				network.joinRoom(userName, matchConfigPanel.getRoomId());
 				break;
 			case RANDOM:
 			default:
@@ -160,8 +160,8 @@ public final class GuiController {
 
 	private void showHome() {
 		SwingUtilities.invokeLater(() -> {
-			matchingPanel.reset();
-			matchingPanel.setVisible(false);
+			matchConfigPanel.reset();
+			matchConfigPanel.setVisible(false);
 			cardLayout.show(cardPanel, CARD_HOME);
 		});
 	}
@@ -170,12 +170,12 @@ public final class GuiController {
 		loadPanel.startLoading();
 	}
 
-	private void showMatching(MatchingPanel.MatchingMode mode) {
-		lastMatchingMode = mode;
+	private void showMatchConfig(MatchConfigPanel.MatchMode mode) {
+		lastMatchMode = mode;
 		SwingUtilities.invokeLater(() -> {
-			matchingPanel.setupForMode(mode);
-			matchingPanel.reset();
-			matchingPanel.setVisible(true);
+			matchConfigPanel.setupForMode(mode);
+			matchConfigPanel.reset();
+			matchConfigPanel.setVisible(true);
 		});
 	}
 
@@ -307,7 +307,7 @@ public final class GuiController {
 				"ルームに参加できませんでした。",
 				"参加エラー",
 				JOptionPane.WARNING_MESSAGE));
-		loadPanel.setNextScreen(() -> showMatching(lastMatchingMode));
+		loadPanel.setNextScreen(() -> showMatchConfig(lastMatchMode));
 		completeLoad();
 	}
 

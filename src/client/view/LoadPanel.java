@@ -12,7 +12,7 @@ import java.util.Objects;
  * ロード完了後にホーム画面へ遷移します。
  * TODO: JOptionPane の UI を改善する
  */
-public class LoadPanel extends JPanel {
+public class LoadPanel extends BaseDecoratedPanel {
 	// --------------- フィールド ---------------
 	/** 背景画像のパス */
 	private static final String BACKGROUND_IMAGE_PATH = "/resorces/loading.png";
@@ -44,7 +44,6 @@ public class LoadPanel extends JPanel {
 	public LoadPanel() {
 		super();
 		setLayout(null);
-		setOpaque(false);
 		setBackground(BACKGROUND_COLOR);
 		animationTimer = new Timer(ANIMATION_DELAY, e -> {
 			updateAnimation();
@@ -90,11 +89,7 @@ public class LoadPanel extends JPanel {
 	}
 
 	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		Graphics2D g2d = (Graphics2D) g;
-		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+	protected void paintPanel(Graphics2D g2d) {
 		if (state == State.HIDDEN) return;
 
 		int width = getWidth();

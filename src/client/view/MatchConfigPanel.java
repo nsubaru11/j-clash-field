@@ -10,10 +10,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * マッチング設定画面を表示するパネルです。
+ * 対戦設定画面を表示するパネルです。
  * ユーザー名の入力、ルーム番号の入力、開始/キャンセルボタンを提供します。
  */
-public class MatchingPanel extends JPanel {
+public class MatchConfigPanel extends BaseDecoratedPanel {
 	// --------------- フィールド ---------------
 	private final JTextField userNameField;  // ユーザー名入力フィールド
 	private final JTextField roomNumberField; // ルーム番号入力フィールド
@@ -23,14 +23,13 @@ public class MatchingPanel extends JPanel {
 	private final JLabel roomNumberLabel; // 部屋番号入力ラベル
 
 	private String userName = ""; // ユーザーネームのキャッシュ
-	private MatchingMode currentMode = MatchingMode.RANDOM; // マッチングモードのキャッシュ
+	private MatchMode currentMode = MatchMode.RANDOM; // 対戦モードのキャッシュ
 
 	/**
-	 * MatchingPanelを構築します。
+	 * MatchConfigPanelを構築します。
 	 */
-	public MatchingPanel() {
+	public MatchConfigPanel() {
 		// 半透明オーバーレイ背景
-		setOpaque(false);
 		setLayout(new GridBagLayout());
 
 		// ダイアログパネルの作成
@@ -43,7 +42,7 @@ public class MatchingPanel extends JPanel {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
 		// タイトルラベル
-		titleLabel = new JLabel("マッチング設定", SwingConstants.CENTER);
+		titleLabel = new JLabel("対戦設定", SwingConstants.CENTER);
 		titleLabel.setFont(new Font("Meiryo", Font.BOLD, 26));
 		titleLabel.setForeground(Color.WHITE);
 		gbc.gridx = 0;
@@ -113,10 +112,10 @@ public class MatchingPanel extends JPanel {
 
 		// ダイアログをパネル中央に配置
 		add(dialogPanel);
-		setupForMode(MatchingMode.RANDOM);
+		setupForMode(MatchMode.RANDOM);
 	}
 
-	public void setupForMode(MatchingMode mode) {
+	public void setupForMode(MatchMode mode) {
 		currentMode = mode;
 		switch (mode) {
 			case RANDOM:
@@ -170,10 +169,9 @@ public class MatchingPanel extends JPanel {
 	 * 半透明のオーバーレイ背景を描画します。
 	 */
 	@Override
-	protected void paintComponent(final Graphics g) {
-		super.paintComponent(g);
-		g.setColor(new Color(0, 0, 0, 150));
-		g.fillRect(0, 0, getWidth(), getHeight());
+	protected void paintPanel(Graphics2D g2d) {
+		g2d.setColor(new Color(0, 0, 0, 150));
+		g2d.fillRect(0, 0, getWidth(), getHeight());
 	}
 
 	/**
@@ -182,13 +180,9 @@ public class MatchingPanel extends JPanel {
 	 * @return ダイアログパネル
 	 */
 	private JPanel createDialogPanel() {
-		JPanel panel = new JPanel() {
+		JPanel panel = new BaseDecoratedPanel() {
 			@Override
-			protected void paintComponent(final Graphics g) {
-				super.paintComponent(g);
-				Graphics2D g2d = (Graphics2D) g;
-				g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+			protected void paintPanel(Graphics2D g2d) {
 				// 角丸の背景
 				g2d.setColor(new Color(45, 45, 45));
 				g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
@@ -199,7 +193,6 @@ public class MatchingPanel extends JPanel {
 				g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 20, 20);
 			}
 		};
-		panel.setOpaque(false);
 		panel.setPreferredSize(new Dimension(460, 320));
 		return panel;
 	}
@@ -240,7 +233,7 @@ public class MatchingPanel extends JPanel {
 		return button;
 	}
 
-	public MatchingMode getCurrentMode() {
+	public MatchMode getCurrentMode() {
 		return currentMode;
 	}
 
@@ -249,7 +242,7 @@ public class MatchingPanel extends JPanel {
 	}
 
 	public int getRoomId() {
-		if (currentMode != MatchingMode.JOIN) return -1;
+		if (currentMode != MatchMode.JOIN) return -1;
 		try {
 			return Integer.parseInt(roomNumberField.getText().trim());
 		} catch (NumberFormatException e) {
@@ -269,7 +262,7 @@ public class MatchingPanel extends JPanel {
 					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
-		if (currentMode == MatchingMode.JOIN) {
+		if (currentMode == MatchMode.JOIN) {
 			int roomNumber = getRoomId();
 			if (roomNumber < 0) {
 				JOptionPane.showMessageDialog(this,
@@ -282,7 +275,7 @@ public class MatchingPanel extends JPanel {
 		return true;
 	}
 
-	public enum MatchingMode {
+	public enum MatchMode {
 		RANDOM, // ランダムマッチ
 		CREATE, // ルーム作成
 		JOIN    // ルーム参加

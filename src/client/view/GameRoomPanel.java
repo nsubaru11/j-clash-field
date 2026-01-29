@@ -128,7 +128,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		Paint originalPaint = g2d.getPaint();
-		g2d.setPaint(new GradientPaint(0, 0, withAlpha(COLOR_LIGHT, 200), 0, getHeight(), withAlpha(COLOR_NEUTRAL, 200)));
+		g2d.setColor(new Color(0, 0, 0, 90));
 		g2d.fillRect(0, 0, getWidth(), getHeight());
 		g2d.setPaint(originalPaint);
 	}
