@@ -5,6 +5,7 @@ import model.GameCharacter;
 import model.PlayerInfo;
 import model.ResultData;
 import network.Protocol;
+import network.CommandType;
 import server.model.Archer;
 import server.model.BattleField;
 import server.model.Fighter;
@@ -65,6 +66,9 @@ class GameRoom extends Thread implements Closeable {
 				BattleField.UpdateResult result = gameSession.update();
 				broadcastState(result);
 				sendResultIfReady();
+			}
+			if (gameSession.isGameOver()) {
+				resetGameRoom();
 			}
 			long waitNs = targetTime - System.nanoTime();
 			if (waitNs > 0) {
@@ -137,6 +141,15 @@ class GameRoom extends Thread implements Closeable {
 		return isPublic;
 	}
 
+	public void resetGameRoom() {
+		for (ClientHandler target : playerMap.keySet()) {
+			playerMap.get(target).setReady(false);
+			for (ClientHandler handler : playerMap.keySet()) {
+				target.sendMessage(Protocol.unreadySuccess(handler.getConnectionId()));
+			}
+		}
+	}
+
 	public synchronized boolean join(final ClientHandler handler, final String playerName) {
 		if (isClosed || gameSession.isStarted() || playerMap.size() >= MAX_PLAYERS) {
 			logger.warning(() -> "ルーム(ID: " + roomId + ")は既に満員です。");
@@ -162,7 +175,8 @@ class GameRoom extends Thread implements Closeable {
 		PlayerInfo player = playerMap.get(sender);
 		if (player == null) return;
 		String body = command.getBody();
-		switch (command.getCommandType()) {
+		CommandType type = command.getCommandType();
+		switch (type) {
 			case READY:
 				if (gameSession.isStarted()) break;
 				int characterId = Integer.parseInt(body);
@@ -198,31 +212,6 @@ class GameRoom extends Thread implements Closeable {
 				String unreadyMessage = Protocol.unreadySuccess(player.getId());
 				playerMap.keySet().forEach(handler -> handler.sendMessage(unreadyMessage));
 				break;
-			case MOVE_LEFT:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.MOVE_LEFT, player), player.getId());
-				break;
-			case MOVE_UP:
-			case JUMP:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.MOVE_UP, player), player.getId());
-				break;
-			case MOVE_RIGHT:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.MOVE_RIGHT, player), player.getId());
-				break;
-			case MOVE_DOWN:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.MOVE_DOWN, player), player.getId());
-				break;
-			case CHARGE_START:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.CHARGE_START, player), player.getId());
-				break;
-			case NORMAL_ATTACK:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.NORMAL_ATTACK, player), player.getId());
-				break;
-			case CHARGE_ATTACK:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.CHARGE_ATTACK, player), player.getId());
-				break;
-			case DEFEND:
-				broadcastGameAction(gameSession.handleAction(GameSession.ActionType.DEFEND, player), player.getId());
-				break;
 			case RESIGN:
 				handleResign(sender);
 				break;
@@ -230,6 +219,10 @@ class GameRoom extends Thread implements Closeable {
 				handleDisconnect(sender);
 				break;
 			default:
+				if (CommandType.GAME_INPUT_ACTIONS.contains(type)) {
+					CommandType broadcast = gameSession.handleAction(type, player);
+					broadcastGameAction(broadcast, player.getId());
+				}
 				break;
 		}
 	}
@@ -318,8 +311,8 @@ class GameRoom extends Thread implements Closeable {
 		playerMap.keySet().forEach(h -> h.sendMessage(message));
 	}
 
-	private void broadcastGameAction(GameSession.BroadcastAction action, int playerId) {
-		if (action == null) return;
+	private void broadcastGameAction(CommandType action, int playerId) {
+		if (action == null || !CommandType.BROADCAST_ACTIONS.contains(action)) return;
 		String msg;
 		switch (action) {
 			case MOVE_UP:
@@ -351,6 +344,15 @@ class GameRoom extends Thread implements Closeable {
 		if (payload.isEmpty()) return;
 		String msg = Protocol.result(payload);
 		playerMap.keySet().forEach(handler -> handler.sendMessage(msg));
+		resetReadyStates();
+	}
+
+	private void resetReadyStates() {
+		for (PlayerInfo player : playerMap.values()) {
+			player.setReady(false);
+			String msg = Protocol.unreadySuccess(player.getId());
+			playerMap.keySet().forEach(handler -> handler.sendMessage(msg));
+		}
 	}
 
 	private String formatPlayerEntry(PlayerInfo info) {

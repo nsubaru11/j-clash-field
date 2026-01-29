@@ -16,7 +16,6 @@ import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -224,7 +223,6 @@ public class GamePanel extends BaseBackgroundPanel {
 
 	private List<PlayerInfo> getOrderedPlayers() {
 		List<PlayerInfo> list = new ArrayList<>(players.values());
-		list.sort(Comparator.comparingInt(PlayerInfo::getId));
 		return list;
 	}
 

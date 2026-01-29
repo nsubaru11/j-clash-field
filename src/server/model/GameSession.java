@@ -4,10 +4,10 @@ import model.GameCharacter;
 import model.PlayerInfo;
 import model.ProjectileType;
 import model.ResultData;
+import network.CommandType;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,25 +15,6 @@ import java.util.Map;
 import java.util.Set;
 
 public final class GameSession {
-	public enum ActionType {
-		MOVE_LEFT,
-		MOVE_RIGHT,
-		MOVE_UP,
-		MOVE_DOWN,
-		NORMAL_ATTACK,
-		CHARGE_START,
-		CHARGE_ATTACK,
-		DEFEND
-	}
-
-	public enum BroadcastAction {
-		MOVE_UP,
-		NORMAL_ATTACK,
-		CHARGE_START,
-		CHARGE_ATTACK,
-		DEFEND
-	}
-
 	private final int maxPlayers;
 	private final Map<Integer, PlayerInfo> playersById = new HashMap<>();
 	private final Map<Integer, ResultData> resultMap = new HashMap<>();
@@ -77,10 +58,9 @@ public final class GameSession {
 		battleField = new BattleField();
 		double fieldWidth = battleField.getWidth();
 		double groundY = battleField.getGroundY();
-		List<PlayerInfo> sortedPlayers = new ArrayList<>(players);
-		sortedPlayers.sort(Comparator.comparingInt(PlayerInfo::getId));
+		List<PlayerInfo> playersList = new ArrayList<>(players);
 		int index = 0;
-		for (PlayerInfo player : sortedPlayers) {
+		for (PlayerInfo player : playersList) {
 			if (player == null) continue;
 			int playerId = player.getId();
 			playersById.put(playerId, player);
@@ -100,7 +80,7 @@ public final class GameSession {
 		}
 	}
 
-	public BroadcastAction handleAction(ActionType actionType, PlayerInfo player) {
+	public CommandType handleAction(CommandType actionType, PlayerInfo player) {
 		if (actionType == null || !canAct(player)) return null;
 		switch (actionType) {
 			case MOVE_LEFT:
@@ -112,22 +92,22 @@ public final class GameSession {
 				applyMove(player, resolveMoveStepX(player), 0);
 				return null;
 			case MOVE_UP:
-				return applyJump(player) ? BroadcastAction.MOVE_UP : null;
+				return applyJump(player) ? CommandType.MOVE_UP : null;
 			case MOVE_DOWN:
 				applyMove(player, 0, -resolveMoveStepY(player));
 				return null;
 			case CHARGE_START:
 				startCharge(player);
-				return BroadcastAction.CHARGE_START;
+				return CommandType.CHARGE_START;
 			case NORMAL_ATTACK:
 				applyNormalAttack(player);
-				return BroadcastAction.NORMAL_ATTACK;
+				return CommandType.NORMAL_ATTACK;
 			case CHARGE_ATTACK:
 				applyChargeAttack(player);
-				return BroadcastAction.CHARGE_ATTACK;
+				return CommandType.CHARGE_ATTACK;
 			case DEFEND:
 				applyDefend(player);
-				return BroadcastAction.DEFEND;
+				return CommandType.DEFEND;
 			default:
 				return null;
 		}
@@ -222,7 +202,6 @@ public final class GameSession {
 
 	private void buildFinalResults(Set<Integer> winners, boolean drawAll) {
 		List<ResultData> list = new ArrayList<>(resultMap.values());
-		list.sort(Comparator.comparingInt(ResultData::getId));
 		for (ResultData data : list) {
 			if (drawAll) {
 				data.setResult(ResultData.ResultType.DRAW);

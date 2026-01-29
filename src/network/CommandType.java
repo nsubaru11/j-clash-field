@@ -1,5 +1,7 @@
 package network;
 
+import java.util.EnumSet;
+
 import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
 
@@ -35,7 +37,6 @@ public enum CommandType {
 	CREATE_ROOM(60),
 	READY_SUCCESS(61),
 	UNREADY_SUCCESS(62),
-	JUMP(63),
 	NORMAL_ATTACK(64),
 	CHARGE_ATTACK(65),
 	DEFEND(66),
@@ -44,6 +45,25 @@ public enum CommandType {
 	// -------------------- その他 --------------------
 	ERROR(254),
 	UNKNOWN(255);
+
+	public static final EnumSet<CommandType> GAME_INPUT_ACTIONS = EnumSet.of(
+			MOVE_LEFT,
+			MOVE_UP,
+			MOVE_RIGHT,
+			MOVE_DOWN,
+			NORMAL_ATTACK,
+			CHARGE_START,
+			CHARGE_ATTACK,
+			DEFEND
+	);
+
+	public static final EnumSet<CommandType> BROADCAST_ACTIONS = EnumSet.of(
+			MOVE_UP,
+			NORMAL_ATTACK,
+			CHARGE_START,
+			CHARGE_ATTACK,
+			DEFEND
+	);
 
 	private final int id;
 

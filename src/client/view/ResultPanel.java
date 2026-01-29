@@ -14,7 +14,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -128,12 +127,11 @@ public class ResultPanel extends BaseBackgroundPanel {
 
 	public void setResults(Map<Integer, PlayerInfo> playerSnapshots, List<ResultData> results, int localPlayerId) {
 		SwingUtilities.invokeLater(() -> {
-			List<ResultData> sorted = new ArrayList<>();
-			if (results != null) sorted.addAll(results);
-			sorted.sort(Comparator.comparingInt(ResultData::getId));
+			List<ResultData> resultsList = new ArrayList<>();
+			if (results != null) resultsList.addAll(results);
 
 			for (int i = 0; i < slots.length; i++) {
-				ResultData data = i < sorted.size() ? sorted.get(i) : null;
+				ResultData data = i < resultsList.size() ? resultsList.get(i) : null;
 				PlayerInfo info = data != null && playerSnapshots != null ? playerSnapshots.get(data.getId()) : null;
 				boolean isLocal = data != null && data.getId() == localPlayerId;
 				slots[i].setResult(info, data, isLocal);

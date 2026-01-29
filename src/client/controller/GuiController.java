@@ -185,6 +185,7 @@ public final class GuiController {
 	}
 
 	private void showGame() {
+		resetSnapshotsForNewMatch();
 		SwingUtilities.invokeLater(() -> {
 			resultPanel.reset();
 			gamePanel.clearPlayers();
@@ -398,6 +399,24 @@ public final class GuiController {
 				snapshot.setCharacter(CharacterSprite.forType(characterType));
 			}
 		}
+	}
+
+	private void resetSnapshotsForNewMatch() {
+		if (playerSnapshots.isEmpty()) return;
+		Map<Integer, PlayerInfo> refreshed = new LinkedHashMap<>(playerSnapshots.size(), 1.0f);
+		for (PlayerInfo snapshot : playerSnapshots.values()) {
+			if (snapshot == null) continue;
+			CharacterType type = CharacterType.defaultType();
+			GameCharacter existing = snapshot.getCharacter();
+			if (existing != null && existing.getType() != null) {
+				type = existing.getType();
+			}
+			GameCharacter character = CharacterSprite.forType(type);
+			PlayerInfo refreshedInfo = new PlayerInfo(snapshot.getId(), snapshot.getName(), snapshot.isReady(), character);
+			refreshed.put(refreshedInfo.getId(), refreshedInfo);
+		}
+		playerSnapshots.clear();
+		playerSnapshots.putAll(refreshed);
 	}
 
 	private final class GameLoopThread extends Thread {
