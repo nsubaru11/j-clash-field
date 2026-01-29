@@ -340,10 +340,12 @@ public final class GuiController {
 	private void handleMove(String body) {
 		String[] parts = body.split(":", 2);
 		int movedPlayerId = Integer.parseInt(parts[0]);
-		String[] coords = parts[1].split(",", 2);
+		String[] coords = parts[1].split(",", 4);
 		double x = Double.parseDouble(coords[0]);
 		double y = Double.parseDouble(coords[1]);
-		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerPosition(movedPlayerId, x, y));
+		double facingX = Double.parseDouble(coords[2]);
+		double facingY = Double.parseDouble(coords[3]);
+		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerPosition(movedPlayerId, x, y, facingX, facingY));
 	}
 
 	private void handlePlayerAction(CommandType actionType, String body) {

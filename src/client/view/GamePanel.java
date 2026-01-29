@@ -184,13 +184,16 @@ public class GamePanel extends BaseBackgroundPanel {
 		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.defaultType());
 	}
 
-	public void updatePlayerPosition(int playerId, double x, double y) {
+	public void updatePlayerPosition(int playerId, double x, double y, double facingX, double facingY) {
 		PlayerInfo info = ensurePlayer(playerId);
 		GameCharacter character = info.getCharacter();
 		if (character == null) return;
 		long now = System.currentTimeMillis();
+		character.setFacingDirection(facingX, facingY);
 		if (character instanceof CharacterSprite) {
-			((CharacterSprite) character).recordPosition(x, y, now);
+			CharacterSprite sprite = (CharacterSprite) character;
+			sprite.recordPosition(x, y, now);
+			sprite.recordFacing(facingX, facingY);
 		} else {
 			character.setPosition(x, y);
 		}

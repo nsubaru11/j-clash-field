@@ -226,6 +226,7 @@ public abstract class GameCharacter extends Entity {
 	}
 
 	public int applyDamage(double damage) {
+		if (defending && defenseRemainingMs > 0) return getHp();
 		double mitigated = Math.max(0.0, damage - resolveDefense());
 		hp = Math.max(0.0, hp - mitigated);
 		return getHp();

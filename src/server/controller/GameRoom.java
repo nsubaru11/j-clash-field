@@ -4,6 +4,7 @@ import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
 import model.ResultData;
+import model.Vector2D;
 import network.CommandType;
 import network.Protocol;
 import server.model.Archer;
@@ -281,7 +282,14 @@ class GameRoom extends Thread implements Closeable {
 
 		playerMap.forEach((handler, player) -> {
 			GameCharacter character = player.getCharacter();
-			String msg = Protocol.move(player.getId(), character.getPosition().getX(), character.getPosition().getY());
+			Vector2D facing = character.getFacingDirection();
+			String msg = Protocol.move(
+					player.getId(),
+					character.getPosition().getX(),
+					character.getPosition().getY(),
+					facing.getX(),
+					facing.getY()
+			);
 			playerMap.keySet().forEach(h -> h.sendMessage(msg));
 		});
 

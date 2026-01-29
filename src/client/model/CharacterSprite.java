@@ -121,6 +121,10 @@ public abstract class CharacterSprite extends GameCharacter {
 		renderState.recordMove(direction, now);
 	}
 
+	public void recordFacing(double x, double y) {
+		renderState.recordFacing(x, y);
+	}
+
 	public void recordAction(Action action, long now) {
 		renderState.recordAction(action, now);
 	}
@@ -243,16 +247,17 @@ public abstract class CharacterSprite extends GameCharacter {
 
 		public void recordMove(int direction, long now) {
 			lastMoveMs = now;
-			if (direction != 0) facingRight = direction > 0;
 		}
 
 		public void recordMovementDelta(double dx, double dy, long now) {
-			if (Math.abs(dx) > 0.1) {
-				facingRight = dx >= 0;
-			}
 			if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
 				lastMoveMs = now;
 			}
+		}
+
+		public void recordFacing(double x, double y) {
+			if (x > 0) facingRight = true;
+			else if (x < 0) facingRight = false;
 		}
 
 		public void recordAction(Action action, long now) {

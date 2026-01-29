@@ -20,8 +20,8 @@ public final class Protocol {
 		return CommandType.GAME_OVER.getId() + "";
 	}
 
-	public static String move(int playerId, double i, double j) {
-		return CommandType.MOVE.getId() + ":" + playerId + ":" + i + "," + j;
+	public static String move(int playerId, double x, double y, double facingX, double facingY) {
+		return CommandType.MOVE.getId() + ":" + playerId + ":" + x + "," + y + "," + facingX + "," + facingY;
 	}
 
 	public static String moveUp(int playerId) {
