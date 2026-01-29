@@ -385,6 +385,9 @@ public final class GuiController {
 		SwingUtilities.invokeLater(() -> gamePanel.updatePlayerHp(targetId, hp));
 	}
 
+	/**
+	 * playerName/characterType が null の場合は既存値を保持する。
+	 */
 	private void updatePlayerSnapshot(int playerId, String playerName, CharacterType characterType) {
 		PlayerInfo snapshot = playerSnapshots.get(playerId);
 		if (snapshot == null) {

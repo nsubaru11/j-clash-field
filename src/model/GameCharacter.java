@@ -95,6 +95,9 @@ public abstract class GameCharacter extends Entity {
 		return projectileSpeed;
 	}
 
+	/**
+	 * null のときは近接キャラ(飛び道具なし)として扱う。
+	 */
 	public ProjectileType getProjectileType() {
 		return null;
 	}
@@ -124,12 +127,8 @@ public abstract class GameCharacter extends Entity {
 	}
 
 	public void setPosition(double x, double y) {
-		if (position == null) {
-			position = new Vector2D(x, y);
-		} else {
-			position.setX(x);
-			position.setY(y);
-		}
+		position.setX(x);
+		position.setY(y);
 	}
 
 	public boolean isGrounded() {
@@ -141,11 +140,7 @@ public abstract class GameCharacter extends Entity {
 	}
 
 	public void setVerticalVelocity(double vy) {
-		if (velocity == null) {
-			velocity = new Vector2D(0, vy);
-		} else {
-			velocity.setY(vy);
-		}
+		velocity.setY(vy);
 	}
 
 	public boolean canJump() {

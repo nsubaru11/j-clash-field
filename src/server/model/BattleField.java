@@ -134,16 +134,12 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 	}
 
 	private void applyGravity(GameCharacter character) {
-		if (character == null) return;
 		Vector2D velocity = character.getVelocity();
-		if (velocity == null) return;
 		velocity.setY(velocity.getY() + character.getGravity());
 	}
 
 	private void clampToGround(GameCharacter character) {
-		if (character == null || character.getPosition() == null) return;
 		Vector2D velocity = character.getVelocity();
-		if (velocity == null) return;
 		if (character.getPosition().getY() <= groundY) {
 			character.getPosition().setY(groundY);
 			if (velocity.getY() < 0) {

@@ -22,6 +22,9 @@ public abstract class CharacterSprite extends GameCharacter {
 	private static final long DEFEND_MS = 420;
 	private static final long JUMP_MS = 250;
 	private final Color accentColor;
+	/**
+	 * スプライトシートが指定されていない場合は null になる。
+	 */
 	private final BufferedImage spriteSheet;
 	private final int sheetColumns;
 	private final int sheetRows;
@@ -48,6 +51,9 @@ public abstract class CharacterSprite extends GameCharacter {
 		this.spriteSheet = loadSpriteSheet(spriteSheetPath);
 	}
 
+	/**
+	 * 未対応 or null の場合は null を返す(描画なし扱い)。
+	 */
 	public static CharacterSprite forType(CharacterType type) {
 		if (type == null) return null;
 		return createSprite(type);

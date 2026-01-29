@@ -56,7 +56,6 @@ public final class Projectile extends Entity {
 
 	@Override
 	public boolean collidesWith(Entity other) {
-		if (other == null || position == null || other.getPosition() == null) return false;
 		double widthValue = getWidthValue();
 		double heightValue = getHeightValue();
 		double otherWidth = other.getWidthValue();
@@ -85,7 +84,7 @@ public final class Projectile extends Entity {
 
 	@Override
 	public void update() {
-		if (velocity != null) traveledDistance += velocity.length();
+		traveledDistance += velocity.length();
 		super.update();
 	}
 
@@ -94,7 +93,6 @@ public final class Projectile extends Entity {
 	}
 
 	public boolean isOutOfBounds(int fieldWidth, int fieldHeight) {
-		if (position == null) return true;
 		return position.getX() < -20 || position.getX() > fieldWidth + 20
 				|| position.getY() < -20 || position.getY() > fieldHeight + 20;
 	}

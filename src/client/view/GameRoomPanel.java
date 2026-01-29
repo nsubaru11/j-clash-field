@@ -50,6 +50,9 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 	private final JButton readyButton;
 	private final JButton backButton;
 	private final PlayerSlot[] slots;
+	/**
+	 * null の場合はスロットが空いていることを示す。
+	 */
 	private final PlayerInfo[] slotPlayers = new PlayerInfo[MAX_PLAYERS];
 	private final Map<Integer, Integer> playerSlotIndex = new HashMap<>(MAX_PLAYERS, 1.0f);
 	private final BitSet occupiedSlots = new BitSet(MAX_PLAYERS);

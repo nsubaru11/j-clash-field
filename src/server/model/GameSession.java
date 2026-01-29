@@ -60,26 +60,23 @@ public final class GameSession {
 		List<PlayerInfo> playersList = new ArrayList<>(players);
 		int index = 0;
 		for (PlayerInfo player : playersList) {
-			if (player == null) continue;
 			int playerId = player.getId();
 			playersById.put(playerId, player);
 			aliveIds.add(playerId);
 			resultMap.put(playerId, new ResultData(playerId));
 			GameCharacter character = player.getCharacter();
-			if (character != null) {
-				double slotCenter = (index + 0.5) / (double) maxPlayers;
-				double x = fieldWidth * slotCenter;
-				character.setPosition(x, groundY);
-				character.setGrounded(true);
-				character.setOwnerId(playerId);
-				battleField.addEntity(character);
-			}
+			double slotCenter = (index + 0.5) / (double) maxPlayers;
+			double x = fieldWidth * slotCenter;
+			character.setPosition(x, groundY);
+			character.setGrounded(true);
+			character.setOwnerId(playerId);
+			battleField.addEntity(character);
 			index++;
 		}
 	}
 
 	public CommandType handleAction(CommandType actionType, PlayerInfo player) {
-		if (actionType == null || !canAct(player)) return null;
+		if (!canAct(player)) return null;
 		switch (actionType) {
 			case MOVE_LEFT:
 				setFacingDirection(player, -1, 0);
@@ -114,7 +111,7 @@ public final class GameSession {
 	}
 
 	public BattleField.UpdateResult update() {
-		if (!started || battleField == null || gameOver) return null;
+		if (!started || gameOver) return null;
 		BattleField.UpdateResult result = battleField.update();
 		processDamage(result.getDamageEvents());
 		return result;
@@ -137,11 +134,11 @@ public final class GameSession {
 	}
 
 	private boolean canAct(PlayerInfo player) {
-		return player != null && started && !gameOver && aliveIds.contains(player.getId());
+		return started && !gameOver && aliveIds.contains(player.getId());
 	}
 
 	private void processDamage(List<BattleField.DamageEvent> events) {
-		if (events == null || events.isEmpty() || gameOver) return;
+		if (events.isEmpty() || gameOver) return;
 		Set<Integer> deathsThisFrame = new HashSet<>();
 		Set<Integer> aliveBefore = new HashSet<>(aliveIds);
 		for (BattleField.DamageEvent damage : events) {
@@ -217,9 +214,8 @@ public final class GameSession {
 
 	private void applyMove(PlayerInfo player, double dx, double dy) {
 		GameCharacter character = player.getCharacter();
-		if (character == null || character.getPosition() == null) return;
-		double fieldWidth = getFieldWidth();
-		double fieldHeight = getFieldHeight();
+		double fieldWidth = battleField.getWidth();
+		double fieldHeight = battleField.getHeight();
 		double nextX = character.getPosition().getX() + dx;
 		double nextY = character.getPosition().getY() + dy;
 		if (nextX < 0) nextX = 0;
@@ -231,7 +227,6 @@ public final class GameSession {
 
 	private void applyNormalAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		if (character == null) return;
 		character.normalAttack();
 		if (character.isRanged()) {
 			spawnProjectile(player, character, 1.0);
@@ -242,7 +237,6 @@ public final class GameSession {
 
 	private void applyChargeAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		if (character == null) return;
 		long chargeMs = stopCharge(player);
 		character.chargeAttack(chargeMs);
 		double power = character.getAttackPowerRatio();
@@ -255,15 +249,13 @@ public final class GameSession {
 
 	private void applyDefend(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		if (character == null) return;
 		character.defend();
 	}
 
 	private void spawnProjectile(PlayerInfo player, GameCharacter character, double power) {
-		if (battleField == null || character.getPosition() == null) return;
 		ProjectileType projectileType = character.getProjectileType();
 		double maxDistance = character.getProjectileRange();
-		if (projectileType == null || maxDistance <= 0) return;
+		if (maxDistance <= 0) return;
 		Vector2D facing = getFacingDirection(character);
 		double speed = character.getProjectileSpeed() * Math.max(1.0, power);
 		double damage = character.getAttack();
@@ -284,7 +276,6 @@ public final class GameSession {
 	}
 
 	private void spawnMeleeAttack(PlayerInfo player, GameCharacter character, double power) {
-		if (battleField == null || character.getPosition() == null) return;
 		double width = character.getMeleeWidth() * Math.min(1.4, power);
 		double height = character.getMeleeHeight() * Math.min(1.3, power);
 		double offset = character.getMeleeOffset();
@@ -325,54 +316,38 @@ public final class GameSession {
 
 	private boolean applyJump(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		if (character == null || !character.canJump()) return false;
+		if (!character.canJump()) return false;
 		character.setVerticalVelocity(character.getJumpVelocity());
 		character.registerJump();
 		return true;
 	}
 
 	private void setFacingDirection(PlayerInfo player, double x, double y) {
-		if (player == null) return;
 		GameCharacter character = player.getCharacter();
-		if (character == null) return;
 		character.setFacingDirection(x, y);
 	}
 
 	private Vector2D getFacingDirection(GameCharacter character) {
-		if (character == null) return new Vector2D(1, 0);
-		Vector2D facing = character.getFacingDirection();
-		if (facing == null) return new Vector2D(1, 0);
-		return facing;
+		return character.getFacingDirection();
 	}
 
 
 	private void startCharge(PlayerInfo player) {
-		if (player == null) return;
 		chargeStartTimes.put(player.getId(), System.currentTimeMillis());
 	}
 
 	private long stopCharge(PlayerInfo player) {
-		if (player == null) return 0;
 		Long start = chargeStartTimes.remove(player.getId());
-		if (start == null) return 0;
 		return Math.max(0, System.currentTimeMillis() - start);
 	}
 
 	private double resolveMoveStepX(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		return character != null ? character.getMoveStepX() : 0;
+		return character.getMoveStepX();
 	}
 
 	private double resolveMoveStepY(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
-		return character != null ? character.getMoveStepY() : 0;
-	}
-
-	private int getFieldWidth() {
-		return battleField != null ? battleField.getWidth() : BattleField.DEFAULT_WIDTH;
-	}
-
-	private int getFieldHeight() {
-		return battleField != null ? battleField.getHeight() : BattleField.DEFAULT_HEIGHT;
+		return character.getMoveStepY();
 	}
 }

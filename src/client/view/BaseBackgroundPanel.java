@@ -37,7 +37,7 @@ abstract class BaseBackgroundPanel extends JPanel {
 	/**
 	 * コンストラクタで画像パスを受け取る
 	 *
-	 * @param imagePath 背景画像のパス
+	 * @param imagePath 背景画像のパス。null の場合はデフォルト画像を使用する。
 	 */
 	protected BaseBackgroundPanel(final String imagePath) {
 		if (imagePath == null || imagePath.equals(DEFAULT_BACKGROUND_IMAGE_PATH)) {

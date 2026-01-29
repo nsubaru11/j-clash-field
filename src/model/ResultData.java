@@ -82,9 +82,7 @@ public final class ResultData {
 	}
 
 	public static ResultData fromProtocolString(String token) {
-		if (token == null || token.isEmpty()) return null;
 		String[] fields = token.split(FIELD_SPLIT_REGEX);
-		if (fields.length < 6) return null;
 		int id = Integer.parseInt(fields[0]);
 		ResultType type = ResultType.fromId(Integer.parseInt(fields[1]));
 		int kills = Integer.parseInt(fields[2]);
@@ -101,11 +99,9 @@ public final class ResultData {
 	}
 
 	public static String serializeList(Iterable<ResultData> results) {
-		if (results == null) return "";
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		for (ResultData data : results) {
-			if (data == null) continue;
 			if (!first) sb.append(ENTRY_DELIMITER);
 			sb.append(data.toProtocolString());
 			first = false;
@@ -115,11 +111,10 @@ public final class ResultData {
 
 	public static List<ResultData> parseList(String payload) {
 		List<ResultData> list = new ArrayList<>();
-		if (payload == null || payload.isEmpty()) return list;
 		String[] tokens = payload.split(ENTRY_DELIMITER);
 		for (String token : tokens) {
 			ResultData data = fromProtocolString(token);
-			if (data != null) list.add(data);
+			list.add(data);
 		}
 		return list;
 	}

@@ -48,9 +48,7 @@ public abstract class Entity {
 	}
 
 	public void update() {
-		if (velocity != null && position != null) {
-			position.addLocal(velocity);
-		}
+		position.addLocal(velocity);
 	}
 
 	public void setVelocity(double x, double y) {
@@ -58,7 +56,6 @@ public abstract class Entity {
 	}
 
 	public boolean collidesWith(Entity other) {
-		if (other == null || position == null || other.position == null) return false;
 		double widthValue = getWidthValue();
 		double heightValue = getHeightValue();
 		double otherWidth = other.getWidthValue();
@@ -80,12 +77,10 @@ public abstract class Entity {
 	}
 
 	public double getWidthValue() {
-		if (width == null) return 0;
 		return Math.abs(width.getX());
 	}
 
 	public double getHeightValue() {
-		if (height == null) return 0;
 		return Math.abs(height.getY());
 	}
 

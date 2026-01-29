@@ -4,8 +4,8 @@ import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
 import model.ResultData;
-import network.Protocol;
 import network.CommandType;
+import network.Protocol;
 import server.model.Archer;
 import server.model.BattleField;
 import server.model.Fighter;
@@ -277,18 +277,14 @@ class GameRoom extends Thread implements Closeable {
 	private synchronized void broadcastState(BattleField.UpdateResult result) {
 		// TODO: 状態を全員に通知する
 		BattleField field = gameSession.getBattleField();
-		if (!gameSession.isStarted() || field == null) return;
 
 		playerMap.forEach((handler, player) -> {
 			GameCharacter character = player.getCharacter();
-			if (character != null && character.getPosition() != null) {
-				String msg = Protocol.move(player.getId(), character.getPosition().getX(), character.getPosition().getY());
-				playerMap.keySet().forEach(h -> h.sendMessage(msg));
-			}
+			String msg = Protocol.move(player.getId(), character.getPosition().getX(), character.getPosition().getY());
+			playerMap.keySet().forEach(h -> h.sendMessage(msg));
 		});
 
 		for (Projectile projectile : field.getProjectiles()) {
-			if (projectile.getPosition() == null) continue;
 			String msg = Protocol.projectile(projectile.getId(), projectile.getType(),
 					projectile.getPosition().getX(), projectile.getPosition().getY(), projectile.getPower());
 			playerMap.keySet().forEach(h -> h.sendMessage(msg));

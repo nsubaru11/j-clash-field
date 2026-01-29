@@ -344,6 +344,10 @@ public class ResultPanel extends BaseBackgroundPanel {
 			);
 		}
 
+		/**
+		 * info/data が両方 null の場合は空スロット扱い。
+		 * info が null で data がある場合は名前が不明なプレイヤーとして表示する。
+		 */
 		private void setResult(PlayerInfo info, ResultData data, boolean isLocal) {
 			isLocalPlayer = isLocal;
 			if (info == null && data == null) {
