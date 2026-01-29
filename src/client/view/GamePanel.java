@@ -531,7 +531,7 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.setFont(HP_FONT);
 				if (state != null) {
 					int hp = character != null ? character.getHp() : 0;
-					String hpText = "HP" + hp + "%";
+					String hpText = "HP" + hp;
 					FontMetrics hpMetrics = g2d.getFontMetrics();
 					g2d.drawString(hpText, centerX - hpMetrics.stringWidth(hpText) / 2, nameY + hpMetrics.getAscent() + 4);
 				}
