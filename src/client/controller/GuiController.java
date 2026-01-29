@@ -95,7 +95,6 @@ public final class GuiController {
 				network::moveRight,
 				network::moveUp,
 				network::moveDown,
-				network::jump,
 				network::normalAttack,
 				network::chargeStart,
 				network::chargeAttack,
@@ -215,7 +214,7 @@ public final class GuiController {
 			case MOVE:
 				handleMove(body);
 				break;
-			case JUMP:
+			case MOVE_UP:
 			case NORMAL_ATTACK:
 			case CHARGE_START:
 			case CHARGE_ATTACK:
@@ -344,7 +343,7 @@ public final class GuiController {
 			case DEFEND:
 				action = CharacterSprite.Action.DEFEND;
 				break;
-			case JUMP:
+			case MOVE_UP:
 				action = CharacterSprite.Action.JUMP;
 				break;
 			default:

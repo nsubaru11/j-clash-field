@@ -109,10 +109,6 @@ class NetworkController implements Closeable {
 		sendQueue.offer(Protocol.moveDown());
 	}
 
-	public void jump() {
-		sendQueue.offer(Protocol.jump());
-	}
-
 	public void normalAttack() {
 		sendQueue.offer(Protocol.normalAttack());
 	}

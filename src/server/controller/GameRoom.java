@@ -207,7 +207,10 @@ class GameRoom extends Thread implements Closeable {
 				applyMove(player, -resolveMoveStepX(player), 0);
 				break;
 			case MOVE_UP:
-				applyMove(player, 0, resolveMoveStepY(player));
+			case JUMP:
+				if (applyJump(player)) {
+					broadcastAction(Protocol.moveUp(player.getId()));
+				}
 				break;
 			case MOVE_RIGHT:
 				setFacingDirection(player, 1);
@@ -215,11 +218,6 @@ class GameRoom extends Thread implements Closeable {
 				break;
 			case MOVE_DOWN:
 				applyMove(player, 0, -resolveMoveStepY(player));
-				break;
-			case JUMP:
-				if (applyJump(player)) {
-					broadcastAction(Protocol.jump(player.getId()));
-				}
 				break;
 			case CHARGE_START:
 				startCharge(player);

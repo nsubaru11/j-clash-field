@@ -24,6 +24,10 @@ public final class Protocol {
 		return CommandType.MOVE.getId() + ":" + playerId + ":" + i + "," + j;
 	}
 
+	public static String moveUp(int playerId) {
+		return CommandType.MOVE_UP.getId() + ":" + playerId;
+	}
+
 	public static String damage(int playerId, int hp) {
 		return CommandType.DAMAGE.getId() + ":" + playerId + "," + hp;
 	}
@@ -116,14 +120,6 @@ public final class Protocol {
 
 	public static String moveDown() {
 		return CommandType.MOVE_DOWN.getId() + "";
-	}
-
-	public static String jump() {
-		return CommandType.JUMP.getId() + "";
-	}
-
-	public static String jump(int playerId) {
-		return CommandType.JUMP.getId() + ":" + playerId;
 	}
 
 	public static String normalAttack() {

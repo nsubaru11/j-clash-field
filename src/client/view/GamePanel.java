@@ -69,7 +69,6 @@ public class GamePanel extends BaseBackgroundPanel {
 	private Runnable moveRightAction;
 	private Runnable moveUpAction;
 	private Runnable moveDownAction;
-	private Runnable jumpAction;
 	private Runnable normalAttackAction;
 	private Runnable chargeStartAction;
 	private Runnable chargeAttackAction;
@@ -121,7 +120,6 @@ public class GamePanel extends BaseBackgroundPanel {
 			Runnable moveRight,
 			Runnable moveUp,
 			Runnable moveDown,
-			Runnable jump,
 			Runnable normalAttack,
 			Runnable chargeStart,
 			Runnable chargeAttack,
@@ -132,7 +130,6 @@ public class GamePanel extends BaseBackgroundPanel {
 		this.moveRightAction = moveRight;
 		this.moveUpAction = moveUp;
 		this.moveDownAction = moveDown;
-		this.jumpAction = jump;
 		this.normalAttackAction = normalAttack;
 		this.chargeStartAction = chargeStart;
 		this.chargeAttackAction = chargeAttack;
@@ -283,7 +280,6 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private void recordLocalMove(int direction) {
-		if (localPlayerId < 0) return;
 		PlayerInfo info = ensurePlayer(localPlayerId);
 		GameCharacter character = info.getCharacter();
 		if (character instanceof CharacterSprite) {
@@ -292,13 +288,12 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private void recordLocalAction(CharacterSprite.Action action) {
-		if (localPlayerId < 0) return;
 		recordPlayerAction(localPlayerId, action);
 	}
 
 	private void triggerJump() {
 		recordLocalAction(CharacterSprite.Action.JUMP);
-		if (jumpAction != null) jumpAction.run();
+		if (moveUpAction != null) moveUpAction.run();
 		if (leftKeyDown && moveLeftAction != null) {
 			recordLocalMove(-1);
 			moveLeftAction.run();
