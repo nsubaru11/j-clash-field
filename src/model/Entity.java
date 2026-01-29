@@ -16,6 +16,8 @@ public abstract class Entity {
 	protected Vector2D height;
 	/** 物体の速度を表すベクトル */
 	protected Vector2D velocity = new Vector2D(0, 0);
+	/** 向きを表すベクトル（8方向） */
+	protected Vector2D facingDirection = new Vector2D(1, 0);
 
 	public long getId() {
 		return id;
@@ -27,6 +29,22 @@ public abstract class Entity {
 
 	public Vector2D getVelocity() {
 		return velocity;
+	}
+
+	public Vector2D getFacingDirection() {
+		return facingDirection;
+	}
+
+	public void setFacingDirection(double x, double y) {
+		int sx = x > 0 ? 1 : (x < 0 ? -1 : 0);
+		int sy = y > 0 ? 1 : (y < 0 ? -1 : 0);
+		if (sx == 0 && sy == 0) return;
+		if (sx != 0 && sy != 0) {
+			double scale = 1.0 / Math.sqrt(2.0);
+			facingDirection = new Vector2D(sx * scale, sy * scale);
+		} else {
+			facingDirection = new Vector2D(sx, sy);
+		}
 	}
 
 	public void update() {

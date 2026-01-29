@@ -93,8 +93,8 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					} else {
 						if (other instanceof GameCharacter) {
 							GameCharacter character = (GameCharacter) other;
-							int oldHp = character.getHp();
-							int newHp = character.applyDamage(projectile.getDamage());
+						int oldHp = character.getHp();
+						int newHp = character.applyDamage(projectile.getDamage());
 							double dealt = Math.max(0, oldHp - newHp);
 							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp, projectile.getOwnerId(), dealt));
 						}

@@ -4,6 +4,7 @@ import model.GameCharacter;
 import model.PlayerInfo;
 import model.ProjectileType;
 import model.ResultData;
+import model.Vector2D;
 import network.CommandType;
 
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ public final class GameSession {
 	private final Map<Integer, PlayerInfo> playersById = new HashMap<>();
 	private final Map<Integer, ResultData> resultMap = new HashMap<>();
 	private final Set<Integer> aliveIds = new HashSet<>();
-	private final Map<Integer, Integer> facingDirections = new HashMap<>();
 	private final Map<Integer, Long> chargeStartTimes = new HashMap<>();
 
 	private BattleField battleField;
@@ -48,7 +48,6 @@ public final class GameSession {
 		playersById.clear();
 		resultMap.clear();
 		aliveIds.clear();
-		facingDirections.clear();
 		chargeStartTimes.clear();
 		finalResults = new ArrayList<>();
 		resultReady = false;
@@ -65,7 +64,6 @@ public final class GameSession {
 			int playerId = player.getId();
 			playersById.put(playerId, player);
 			aliveIds.add(playerId);
-			facingDirections.put(playerId, 1);
 			resultMap.put(playerId, new ResultData(playerId));
 			GameCharacter character = player.getCharacter();
 			if (character != null) {
@@ -84,16 +82,18 @@ public final class GameSession {
 		if (actionType == null || !canAct(player)) return null;
 		switch (actionType) {
 			case MOVE_LEFT:
-				setFacingDirection(player, -1);
+				setFacingDirection(player, -1, 0);
 				applyMove(player, -resolveMoveStepX(player), 0);
 				return null;
 			case MOVE_RIGHT:
-				setFacingDirection(player, 1);
+				setFacingDirection(player, 1, 0);
 				applyMove(player, resolveMoveStepX(player), 0);
 				return null;
 			case MOVE_UP:
+				setFacingDirection(player, 0, 1);
 				return applyJump(player) ? CommandType.MOVE_UP : null;
 			case MOVE_DOWN:
+				setFacingDirection(player, 0, -1);
 				applyMove(player, 0, -resolveMoveStepY(player));
 				return null;
 			case CHARGE_START:
@@ -264,18 +264,18 @@ public final class GameSession {
 		ProjectileType projectileType = character.getProjectileType();
 		double maxDistance = character.getProjectileRange();
 		if (projectileType == null || maxDistance <= 0) return;
-		int direction = getFacingDirection(player);
+		Vector2D facing = getFacingDirection(character);
 		double speed = character.getProjectileSpeed() * Math.max(1.0, power);
 		double damage = character.getAttack();
-		double startX = character.getPosition().getX() + (direction * 16);
-		double startY = character.getPosition().getY() + 35;
+		double startX = character.getPosition().getX() + (facing.getX() * 16);
+		double startY = character.getPosition().getY() + 35 + (facing.getY() * 16);
 		Projectile projectile = new Projectile(
 				projectileType,
 				player.getId(),
 				startX,
 				startY,
-				direction * speed,
-				0,
+				facing.getX() * speed,
+				facing.getY() * speed,
 				power,
 				damage,
 				maxDistance
@@ -292,11 +292,14 @@ public final class GameSession {
 		double damage = character.getAttack();
 		double baseX = character.getPosition().getX();
 		double baseY = character.getPosition().getY();
+		Vector2D facing = getFacingDirection(character);
+		double offsetX = facing.getX() * offset;
+		double offsetY = facing.getY() * offset;
 		AttackHitbox front = new AttackHitbox(
 				player.getId(),
 				damage,
-				baseX + offset,
-				baseY,
+				baseX + offsetX,
+				baseY + offsetY,
 				width,
 				height,
 				0,
@@ -307,8 +310,8 @@ public final class GameSession {
 		AttackHitbox back = new AttackHitbox(
 				player.getId(),
 				damage,
-				baseX - offset,
-				baseY,
+				baseX - offsetX,
+				baseY - offsetY,
 				width,
 				height,
 				0,
@@ -328,15 +331,20 @@ public final class GameSession {
 		return true;
 	}
 
-	private void setFacingDirection(PlayerInfo player, int direction) {
-		if (direction == 0 || player == null) return;
-		facingDirections.put(player.getId(), direction > 0 ? 1 : -1);
+	private void setFacingDirection(PlayerInfo player, double x, double y) {
+		if (player == null) return;
+		GameCharacter character = player.getCharacter();
+		if (character == null) return;
+		character.setFacingDirection(x, y);
 	}
 
-	private int getFacingDirection(PlayerInfo player) {
-		if (player == null) return 1;
-		return facingDirections.getOrDefault(player.getId(), 1);
+	private Vector2D getFacingDirection(GameCharacter character) {
+		if (character == null) return new Vector2D(1, 0);
+		Vector2D facing = character.getFacingDirection();
+		if (facing == null) return new Vector2D(1, 0);
+		return facing;
 	}
+
 
 	private void startCharge(PlayerInfo player) {
 		if (player == null) return;

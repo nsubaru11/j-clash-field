@@ -7,8 +7,9 @@ import model.Vector2D;
 public final class Projectile extends Entity {
 	private final ProjectileType type;
 	private final int ownerId;
-	private final double power;
-	private final double damage;
+	private final double power; // チャージ倍率
+	private final double damage; // 基本ダメージ
+	private final double baseSpeed; // 初速
 	private final double maxDistance;
 	private double traveledDistance;
 
@@ -32,6 +33,7 @@ public final class Projectile extends Entity {
 		width = new Vector2D(10, 0);
 		height = new Vector2D(0, 10);
 		velocity = new Vector2D(velocityX, velocityY);
+		this.baseSpeed = velocity.length();
 	}
 
 	public ProjectileType getType() {
@@ -47,7 +49,9 @@ public final class Projectile extends Entity {
 	}
 
 	public double getDamage() {
-		return damage;
+		double currentSpeed = velocity.length();
+		double ratio = currentSpeed / baseSpeed;
+		return Math.max(0, damage * ratio * power);
 	}
 
 	@Override
