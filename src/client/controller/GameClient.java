@@ -7,9 +7,9 @@ import java.util.logging.Logger;
 
 public final class GameClient {
 	private static final Logger logger = Logger.getLogger(GameClient.class.getName());
-//	private static final String DEFAULT_HOST = "localhost";
+	private static final String DEFAULT_HOST = "localhost";
 	private static final int DEFAULT_PORT = 10000;
-	 private static final String DEFAULT_HOST = "10.75.200.15";
+//	 private static final String DEFAULT_HOST = "10.75.200.15";
 
 	public static void main(final String[] args) {
 		LoggingConfig.initialize("client");

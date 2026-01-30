@@ -37,10 +37,8 @@ public final class AttackHitbox extends Entity {
 
 	@Override
 	public void update() {
-		if (velocity != null) {
-			double step = velocity.length();
-			traveledDistance += step;
-		}
+		double step = velocity.length();
+		traveledDistance += step;
 		super.update();
 		remainingTicks--;
 	}

@@ -111,7 +111,6 @@ public class GamePanel extends BaseBackgroundPanel {
 
 		defendTimer = new Timer(DEFEND_HOLD_INTERVAL_MS, e -> {
 			if (!defendKeyDown) return;
-			recordLocalAction(CharacterSprite.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
 		});
 		defendTimer.setRepeats(true);
@@ -266,29 +265,24 @@ public class GamePanel extends BaseBackgroundPanel {
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, false), "move_left", () -> {
 			leftKeyDown = true;
 			recordLocalMove(-1);
-			if (moveLeftAction != null) moveLeftAction.run();
+			moveLeftAction.run();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, true), "move_left_release", () -> leftKeyDown = false);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "move_right", () -> {
 			rightKeyDown = true;
 			recordLocalMove(1);
-			if (moveRightAction != null) moveRightAction.run();
+			moveRightAction.run();
 		});
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "move_right_release", () -> rightKeyDown = false);
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0), "jump", () -> {
-			triggerJump();
-		});
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0), "jump", this::triggerJump);
 		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), "move_down", () -> {
 			recordLocalMove(0);
-			if (moveDownAction != null) moveDownAction.run();
+			moveDownAction.run();
 		});
-		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "jump", () -> {
-			triggerJump();
-		});
+		bindKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "jump", this::triggerJump);
 		Runnable defendPress = () -> {
 			if (defendKeyDown) return;
 			defendKeyDown = true;
-			recordLocalAction(CharacterSprite.Action.DEFEND);
 			if (defendAction != null) defendAction.run();
 			defendTimer.start();
 		};

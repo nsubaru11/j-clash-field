@@ -355,10 +355,10 @@ public class ResultPanel extends BaseBackgroundPanel {
 				resultLabel.setText("-");
 				resultLabel.setForeground(COLOR_DARK);
 				nameLabel.setText("-");
-				killsLabel.setText("Kills: -");
-				deathsLabel.setText("Deaths: -");
-				damageGivenLabel.setText("Damage Given: -");
-				damageTakenLabel.setText("Damage Taken: -");
+				killsLabel.setText("-");
+				deathsLabel.setText("-");
+				damageGivenLabel.setText("-");
+				damageTakenLabel.setText("-");
 				avatarPanel.setActive(false);
 				avatarPanel.setCharacter(null);
 				repaint();
@@ -366,10 +366,10 @@ public class ResultPanel extends BaseBackgroundPanel {
 			}
 			hasPlayer = true;
 			String name = info != null ? info.getName() : "";
-			if (info == null && data != null) {
-				nameLabel.setText("player:" + data.getId());
+			if (info == null) {
+				nameLabel.setText(data.getId() + "");
 			} else {
-				nameLabel.setText("player: " + (name.isEmpty() ? "-" : name));
+				nameLabel.setText((name.isEmpty() ? "-" : name));
 			}
 
 			ResultData.ResultType resultType = data != null ? data.getResult() : ResultData.ResultType.LOSE;
@@ -381,10 +381,10 @@ public class ResultPanel extends BaseBackgroundPanel {
 			long given = data != null ? Math.round(data.getDamageGiven()) : 0;
 			long taken = data != null ? Math.round(data.getDamageTaken()) : 0;
 
-			killsLabel.setText("Kills: " + kills);
-			deathsLabel.setText("Deaths: " + deaths);
-			damageGivenLabel.setText("Damage Given: " + given);
-			damageTakenLabel.setText("Damage Taken: " + taken);
+			killsLabel.setText("倒した回数：" + kills);
+			deathsLabel.setText("倒された回数：" + deaths);
+			damageGivenLabel.setText("与ダメージ量：" + given);
+			damageTakenLabel.setText("被ダメージ量：" + taken);
 
 			CharacterType characterType = resolveCharacterType(info);
 			avatarPanel.setActive(true);

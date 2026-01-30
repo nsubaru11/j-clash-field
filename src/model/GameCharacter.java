@@ -79,17 +79,14 @@ public abstract class GameCharacter extends Entity {
 
 	public abstract void specialAttack();
 
-	public void defend() {
-		startDefend(System.currentTimeMillis());
-	}
-
-	public void startDefend(long nowMs) {
-		if (defend <= 0.0 || defenseChargeTimeMs <= 0.0) return;
-		if (defenseRemainingMs <= 0) return;
+	public boolean startDefend(long nowMs) {
+		updateDefense(nowMs);
+		if (defenseRemainingMs <= 0) return false;
 		if (!defending) {
 			defending = true;
 			lastDefenseTickMs = nowMs;
 		}
+		return true;
 	}
 
 	public void stopDefend() {
@@ -166,10 +163,6 @@ public abstract class GameCharacter extends Entity {
 		position.setY(y);
 	}
 
-	public boolean isGrounded() {
-		return grounded;
-	}
-
 	public void setGrounded(boolean grounded) {
 		this.grounded = grounded;
 	}
@@ -203,14 +196,6 @@ public abstract class GameCharacter extends Entity {
 		return attack;
 	}
 
-	public double getAttackMin() {
-		return attackMin;
-	}
-
-	public double getAttackMax() {
-		return attackMax;
-	}
-
 	public double getAttackPowerRatio() {
 		double normal = resolveNormalAttackValue();
 		if (normal <= 0.0) return 1.0;
@@ -227,25 +212,9 @@ public abstract class GameCharacter extends Entity {
 
 	public int applyDamage(double damage) {
 		if (defending && defenseRemainingMs > 0) return getHp();
-		double mitigated = Math.max(0.0, damage - resolveDefense());
+		double mitigated = Math.max(0.0, damage - defend);
 		hp = Math.max(0.0, hp - mitigated);
 		return getHp();
-	}
-
-	public void movLeft() {
-		position.moveX(-getMoveStepX());
-	}
-
-	public void movRight() {
-		position.moveX(getMoveStepX());
-	}
-
-	public void movUp() {
-		position.moveY(getMoveStepY());
-	}
-
-	public void movDown() {
-		position.moveY(-getMoveStepY());
 	}
 
 	protected double resolveNormalAttackValue() {
@@ -260,12 +229,4 @@ public abstract class GameCharacter extends Entity {
 		return attackMin + (attackMax - attackMin) * ratio;
 	}
 
-	private double resolveDefense() {
-		if (defend <= 0.0) return 0.0;
-		if (defenseChargeTimeMs <= 0.0) return 0.0;
-		if (!defending) return 0.0;
-		if (defenseRemainingMs <= 0) return 0.0;
-		double ratio = Math.min(1.0, defenseRemainingMs / defenseChargeTimeMs);
-		return defend * ratio;
-	}
 }

@@ -132,8 +132,10 @@ public final class GameSession {
 				return CommandType.CHARGE_ATTACK;
 			case DEFEND:
 				defendInputTimes.put(player.getId(), now);
-				character.startDefend(now);
-				return CommandType.DEFEND;
+				if (character.startDefend(now)) {
+					return CommandType.DEFEND;
+				}
+				return null;
 			default:
 				return null;
 		}
