@@ -1,6 +1,6 @@
 package client.view;
 
-import client.model.CharacterSprite;
+import client.model.GameCharacterClient;
 import model.CharacterInfo;
 import model.CharacterType;
 import model.GameCharacter;
@@ -39,7 +39,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	static {
 		for (CharacterType type : CharacterType.values()) {
-			CharacterSprite sprite = CharacterSprite.forType(type);
+			GameCharacterClient sprite = GameCharacterClient.forType(type);
 			BufferedImage idleImage = sprite.getIdleImage();
 			CHARACTER_IMAGES.put(type, idleImage);
 		}
@@ -136,10 +136,10 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		g2d.setPaint(originalPaint);
 	}
 
-	private static CharacterSprite createCharacterSprite(CharacterType characterType) {
+	private static GameCharacterClient createCharacterSprite(CharacterType characterType) {
 		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
-		CharacterSprite sprite = CharacterSprite.forType(resolved);
-		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.defaultType());
+		GameCharacterClient sprite = GameCharacterClient.forType(resolved);
+		return sprite != null ? sprite : GameCharacterClient.forType(CharacterType.defaultType());
 	}
 
 	private static BufferedImage resolveCharacterImage(CharacterType characterType) {

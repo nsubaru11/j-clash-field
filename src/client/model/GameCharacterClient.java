@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class CharacterSprite extends GameCharacter {
+public abstract class GameCharacterClient extends GameCharacter {
 	private static final int DEFAULT_COLUMNS = 3;
 	private static final int DEFAULT_ROWS = 3;
 	private static final Map<String, BufferedImage> SPRITE_CACHE = new HashMap<>();
@@ -31,19 +31,19 @@ public abstract class CharacterSprite extends GameCharacter {
 	private final RenderState renderState = new RenderState();
 	private boolean hasPosition;
 
-	protected CharacterSprite(CharacterType type, String spriteSheetPath) {
+	protected GameCharacterClient(CharacterType type, String spriteSheetPath) {
 		this(type, spriteSheetPath, DEFAULT_COLUMNS, DEFAULT_ROWS, Color.BLACK);
 	}
 
-	protected CharacterSprite(CharacterType type, String spriteSheetPath, Color accentColor) {
+	protected GameCharacterClient(CharacterType type, String spriteSheetPath, Color accentColor) {
 		this(type, spriteSheetPath, DEFAULT_COLUMNS, DEFAULT_ROWS, accentColor);
 	}
 
-	protected CharacterSprite(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows) {
+	protected GameCharacterClient(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows) {
 		this(type, spriteSheetPath, sheetColumns, sheetRows, Color.BLACK);
 	}
 
-	protected CharacterSprite(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows, Color accentColor) {
+	protected GameCharacterClient(CharacterType type, String spriteSheetPath, int sheetColumns, int sheetRows, Color accentColor) {
 		super(type);
 		this.sheetColumns = sheetColumns;
 		this.sheetRows = sheetRows;
@@ -54,21 +54,21 @@ public abstract class CharacterSprite extends GameCharacter {
 	/**
 	 * 未対応 or null の場合は null を返す(描画なし扱い)。
 	 */
-	public static CharacterSprite forType(CharacterType type) {
+	public static GameCharacterClient forType(CharacterType type) {
 		if (type == null) return null;
 		return createSprite(type);
 	}
 
-	private static CharacterSprite createSprite(CharacterType type) {
+	private static GameCharacterClient createSprite(CharacterType type) {
 		switch (type) {
 			case ARCHER:
-				return new ArcherSprite();
+				return new Archer();
 			case WARRIOR:
-				return new WarriorSprite();
+				return new Warrior();
 			case FIGHTER:
-				return new FighterSprite();
+				return new Fighter();
 			case WIZARD:
-				return new WizardSprite();
+				return new Wizard();
 			default:
 				return null;
 		}
@@ -79,7 +79,7 @@ public abstract class CharacterSprite extends GameCharacter {
 		BufferedImage cached = SPRITE_CACHE.get(spriteSheetPath);
 		if (cached != null) return cached;
 		try {
-			BufferedImage image = ImageIO.read(Objects.requireNonNull(CharacterSprite.class.getResource(spriteSheetPath)));
+			BufferedImage image = ImageIO.read(Objects.requireNonNull(GameCharacterClient.class.getResource(spriteSheetPath)));
 			SPRITE_CACHE.put(spriteSheetPath, image);
 			return image;
 		} catch (IOException | NullPointerException e) {

@@ -1,6 +1,6 @@
 package client.controller;
 
-import client.model.CharacterSprite;
+import client.model.GameCharacterClient;
 import client.view.GameGUI;
 import client.view.GamePanel;
 import client.view.GameRoomPanel;
@@ -350,28 +350,28 @@ public final class GuiController {
 
 	private void handlePlayerAction(CommandType actionType, String body) {
 		int actedPlayerId = Integer.parseInt(body);
-		CharacterSprite.Action action;
+		GameCharacterClient.Action action;
 		switch (actionType) {
 			case NORMAL_ATTACK:
-				action = CharacterSprite.Action.NORMAL_ATTACK;
+				action = GameCharacterClient.Action.NORMAL_ATTACK;
 				break;
 			case CHARGE_START:
-				action = CharacterSprite.Action.CHARGE_HOLD;
+				action = GameCharacterClient.Action.CHARGE_HOLD;
 				break;
 			case CHARGE_ATTACK:
-				action = CharacterSprite.Action.CHARGE_ATTACK;
+				action = GameCharacterClient.Action.CHARGE_ATTACK;
 				break;
 			case DEFEND:
-				action = CharacterSprite.Action.DEFEND;
+				action = GameCharacterClient.Action.DEFEND;
 				break;
 			case MOVE_UP:
-				action = CharacterSprite.Action.JUMP;
+				action = GameCharacterClient.Action.JUMP;
 				break;
 			default:
-				action = CharacterSprite.Action.NONE;
+				action = GameCharacterClient.Action.NONE;
 				break;
 		}
-		if (action == CharacterSprite.Action.NONE) return;
+		if (action == GameCharacterClient.Action.NONE) return;
 		SwingUtilities.invokeLater(() -> gamePanel.recordPlayerAction(actedPlayerId, action));
 	}
 
@@ -406,7 +406,7 @@ public final class GuiController {
 	private void updatePlayerSnapshot(int playerId, String playerName, CharacterType characterType) {
 		PlayerInfo snapshot = playerSnapshots.get(playerId);
 		if (snapshot == null) {
-			GameCharacter character = characterType != null ? CharacterSprite.forType(characterType) : null;
+			GameCharacter character = characterType != null ? GameCharacterClient.forType(characterType) : null;
 			snapshot = new PlayerInfo(playerId, playerName, false, character);
 			playerSnapshots.put(playerId, snapshot);
 		}
@@ -414,7 +414,7 @@ public final class GuiController {
 		if (characterType != null) {
 			GameCharacter current = snapshot.getCharacter();
 			if (current == null || current.getType() != characterType) {
-				snapshot.setCharacter(CharacterSprite.forType(characterType));
+				snapshot.setCharacter(GameCharacterClient.forType(characterType));
 			}
 		}
 	}
@@ -429,7 +429,7 @@ public final class GuiController {
 			if (existing != null && existing.getType() != null) {
 				type = existing.getType();
 			}
-			GameCharacter character = CharacterSprite.forType(type);
+			GameCharacter character = GameCharacterClient.forType(type);
 			PlayerInfo refreshedInfo = new PlayerInfo(snapshot.getId(), snapshot.getName(), snapshot.isReady(), character);
 			refreshed.put(refreshedInfo.getId(), refreshedInfo);
 		}

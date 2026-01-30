@@ -1,6 +1,6 @@
 package client.view;
 
-import client.model.CharacterSprite;
+import client.model.GameCharacterClient;
 import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
@@ -41,7 +41,7 @@ public class ResultPanel extends BaseBackgroundPanel {
 
 	static {
 		for (CharacterType type : CharacterType.values()) {
-			CharacterSprite sprite = CharacterSprite.forType(type);
+			GameCharacterClient sprite = GameCharacterClient.forType(type);
 			BufferedImage idleImage = sprite.getIdleImage();
 			CHARACTER_IMAGES.put(type, idleImage);
 		}

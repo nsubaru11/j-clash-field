@@ -1,6 +1,6 @@
 package client.view;
 
-import client.model.CharacterSprite;
+import client.model.GameCharacterClient;
 import model.CharacterType;
 import model.GameCharacter;
 import model.PlayerInfo;
@@ -178,10 +178,10 @@ public class GamePanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private CharacterSprite createCharacterSprite(CharacterType characterType) {
+	private GameCharacterClient createCharacterSprite(CharacterType characterType) {
 		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
-		CharacterSprite sprite = CharacterSprite.forType(resolved);
-		return sprite != null ? sprite : CharacterSprite.forType(CharacterType.defaultType());
+		GameCharacterClient sprite = GameCharacterClient.forType(resolved);
+		return sprite != null ? sprite : GameCharacterClient.forType(CharacterType.defaultType());
 	}
 
 	public void updatePlayerPosition(int playerId, double x, double y, double facingX, double facingY) {
@@ -190,8 +190,8 @@ public class GamePanel extends BaseBackgroundPanel {
 		if (character == null) return;
 		long now = System.currentTimeMillis();
 		character.setFacingDirection(facingX, facingY);
-		if (character instanceof CharacterSprite) {
-			CharacterSprite sprite = (CharacterSprite) character;
+		if (character instanceof GameCharacterClient) {
+			GameCharacterClient sprite = (GameCharacterClient) character;
 			sprite.recordPosition(x, y, now);
 			sprite.recordFacing(facingX, facingY);
 		} else {
@@ -206,13 +206,13 @@ public class GamePanel extends BaseBackgroundPanel {
 		character.setHp(hp);
 	}
 
-	public void recordPlayerAction(int playerId, CharacterSprite.Action action) {
-		if (action == null || action == CharacterSprite.Action.NONE) return;
+	public void recordPlayerAction(int playerId, GameCharacterClient.Action action) {
+		if (action == null || action == GameCharacterClient.Action.NONE) return;
 		PlayerInfo info = ensurePlayer(playerId);
 		GameCharacter character = info.getCharacter();
-		if (!(character instanceof CharacterSprite)) return;
+		if (!(character instanceof GameCharacterClient)) return;
 		long now = System.currentTimeMillis();
-		((CharacterSprite) character).recordAction(action, now);
+		((GameCharacterClient) character).recordAction(action, now);
 	}
 
 	public void updateProjectile(long projectileId, ProjectileType type, double x, double y, double power, double vx, double vy) {
@@ -302,17 +302,17 @@ public class GamePanel extends BaseBackgroundPanel {
 	private void recordLocalMove(int direction) {
 		PlayerInfo info = ensurePlayer(localPlayerId);
 		GameCharacter character = info.getCharacter();
-		if (character instanceof CharacterSprite) {
-			((CharacterSprite) character).recordMove(direction, System.currentTimeMillis());
+		if (character instanceof GameCharacterClient) {
+			((GameCharacterClient) character).recordMove(direction, System.currentTimeMillis());
 		}
 	}
 
-	private void recordLocalAction(CharacterSprite.Action action) {
+	private void recordLocalAction(GameCharacterClient.Action action) {
 		recordPlayerAction(localPlayerId, action);
 	}
 
 	private void triggerJump() {
-		recordLocalAction(CharacterSprite.Action.JUMP);
+		recordLocalAction(GameCharacterClient.Action.JUMP);
 		if (moveUpAction != null) moveUpAction.run();
 		if (leftKeyDown && moveLeftAction != null) {
 			recordLocalMove(-1);
@@ -354,11 +354,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mousePressed(MouseEvent e) {
 					requestFocusInWindow();
 					if (SwingUtilities.isLeftMouseButton(e)) {
-						recordLocalAction(CharacterSprite.Action.NORMAL_ATTACK);
+						recordLocalAction(GameCharacterClient.Action.NORMAL_ATTACK);
 						if (normalAttackAction != null) normalAttackAction.run();
 					} else if (SwingUtilities.isRightMouseButton(e)) {
 						rightMouseDown = true;
-						recordLocalAction(CharacterSprite.Action.CHARGE_HOLD);
+						recordLocalAction(GameCharacterClient.Action.CHARGE_HOLD);
 						if (chargeStartAction != null) chargeStartAction.run();
 					}
 				}
@@ -367,7 +367,7 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mouseReleased(MouseEvent e) {
 					if (SwingUtilities.isRightMouseButton(e) && rightMouseDown) {
 						rightMouseDown = false;
-						recordLocalAction(CharacterSprite.Action.CHARGE_ATTACK);
+						recordLocalAction(GameCharacterClient.Action.CHARGE_ATTACK);
 						if (chargeAttackAction != null) chargeAttackAction.run();
 					}
 				}
@@ -418,7 +418,7 @@ public class GamePanel extends BaseBackgroundPanel {
 					index++;
 					continue;
 				}
-				CharacterSprite view = character instanceof CharacterSprite ? (CharacterSprite) character : null;
+				GameCharacterClient view = character instanceof GameCharacterClient ? (GameCharacterClient) character : null;
 				if (character != null && character.getPosition() != null) {
 					boolean usePosition = view == null || view.hasPosition();
 					if (usePosition) {
@@ -431,7 +431,7 @@ public class GamePanel extends BaseBackgroundPanel {
 				int drawX = x - spriteWidth / 2;
 				int drawY = y - spriteHeight;
 				if (view != null) {
-					CharacterSprite.Frame frame = view.resolveFrame(now, worldY, WORLD_GROUND_Y);
+					GameCharacterClient.Frame frame = view.resolveFrame(now, worldY, WORLD_GROUND_Y);
 					view.draw(g2d, drawX, drawY, spriteWidth, spriteHeight, frame, view.isFacingRight());
 				} else {
 					g2d.setColor(resolveCharacterColor(character));
