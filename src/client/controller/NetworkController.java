@@ -28,7 +28,7 @@ class NetworkController implements Closeable {
 	private LinkedBlockingQueue<String> sendQueue;
 	private Thread senderThread;
 	private Thread receiverThread;
-	private volatile Consumer<String> messageListener;
+	private volatile MessageListener messageListener;
 	private volatile boolean isConnected;
 
 	public NetworkController(String host, int port) {
@@ -142,7 +142,7 @@ class NetworkController implements Closeable {
 		close();
 	}
 
-	public void setMessageListener(Consumer<String> messageListener) {
+	public void setMessageListener(MessageListener messageListener) {
 		this.messageListener = messageListener;
 	}
 
@@ -183,7 +183,7 @@ class NetworkController implements Closeable {
 
 					if (messageListener != null) {
 						logger.fine(() -> "サーバーから受信: " + line);
-						messageListener.accept(line);
+						messageListener.onMessageReceived(line);
 					}
 				}
 			} catch (SocketException e) {
