@@ -42,6 +42,6 @@ del "%REPO_DIR%\sources.txt"
 
 rem 実行
 echo Starting Server Application...
-"%JAVA_CMD%" -cp "%OUT_DIR%" server.controller.GameServer
+"%JAVA_CMD%" -cp "%OUT_DIR%" server.ServerMain
 
 pause

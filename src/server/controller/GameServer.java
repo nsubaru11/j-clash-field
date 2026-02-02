@@ -1,6 +1,5 @@
 package server.controller;
 
-import model.LoggingConfig;
 import network.Protocol;
 
 import java.io.Closeable;
@@ -9,7 +8,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,10 +15,9 @@ import java.util.logging.Logger;
 /**
  * サーバーを起動するためのクラスです。
  */
-final class GameServer implements Runnable, Closeable {
+public final class GameServer implements Runnable, Closeable {
 	// -------------------- クラス定数 --------------------
 	private static final Logger logger = Logger.getLogger(GameServer.class.getName());
-	private static final int DEFAULT_PORT = 10000;
 
 	// -------------------- インスタンス定数 --------------------
 	private final ServerSocket serverSocket;
@@ -51,38 +48,6 @@ final class GameServer implements Runnable, Closeable {
 		waitingPlayers = new LinkedHashSet<>();
 		playerNames = new ConcurrentHashMap<>();
 		isRunning = true;
-	}
-
-	// -------------------- エントリーポイント --------------------
-	public static void main(final String[] args) {
-		LoggingConfig.initialize("server");
-
-		// ポート番号の設定
-		int port = DEFAULT_PORT;
-		if (args.length > 0) {
-			try {
-				// 引数があれば、それをポート番号として使う
-				port = Integer.parseInt(args[0]);
-			} catch (final NumberFormatException e) {
-				logger.log(Level.WARNING, "ポート番号が不正です。デフォルト(" + DEFAULT_PORT + ")を使用します。", e);
-			}
-		}
-
-		// サーバーを起動する
-		GameServer server = new GameServer(port);
-		new Thread(server).start();
-		Runtime.getRuntime().addShutdownHook(new Thread(server::close));
-
-		// 標準入力を監視してサーバーを終了する（exitを入力すると終了する）
-		Scanner sc = new Scanner(System.in);
-		while (true) {
-			String input = sc.nextLine();
-			if (input.equals("exit")) {
-				server.close();
-				sc.close();
-				break;
-			}
-		}
 	}
 
 	// -------------------- publicメソッド --------------------

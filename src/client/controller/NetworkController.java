@@ -11,14 +11,13 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * 通信を管理するクラスです。
  */
-class NetworkController implements Closeable {
+public class NetworkController implements Closeable {
 	private static final Logger logger = Logger.getLogger(NetworkController.class.getName());
 	private final String host;
 	private final int port;

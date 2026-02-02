@@ -52,6 +52,6 @@ if %errorlevel% neq 0 (
 
 rem 実行
 echo Starting Client Application...
-"%JAVA_CMD%" -cp "%OUT_DIR%" client.controller.GameClient
+"%JAVA_CMD%" -cp "%OUT_DIR%" client.ClientMain
 
 pause
