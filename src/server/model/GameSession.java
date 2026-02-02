@@ -2,7 +2,6 @@ package server.model;
 
 import model.GameCharacter;
 import model.PlayerInfo;
-import model.ProjectileType;
 import model.ResultData;
 import model.Vector2D;
 import network.CommandType;
@@ -268,10 +267,10 @@ public final class GameSession {
 	private void applyNormalAttack(PlayerInfo player) {
 		GameCharacter character = player.getCharacter();
 		character.normalAttack();
-		if (character.isRanged()) {
-			spawnProjectile(player, character, 1.0);
-		} else {
-			spawnMeleeAttack(player, character, 1.0);
+		if (character instanceof RangedAttacker) {
+			((RangedAttacker) character).shoot(battleField);
+		} else if (character instanceof MeleeAttacker) {
+			((MeleeAttacker) character).strike(battleField);
 		}
 	}
 
@@ -279,74 +278,11 @@ public final class GameSession {
 		GameCharacter character = player.getCharacter();
 		long chargeMs = stopCharge(player);
 		character.chargeAttack(chargeMs);
-		double power = character.getAttackPowerRatio();
-		if (character.isRanged()) {
-			spawnProjectile(player, character, power);
-		} else {
-			spawnMeleeAttack(player, character, power);
+		if (character instanceof RangedAttacker) {
+			((RangedAttacker) character).shoot(battleField);
+		} else if (character instanceof MeleeAttacker) {
+			((MeleeAttacker) character).strike(battleField);
 		}
-	}
-
-	private void spawnProjectile(PlayerInfo player, GameCharacter character, double power) {
-		ProjectileType projectileType = character.getProjectileType();
-		double maxDistance = character.getProjectileRange();
-		if (maxDistance <= 0) return;
-		Vector2D facing = getFacingDirection(character);
-		double speed = character.getProjectileSpeed() * Math.max(1.0, power);
-		double damage = character.getAttack();
-		double startX = character.getPosition().getX() + (facing.getX() * 16);
-		double startY = character.getPosition().getY() + 35 + (facing.getY() * 16);
-		Projectile projectile = new Projectile(
-				projectileType,
-				player.getId(),
-				startX,
-				startY,
-				facing.getX() * speed,
-				facing.getY() * speed,
-				power,
-				damage,
-				maxDistance
-		);
-		battleField.addEntity(projectile);
-	}
-
-	private void spawnMeleeAttack(PlayerInfo player, GameCharacter character, double power) {
-		double width = character.getMeleeWidth() * Math.min(1.4, power);
-		double height = character.getMeleeHeight() * Math.min(1.3, power);
-		double offset = character.getMeleeOffset();
-		int lifetime = character.getMeleeLifetimeTicks();
-		double damage = character.getAttack();
-		double baseX = character.getPosition().getX();
-		double baseY = character.getPosition().getY();
-		Vector2D facing = getFacingDirection(character);
-		double offsetX = facing.getX() * offset;
-		double offsetY = facing.getY() * offset;
-		AttackHitbox front = new AttackHitbox(
-				player.getId(),
-				damage,
-				baseX + offsetX,
-				baseY + offsetY,
-				width,
-				height,
-				0,
-				0,
-				0,
-				lifetime
-		);
-		AttackHitbox back = new AttackHitbox(
-				player.getId(),
-				damage,
-				baseX - offsetX,
-				baseY - offsetY,
-				width,
-				height,
-				0,
-				0,
-				0,
-				lifetime
-		);
-		battleField.addEntity(front);
-		battleField.addEntity(back);
 	}
 
 	private boolean applyJump(PlayerInfo player) {
