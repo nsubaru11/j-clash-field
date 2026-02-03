@@ -125,21 +125,6 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
 	}
 
-	public boolean isReady() {
-		return slotPlayers[playerSlotIndex.get(localPlayerId)].isReady();
-	}
-
-	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		Graphics2D g2d = (Graphics2D) g;
-		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		Paint originalPaint = g2d.getPaint();
-		g2d.setColor(new Color(0, 0, 0, 90));
-		g2d.fillRect(0, 0, getWidth(), getHeight());
-		g2d.setPaint(originalPaint);
-	}
-
 	private static GameCharacterClient createCharacterSprite(CharacterType characterType) {
 		CharacterType resolved = characterType == null ? CharacterType.defaultType() : characterType;
 		GameCharacterClient sprite = GameCharacterClient.forType(resolved);
@@ -158,6 +143,21 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		if (entry == null) return CharacterType.defaultType();
 		GameCharacter character = entry.getCharacter();
 		return character != null ? character.getType() : CharacterType.defaultType();
+	}
+
+	public boolean isReady() {
+		return slotPlayers[playerSlotIndex.get(localPlayerId)].isReady();
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		Paint originalPaint = g2d.getPaint();
+		g2d.setColor(new Color(0, 0, 0, 90));
+		g2d.fillRect(0, 0, getWidth(), getHeight());
+		g2d.setPaint(originalPaint);
 	}
 
 	public void setReadyAction(ActionListener listener) {

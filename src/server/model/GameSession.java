@@ -15,12 +15,12 @@ import java.util.Map;
 import java.util.Set;
 
 public final class GameSession {
+	private static final long DEFEND_HOLD_TIMEOUT_MS = 250L;
 	private final int maxPlayers;
 	private final Map<Integer, PlayerInfo> playersById = new HashMap<>();
 	private final Map<Integer, ResultData> resultMap = new HashMap<>();
 	private final Set<Integer> aliveIds = new HashSet<>();
 	private final Map<Integer, Long> chargeStartTimes = new HashMap<>();
-	private static final long DEFEND_HOLD_TIMEOUT_MS = 250L;
 	private final Map<Integer, Long> defendInputTimes = new HashMap<>();
 
 	private BattleField battleField;

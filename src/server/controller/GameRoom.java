@@ -40,10 +40,9 @@ class GameRoom extends Thread implements Closeable {
 	private final ConcurrentLinkedQueue<ServerCommand> commandQueue;
 	private final ConcurrentHashMap<ClientHandler, PlayerInfo> playerMap;
 	private final GameSession gameSession;
-
+	private final boolean isPublic;
 	// -------------------- インスタンス変数 --------------------
 	private volatile Runnable disconnectListener;
-	private final boolean isPublic;
 	private volatile boolean isClosed;
 
 	public GameRoom(final boolean isPublic) {
@@ -123,13 +122,17 @@ class GameRoom extends Thread implements Closeable {
 		return sj.toString();
 	}
 
-	/** 一意識別用 */
+	/**
+	 * 一意識別用
+	 */
 	public synchronized boolean equals(Object obj) {
 		if (!(obj instanceof GameRoom)) return false;
 		return ((GameRoom) obj).roomId == roomId;
 	}
 
-	/** 一意識別用 */
+	/**
+	 * 一意識別用
+	 */
 	public synchronized int hashCode() {
 		return roomId;
 	}

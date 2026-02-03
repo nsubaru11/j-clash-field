@@ -92,7 +92,10 @@ public final class GameServer implements Runnable, Closeable {
 	}
 
 	// -------------------- privateメソッド --------------------
-	/** プレイヤーがルームに参加するコマンドを受け取ったときの処理 */
+
+	/**
+	 * プレイヤーがルームに参加するコマンドを受け取ったときの処理
+	 */
 	private synchronized void handleMessage(ClientHandler handler, String msg) {
 		ServerCommand cmd = new ServerCommand(handler, msg);
 		switch (cmd.getCommandType()) {

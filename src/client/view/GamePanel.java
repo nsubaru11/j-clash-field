@@ -47,7 +47,7 @@ public class GamePanel extends BaseBackgroundPanel {
 	private static final String MAGIC_IMAGE = "/resources/magic.png";
 	private static final String BACKGROUND_IMAGE = "/resources/gameBackGround.png";
 	private static final Map<ProjectileType, BufferedImage> PROJECTILE_IMAGES = new EnumMap<>(ProjectileType.class);
-	private static BufferedImage backgroundImage;
+	private static final BufferedImage backgroundImage;
 
 	static {
 		try {
@@ -60,6 +60,7 @@ public class GamePanel extends BaseBackgroundPanel {
 			throw new RuntimeException("画像の読み込みに失敗しました", e);
 		}
 	}
+
 	// --------------- フィールド ---------------
 	private final ScreenPanel screenPanel;
 	private final InfoPanel infoPanel;

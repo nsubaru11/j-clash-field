@@ -12,9 +12,13 @@ import java.util.Objects;
  */
 public class GameGUI extends JFrame {
 	// --------------- クラス定数 ---------------
-	/** アプリケーションアイコンの画像 */
+	/**
+	 * アプリケーションアイコンの画像
+	 */
 	private static final Image ICON_IMAGE;
-	/** アプリケーションアイコンの画像パス */
+	/**
+	 * アプリケーションアイコンの画像パス
+	 */
 	private static final String ICON_IMAGE_PATH = "/resources/icon.png";
 
 	static {
@@ -29,7 +33,9 @@ public class GameGUI extends JFrame {
 	}
 
 	// --------------- フィールド ---------------
-	/** 各画面パネルを保持する親パネル */
+	/**
+	 * 各画面パネルを保持する親パネル
+	 */
 	private final JComponent rootPane;
 
 	/**
@@ -51,7 +57,7 @@ public class GameGUI extends JFrame {
 		add(rootPane);
 
 		requestFocus();
-		
+
 		setVisible(true);
 	}
 }

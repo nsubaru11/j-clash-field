@@ -9,9 +9,13 @@ import java.util.Objects;
 
 @SuppressWarnings("unused")
 abstract class BaseBackgroundPanel extends JPanel {
-	/** 背景画像のパス（デフォルト） */
+	/**
+	 * 背景画像のパス（デフォルト）
+	 */
 	protected static final String DEFAULT_BACKGROUND_IMAGE_PATH = "/resources/background.png";
-	/** 背景画像（デフォルト） */
+	/**
+	 * 背景画像（デフォルト）
+	 */
 	protected static final BufferedImage DEFAULT_BACKGROUND_IMAGE;
 
 	static {

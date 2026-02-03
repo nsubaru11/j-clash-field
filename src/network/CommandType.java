@@ -64,9 +64,6 @@ public enum CommandType {
 			CHARGE_ATTACK,
 			DEFEND
 	);
-
-	private final int id;
-
 	private static final CommandType[] CACHE = new CommandType[256];
 
 	static {
@@ -74,16 +71,18 @@ public enum CommandType {
 		stream(values()).forEach(type -> CACHE[type.id] = type);
 	}
 
+	private final int id;
+
 	CommandType(int id) {
 		this.id = id;
-	}
-
-	public int getId() {
-		return id;
 	}
 
 	public static CommandType fromId(int id) {
 		if (id < 0 || id >= CACHE.length) return UNKNOWN;
 		return CACHE[id];
+	}
+
+	public int getId() {
+		return id;
 	}
 }

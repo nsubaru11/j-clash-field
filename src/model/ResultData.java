@@ -20,12 +20,54 @@ public final class ResultData {
 		reset();
 	}
 
+	public static ResultData fromProtocolString(String token) {
+		String[] fields = token.split(FIELD_SPLIT_REGEX);
+		int id = Integer.parseInt(fields[0]);
+		ResultType type = ResultType.fromId(Integer.parseInt(fields[1]));
+		int kills = Integer.parseInt(fields[2]);
+		int deaths = Integer.parseInt(fields[3]);
+		double damageGiven = Double.parseDouble(fields[4]);
+		double damageTaken = Double.parseDouble(fields[5]);
+		ResultData data = new ResultData(id);
+		data.result = type;
+		data.kills = kills;
+		data.deaths = deaths;
+		data.damageGiven = damageGiven;
+		data.damageTaken = damageTaken;
+		return data;
+	}
+
+	public static String serializeList(Iterable<ResultData> results) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (ResultData data : results) {
+			if (!first) sb.append(ENTRY_DELIMITER);
+			sb.append(data.toProtocolString());
+			first = false;
+		}
+		return sb.toString();
+	}
+
+	public static List<ResultData> parseList(String payload) {
+		List<ResultData> list = new ArrayList<>();
+		String[] tokens = payload.split(ENTRY_DELIMITER);
+		for (String token : tokens) {
+			ResultData data = fromProtocolString(token);
+			list.add(data);
+		}
+		return list;
+	}
+
 	public int getId() {
 		return id;
 	}
 
 	public ResultType getResult() {
 		return result;
+	}
+
+	public void setResult(ResultType result) {
+		this.result = result == null ? ResultType.LOSE : result;
 	}
 
 	public int getKills() {
@@ -68,10 +110,6 @@ public final class ResultData {
 		if (damage > 0) damageTaken += damage;
 	}
 
-	public void setResult(ResultType result) {
-		this.result = result == null ? ResultType.LOSE : result;
-	}
-
 	public String toProtocolString() {
 		return id + FIELD_DELIMITER
 				+ result.getId() + FIELD_DELIMITER
@@ -79,44 +117,6 @@ public final class ResultData {
 				+ deaths + FIELD_DELIMITER
 				+ damageGiven + FIELD_DELIMITER
 				+ damageTaken;
-	}
-
-	public static ResultData fromProtocolString(String token) {
-		String[] fields = token.split(FIELD_SPLIT_REGEX);
-		int id = Integer.parseInt(fields[0]);
-		ResultType type = ResultType.fromId(Integer.parseInt(fields[1]));
-		int kills = Integer.parseInt(fields[2]);
-		int deaths = Integer.parseInt(fields[3]);
-		double damageGiven = Double.parseDouble(fields[4]);
-		double damageTaken = Double.parseDouble(fields[5]);
-		ResultData data = new ResultData(id);
-		data.result = type;
-		data.kills = kills;
-		data.deaths = deaths;
-		data.damageGiven = damageGiven;
-		data.damageTaken = damageTaken;
-		return data;
-	}
-
-	public static String serializeList(Iterable<ResultData> results) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (ResultData data : results) {
-			if (!first) sb.append(ENTRY_DELIMITER);
-			sb.append(data.toProtocolString());
-			first = false;
-		}
-		return sb.toString();
-	}
-
-	public static List<ResultData> parseList(String payload) {
-		List<ResultData> list = new ArrayList<>();
-		String[] tokens = payload.split(ENTRY_DELIMITER);
-		for (String token : tokens) {
-			ResultData data = fromProtocolString(token);
-			list.add(data);
-		}
-		return list;
 	}
 
 	@Override
@@ -137,19 +137,19 @@ public final class ResultData {
 			this.label = label;
 		}
 
+		public static ResultType fromId(int id) {
+			for (ResultType type : values()) {
+				if (type.id == id) return type;
+			}
+			return LOSE;
+		}
+
 		public int getId() {
 			return id;
 		}
 
 		public String getLabel() {
 			return label;
-		}
-
-		public static ResultType fromId(int id) {
-			for (ResultType type : values()) {
-				if (type.id == id) return type;
-			}
-			return LOSE;
 		}
 	}
 }

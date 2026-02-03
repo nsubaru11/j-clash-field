@@ -1,6 +1,6 @@
 package model;
 
-import java.awt.Color;
+import java.awt.*;
 
 public enum CharacterType {
 	ARCHER(0),
@@ -8,8 +8,8 @@ public enum CharacterType {
 	FIGHTER(2),
 	WIZARD(3);
 
-	private static final CharacterType[] BY_ID;
 	public static final int DEFAULT_ID = 0;
+	private static final CharacterType[] BY_ID;
 
 	static {
 		int maxId = 0;

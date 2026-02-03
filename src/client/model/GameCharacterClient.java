@@ -87,6 +87,23 @@ public abstract class GameCharacterClient extends GameCharacter {
 		}
 	}
 
+	private static long resolveActionDuration(Action action) {
+		switch (action) {
+			case NORMAL_ATTACK:
+				return NORMAL_ATTACK_MS;
+			case CHARGE_ATTACK:
+				return CHARGE_ATTACK_MS;
+			case CHARGE_HOLD:
+				return 0;
+			case DEFEND:
+				return DEFEND_MS;
+			case JUMP:
+				return JUMP_MS;
+			default:
+				return 0;
+		}
+	}
+
 	@Override
 	public double getGravity() {
 		return 0;
@@ -269,23 +286,6 @@ public abstract class GameCharacterClient extends GameCharacter {
 
 		public boolean isFacingRight() {
 			return facingRight;
-		}
-	}
-
-	private static long resolveActionDuration(Action action) {
-		switch (action) {
-			case NORMAL_ATTACK:
-				return NORMAL_ATTACK_MS;
-			case CHARGE_ATTACK:
-				return CHARGE_ATTACK_MS;
-			case CHARGE_HOLD:
-				return 0;
-			case DEFEND:
-				return DEFEND_MS;
-			case JUMP:
-				return JUMP_MS;
-			default:
-				return 0;
 		}
 	}
 }

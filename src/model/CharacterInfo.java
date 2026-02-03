@@ -61,6 +61,7 @@ public final class CharacterInfo {
 	private final double meleeHeight; // 近接攻撃の高さ
 	private final double meleeOffset; // 近接攻撃のオフセット
 	private final int meleeLifetimeTicks; // 近接攻撃の持続時間
+
 	private CharacterInfo(
 			String name,
 			Color themeColor,

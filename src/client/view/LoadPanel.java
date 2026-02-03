@@ -15,9 +15,13 @@ import java.util.Objects;
  */
 public class LoadPanel extends BaseDecoratedPanel {
 	// --------------- フィールド ---------------
-	/** 背景画像のパス */
+	/**
+	 * 背景画像のパス
+	 */
 	private static final String BACKGROUND_IMAGE_PATH = "/resources/loading.png";
-	/** 背景画像 */
+	/**
+	 * 背景画像
+	 */
 	private static final BufferedImage BACKGROUND_IMAGE;
 	private static final int ANIMATION_DELAY = 10; // 更新間隔 (ms)
 	private static final int SLIDE_SPEED = 180;     // スライド速度 (px/frame)
@@ -41,13 +45,16 @@ public class LoadPanel extends BaseDecoratedPanel {
 	private Runnable onSwitchScreen;
 	private long startTime;
 
-	/** LoadPanelを構築します。 */
+	/**
+	 * LoadPanelを構築します。
+	 */
 	public LoadPanel() {
 		super();
 		setLayout(null);
 
 		// 下のレイヤーへのクリック透過を防ぐ
-		MouseAdapter blocker = new MouseAdapter() {};
+		MouseAdapter blocker = new MouseAdapter() {
+		};
 		addMouseListener(blocker);
 		addMouseMotionListener(blocker);
 

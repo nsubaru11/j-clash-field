@@ -9,9 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class BattleField {
-public static final int DEFAULT_WIDTH = 1280;
-public static final int DEFAULT_HEIGHT = 720;
-public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
+	public static final int DEFAULT_WIDTH = 1280;
+	public static final int DEFAULT_HEIGHT = 720;
+	public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 	private final List<Entity> entities = new ArrayList<>();
 	private final int width;
 	private final int height;
@@ -95,8 +95,8 @@ public static final double DEFAULT_GROUND_Y = DEFAULT_HEIGHT * 0.255;
 					} else {
 						if (other instanceof GameCharacter) {
 							GameCharacter character = (GameCharacter) other;
-						int oldHp = character.getHp();
-						int newHp = character.applyDamage(projectile.getDamage());
+							int oldHp = character.getHp();
+							int newHp = character.applyDamage(projectile.getDamage());
 							double dealt = Math.max(0, oldHp - newHp);
 							damageEvents.add(new DamageEvent(character.getOwnerId(), newHp, projectile.getOwnerId(), dealt));
 						}

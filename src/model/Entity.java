@@ -8,15 +8,25 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class Entity {
 	private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 	private final long id = ID_GENERATOR.getAndIncrement();
-	/** 物体の位置を表すベクトル */
+	/**
+	 * 物体の位置を表すベクトル
+	 */
 	protected Vector2D position;
-	/** 物体の幅方向を表すベクトル（positionを始点とするベクトル） */
+	/**
+	 * 物体の幅方向を表すベクトル（positionを始点とするベクトル）
+	 */
 	protected Vector2D width;
-	/** 物体の高さ方向を表すベクトル（positionを始点とするベクトル） */
+	/**
+	 * 物体の高さ方向を表すベクトル（positionを始点とするベクトル）
+	 */
 	protected Vector2D height;
-	/** 物体の速度を表すベクトル */
+	/**
+	 * 物体の速度を表すベクトル
+	 */
 	protected Vector2D velocity = new Vector2D(0, 0);
-	/** 向きを表すベクトル（8方向） */
+	/**
+	 * 向きを表すベクトル（8方向）
+	 */
 	protected Vector2D facingDirection = new Vector2D(1, 0);
 
 	public long getId() {

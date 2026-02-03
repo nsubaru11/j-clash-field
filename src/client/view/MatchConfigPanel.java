@@ -1,7 +1,6 @@
 package client.view;
 
 
-
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -35,7 +34,8 @@ public class MatchConfigPanel extends BaseDecoratedPanel {
 		setLayout(new GridBagLayout());
 
 		// 下のレイヤー（HomePanel）へのクリック透過を防ぐ
-		MouseAdapter blocker = new MouseAdapter() {};
+		MouseAdapter blocker = new MouseAdapter() {
+		};
 		addMouseListener(blocker);
 		addMouseMotionListener(blocker);
 

@@ -17,11 +17,17 @@ import java.util.function.Consumer;
  */
 public class HomePanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
-	/** タイトルテキスト */
+	/**
+	 * タイトルテキスト
+	 */
 	private static final String TITLE_TEXT = "J-Clash Field";
-	/** タイトルフォント */
+	/**
+	 * タイトルフォント
+	 */
 	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 64);
-	/** バージョン情報 */
+	/**
+	 * バージョン情報
+	 */
 	private static final String VERSION_TEXT = "v1.0.0";
 
 	/**
