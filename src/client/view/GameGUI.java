@@ -43,19 +43,15 @@ public class GameGUI extends JFrame {
 		if (ICON_IMAGE != null) setIconImage(ICON_IMAGE);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		setUndecorated(true); // 枠を消す
 		setResizable(false);  // リサイズ禁止
-		getContentPane().setBackground(Color.BLACK);
-		setBackground(Color.BLACK);
-
-		// グラフィックスデバイスを取得してフルスクリーン化
+		setUndecorated(true);
 		setExtendedState(JFrame.MAXIMIZED_BOTH);
-		setVisible(true);
 
 		// レイアウトとパネルの初期化
 		add(rootPane);
 
-		// フルスクリーンの場合、フォーカスを確実に持たせる
 		requestFocus();
+		
+		setVisible(true);
 	}
 }

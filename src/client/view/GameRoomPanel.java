@@ -1,6 +1,6 @@
 package client.view;
 
-import client.UiScaleConfig;
+
 import client.model.GameCharacterClient;
 import model.CharacterInfo;
 import model.CharacterType;
@@ -25,12 +25,12 @@ import java.util.Map;
 public class GameRoomPanel extends BaseBackgroundPanel {
 	// --------------- クラス定数 ---------------
 	private static final int MAX_PLAYERS = 4;
-	private static final Font TITLE_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.BOLD, 30));
-	private static final Font INFO_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.PLAIN, 16));
-	private static final Font STATUS_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.BOLD, 12));
-	private static final Font CHARACTER_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.BOLD, 14));
-	private static final Font DESCRIPTION_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.PLAIN, 11));
-	private static final Font NAME_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.PLAIN, 13));
+	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 30);
+	private static final Font INFO_FONT = new Font("Meiryo", Font.PLAIN, 16);
+	private static final Font STATUS_FONT = new Font("Meiryo", Font.BOLD, 12);
+	private static final Font CHARACTER_FONT = new Font("Meiryo", Font.BOLD, 14);
+	private static final Font DESCRIPTION_FONT = new Font("Meiryo", Font.PLAIN, 11);
+	private static final Font NAME_FONT = new Font("Meiryo", Font.PLAIN, 13);
 	private static final Color COLOR_LIGHT = new Color(248, 245, 238);
 	private static final Color COLOR_NEUTRAL = new Color(220, 212, 202);
 	private static final Color COLOR_DARK = new Color(50, 55, 60);
@@ -70,15 +70,15 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		// 白い背景ボード（ヘッダー、プレイヤースロット部分を管理）
 		JPanel board = new BoardPanel();
 		board.setLayout(new BorderLayout());
-		Insets boardInsets = UiScaleConfig.scaleInsets(28, 36, 36, 36);
+		Insets boardInsets = new Insets(28, 36, 36, 36);
 		board.setBorder(new EmptyBorder(boardInsets.top, boardInsets.left, boardInsets.bottom, boardInsets.right));
-		board.setPreferredSize(UiScaleConfig.scale(1200, 620));
+		board.setPreferredSize(new Dimension(1200, 620));
 
 		// region ---------- header ----------
 		// ヘッダー管理用パネル（ルーム番号・ホームへ戻るボタン・準備完了ボタン表示用）
 		JPanel header = new JPanel(new BorderLayout());
 		header.setOpaque(false);
-		Insets headerInsets = UiScaleConfig.scaleInsets(0, 0, 18, 0);
+		Insets headerInsets = new Insets(0, 0, 18, 0);
 		header.setBorder(new EmptyBorder(headerInsets.top, headerInsets.left, headerInsets.bottom, headerInsets.right));
 
 		// ルーム番号
@@ -88,7 +88,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		header.add(roomLabel, BorderLayout.WEST); // ヘッダーの左側に追加
 
 		// ボタン管理用パネル（ホームへ戻るボタン・準備完了ボタン）
-		JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, UiScaleConfig.scale(10), 0));
+		JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 		actionPanel.setOpaque(false);
 
 		backButton = createActionButton("ホームへ戻る", withAlpha(COLOR_NEUTRAL, 220), COLOR_NEUTRAL);
@@ -103,9 +103,9 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		// region ---------- playerSlots ----------
 		// プレイヤーのスロット表示（プレイヤーが選択しているキャラの表示など）
-		JPanel slotsPanel = new JPanel(new GridLayout(1, MAX_PLAYERS, UiScaleConfig.scale(28), 0));
+		JPanel slotsPanel = new JPanel(new GridLayout(1, MAX_PLAYERS, 28, 0));
 		slotsPanel.setOpaque(false);
-		Insets slotsInsets = UiScaleConfig.scaleInsets(24, 6, 6, 6);
+		Insets slotsInsets = new Insets(24, 6, 6, 6);
 		slotsPanel.setBorder(new EmptyBorder(slotsInsets.top, slotsInsets.left, slotsInsets.bottom, slotsInsets.right));
 
 		slots = new PlayerSlot[MAX_PLAYERS];
@@ -174,7 +174,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		button.setForeground(COLOR_DARK);
 		button.setBackground(background);
 		button.setFocusPainted(false);
-		Insets padding = UiScaleConfig.scaleInsets(8, 20, 8, 20);
+		Insets padding = new Insets(8, 20, 8, 20);
 		button.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(border, 1, true),
 				BorderFactory.createEmptyBorder(padding.top, padding.left, padding.bottom, padding.right)
@@ -360,8 +360,8 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 		private BufferedImage characterImage;
 
 		private AvatarPanel() {
-			setPreferredSize(UiScaleConfig.scale(150, 180));
-			setMinimumSize(UiScaleConfig.scale(150, 180));
+			setPreferredSize(new Dimension(150, 180));
+			setMinimumSize(new Dimension(150, 180));
 		}
 
 		private void setActive(boolean active) {
@@ -380,20 +380,20 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			int width = getWidth();
 			int height = getHeight();
 
-			int frameInset = UiScaleConfig.scale(8);
+			int frameInset = 8;
 			int frameX = frameInset;
 			int frameY = frameInset;
 			int frameWidth = width - frameInset * 2;
 			int frameHeight = height - frameInset * 2;
-			int corner = UiScaleConfig.scale(28);
+			int corner = 28;
 			if (frameWidth > 0 && frameHeight > 0) {
 				g2d.setColor(withAlpha(COLOR_LIGHT, 210));
 				g2d.fillRoundRect(frameX, frameY, frameWidth, frameHeight, corner, corner);
 
 				Color accent = characterType != null ? characterType.getAccentColor() : COLOR_NEUTRAL;
 				int alpha = active ? 90 : 40;
-				int ovalInsetX = UiScaleConfig.scale(10);
-				int ovalInsetY = UiScaleConfig.scale(12);
+				int ovalInsetX = 10;
+				int ovalInsetY = 12;
 				g2d.setColor(withAlpha(accent, alpha));
 				g2d.fillOval(frameX + ovalInsetX, frameY + ovalInsetY,
 						frameWidth - ovalInsetX * 2, frameHeight - ovalInsetY * 2);
@@ -403,7 +403,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			}
 
 			if (characterImage != null) {
-				int inset = UiScaleConfig.scale(16);
+				int inset = 16;
 				int drawWidth = width - inset * 2;
 				int drawHeight = height - inset * 2;
 				double imageAspect = (double) characterImage.getWidth() / characterImage.getHeight();
@@ -435,15 +435,15 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 	private static final class ShadowPanel extends BaseDecoratedPanel {
 		private ShadowPanel() {
-			setPreferredSize(UiScaleConfig.scale(160, 20));
-			setMinimumSize(UiScaleConfig.scale(160, 20));
+			setPreferredSize(new Dimension(160, 20));
+			setMinimumSize(new Dimension(160, 20));
 		}
 
 		@Override
 		protected void paintPanel(Graphics2D g2d) {
 			int width = getWidth();
 			int height = getHeight();
-			int inset = UiScaleConfig.scale(20);
+			int inset = 20;
 			g2d.setColor(withAlpha(COLOR_DARK, 55));
 			g2d.fillOval(inset, height / 3, width - inset * 2, height / 3);
 		}
@@ -463,7 +463,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		private PlayerSlot() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-			Insets slotInsets = UiScaleConfig.scaleInsets(18, 16, 16, 16);
+			Insets slotInsets = new Insets(18, 16, 16, 16);
 			setBorder(new EmptyBorder(slotInsets.top, slotInsets.left, slotInsets.bottom, slotInsets.right));
 
 			statusLabel = new JLabel("準備中", SwingConstants.CENTER);
@@ -472,13 +472,13 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			statusLabel.setBackground(withAlpha(COLOR_NEUTRAL, 170));
 			statusLabel.setForeground(COLOR_DARK);
 			statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			Insets statusInsets = UiScaleConfig.scaleInsets(4, 12, 4, 12);
+			Insets statusInsets = new Insets(4, 12, 4, 12);
 			statusLabel.setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(statusInsets.top, statusInsets.left, statusInsets.bottom, statusInsets.right)
 			));
 			add(statusLabel);
-			add(Box.createVerticalStrut(UiScaleConfig.scale(10)));
+			add(Box.createVerticalStrut(10));
 
 			JPanel avatarRow = new JPanel();
 			avatarRow.setOpaque(false);
@@ -500,32 +500,32 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			avatarPanel = new AvatarPanel();
 
 			avatarRow.add(leftArrow);
-			avatarRow.add(Box.createHorizontalStrut(UiScaleConfig.scale(6)));
+			avatarRow.add(Box.createHorizontalStrut(6));
 			avatarRow.add(avatarPanel);
-			avatarRow.add(Box.createHorizontalStrut(UiScaleConfig.scale(6)));
+			avatarRow.add(Box.createHorizontalStrut(6));
 			avatarRow.add(rightArrow);
 			avatarRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(avatarRow);
 
-			add(Box.createVerticalStrut(UiScaleConfig.scale(8)));
+			add(Box.createVerticalStrut(8));
 			shadowPanel = new ShadowPanel();
 			shadowPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(shadowPanel);
-			add(Box.createVerticalStrut(UiScaleConfig.scale(10)));
+			add(Box.createVerticalStrut(10));
 
 			characterLabel = new JLabel(" ", SwingConstants.CENTER);
 			characterLabel.setFont(CHARACTER_FONT);
 			characterLabel.setForeground(COLOR_DARK);
 			characterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(characterLabel);
-			add(Box.createVerticalStrut(UiScaleConfig.scale(2)));
+			add(Box.createVerticalStrut(2));
 
 			descriptionLabel = new JLabel(" ", SwingConstants.CENTER);
 			descriptionLabel.setFont(DESCRIPTION_FONT);
 			descriptionLabel.setForeground(COLOR_MUTED);
 			descriptionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			add(descriptionLabel);
-			add(Box.createVerticalStrut(UiScaleConfig.scale(10)));
+			add(Box.createVerticalStrut(10));
 
 			nameLabel = new JLabel("-", SwingConstants.CENTER);
 			nameLabel.setFont(NAME_FONT);
@@ -533,7 +533,7 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 			nameLabel.setBackground(withAlpha(COLOR_NEUTRAL, 170));
 			nameLabel.setForeground(COLOR_DARK);
 			nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-			Insets nameInsets = UiScaleConfig.scaleInsets(6, 16, 6, 16);
+			Insets nameInsets = new Insets(6, 16, 6, 16);
 			nameLabel.setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(nameInsets.top, nameInsets.left, nameInsets.bottom, nameInsets.right)
@@ -563,11 +563,11 @@ public class GameRoomPanel extends BaseBackgroundPanel {
 
 		private JLabel createArrowLabel(String text) {
 			JLabel label = new JLabel(text, SwingConstants.CENTER);
-			label.setFont(UiScaleConfig.scaleFont("Meiryo", Font.BOLD, 18));
+			label.setFont(new Font("Meiryo", Font.BOLD, 18));
 			label.setForeground(COLOR_MUTED);
 			label.setOpaque(true);
 			label.setBackground(withAlpha(COLOR_LIGHT, 200));
-			Insets arrowInsets = UiScaleConfig.scaleInsets(2, 8, 2, 8);
+			Insets arrowInsets = new Insets(2, 8, 2, 8);
 			label.setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createLineBorder(withAlpha(COLOR_NEUTRAL, 180), 1, true),
 					new EmptyBorder(arrowInsets.top, arrowInsets.left, arrowInsets.bottom, arrowInsets.right)

@@ -18,7 +18,7 @@ public final class ClientMain {
 
 	public static void main(final String[] args) {
 		LoggingConfig.initialize("client");
-		UiScaleConfig.apply();
+
 		int len = args.length;
 		String host = len == 0 ? DEFAULT_HOST : args[0];
 		int port = len <= 1 ? DEFAULT_PORT : Integer.parseInt(args[1]);

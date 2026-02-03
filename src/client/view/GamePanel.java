@@ -1,5 +1,6 @@
 package client.view;
 
+
 import client.model.GameCharacterClient;
 import model.CharacterType;
 import model.GameCharacter;
@@ -92,14 +93,16 @@ public class GamePanel extends BaseBackgroundPanel {
 		GridBagConstraints screenConstraints = new GridBagConstraints();
 		screenConstraints.gridx = 0;
 		screenConstraints.gridy = 0;
-		screenConstraints.insets = new Insets(SCREEN_PADDING, SCREEN_PADDING, 12, SCREEN_PADDING);
+		Insets screenInsets = new Insets(SCREEN_PADDING, SCREEN_PADDING, 12, SCREEN_PADDING);
+		screenConstraints.insets = screenInsets;
 		screenConstraints.anchor = GridBagConstraints.CENTER;
 		add(screenPanel, screenConstraints);
 
 		GridBagConstraints infoConstraints = new GridBagConstraints();
 		infoConstraints.gridx = 0;
 		infoConstraints.gridy = 1;
-		infoConstraints.insets = new Insets(0, INFO_PADDING, INFO_PADDING, INFO_PADDING);
+		Insets infoInsets = new Insets(0, INFO_PADDING, INFO_PADDING, INFO_PADDING);
+		infoConstraints.insets = infoInsets;
 		infoConstraints.anchor = GridBagConstraints.CENTER;
 		add(infoPanel, infoConstraints);
 
@@ -389,9 +392,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.fillRect(0, 0, width, height);
 			}
 
+			int stroke = 3;
 			g2d.setColor(new Color(240, 240, 240, 180));
-			g2d.setStroke(new BasicStroke(3));
-			g2d.drawRoundRect(1, 1, width - 3, height - 3, 24, 24);
+			g2d.setStroke(new BasicStroke(stroke));
+			int arc = 24;
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, arc, arc);
 
 			long now = System.currentTimeMillis();
 			drawCharacters(g2d, width, height, now);
@@ -502,8 +507,9 @@ public class GamePanel extends BaseBackgroundPanel {
 			int width = getWidth();
 			int height = getHeight();
 
+			int arc = 24;
 			g2d.setColor(PANEL_BG);
-			g2d.fillRoundRect(0, 0, width, height, 24, 24);
+			g2d.fillRoundRect(0, 0, width, height, arc, arc);
 
 			List<PlayerInfo> entries = getOrderedPlayers();
 			int entryWidth = width / MAX_PLAYERS;
@@ -535,9 +541,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				}
 			}
 
+			int stroke = 3;
 			g2d.setColor(new Color(240, 240, 240, 180));
-			g2d.setStroke(new BasicStroke(3));
-			g2d.drawRoundRect(1, 1, width - 3, height - 3, 24, 24);
+			g2d.setStroke(new BasicStroke(stroke));
+			int arc2 = 24;
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, arc2, arc2);
 		}
 	}
 }

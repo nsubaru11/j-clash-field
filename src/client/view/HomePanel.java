@@ -1,6 +1,5 @@
 package client.view;
 
-import client.UiScaleConfig;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -21,7 +20,7 @@ public class HomePanel extends BaseBackgroundPanel {
 	/** タイトルテキスト */
 	private static final String TITLE_TEXT = "J-Clash Field";
 	/** タイトルフォント */
-	private static final Font TITLE_FONT = UiScaleConfig.scaleFont(new Font("Meiryo", Font.BOLD, 64));
+	private static final Font TITLE_FONT = new Font("Meiryo", Font.BOLD, 64);
 	/** バージョン情報 */
 	private static final String VERSION_TEXT = "v1.0.0";
 
@@ -34,36 +33,36 @@ public class HomePanel extends BaseBackgroundPanel {
 		JPanel leftPanel = new JPanel();
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 		leftPanel.setOpaque(false);
-		Insets leftInsets = UiScaleConfig.scaleInsets(550, 100, 0, 0);
+		Insets leftInsets = new Insets(550, 100, 0, 0);
 		leftPanel.setBorder(BorderFactory.createEmptyBorder(leftInsets.top, leftInsets.left, leftInsets.bottom, leftInsets.right));
 
-		Dimension largeButtonSize = UiScaleConfig.scale(500, 50);
-		Dimension smallButtonSize = UiScaleConfig.scale(245, 50);
+		Dimension largeButtonSize = new Dimension(500, 50);
+		Dimension smallButtonSize = new Dimension(245, 50);
 
 		// ランダム参加ボタン
 		JButton randomMatchButton = createSimpleButton("ランダム参加", largeButtonSize, new Color(20, 92, 62));
 		randomMatchButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.RANDOM));
 		randomMatchButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(randomMatchButton);
-		leftPanel.add(Box.createVerticalStrut(UiScaleConfig.scale(20)));
+		leftPanel.add(Box.createVerticalStrut((20)));
 
 		// ルーム作成・参加ボタン
 		JPanel subPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		subPanel.setOpaque(false);
-		subPanel.setMaximumSize(UiScaleConfig.scale(500, 50));
+		subPanel.setMaximumSize(new Dimension(500, 50));
 		subPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JButton createRoomButton = createSimpleButton("ルーム作成", smallButtonSize, new Color(27, 110, 80));
 		createRoomButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.CREATE));
 		subPanel.add(createRoomButton);
-		subPanel.add(Box.createHorizontalStrut(UiScaleConfig.scale(10)));
+		subPanel.add(Box.createHorizontalStrut(10));
 
 		JButton joinRoomButton = createSimpleButton("ルーム参加", smallButtonSize, new Color(24, 102, 74));
 		joinRoomButton.addActionListener(e -> onMatchAction.accept(MatchConfigPanel.MatchMode.JOIN));
 		subPanel.add(joinRoomButton);
 
 		leftPanel.add(subPanel);
-		leftPanel.add(Box.createVerticalStrut(UiScaleConfig.scale(20)));
+		leftPanel.add(Box.createVerticalStrut((20)));
 
 		// 設定ボタン
 		JButton configButton = createSimpleButton("設定", largeButtonSize, new Color(90, 96, 104)); // 色をグレーに
@@ -71,7 +70,7 @@ public class HomePanel extends BaseBackgroundPanel {
 		// configButton.setDisabledTextColor(new Color(210, 210, 210));
 		configButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		leftPanel.add(configButton);
-		leftPanel.add(Box.createVerticalStrut(UiScaleConfig.scale(20)));
+		leftPanel.add(Box.createVerticalStrut((20)));
 
 		// 終了ボタン
 		JButton exitButton = createSimpleButton("終了", largeButtonSize, new Color(112, 45, 45));
@@ -99,7 +98,7 @@ public class HomePanel extends BaseBackgroundPanel {
 		// タイトルは画面中央上部に配置
 		int textX = (panelWidth - textWidth) / 2;
 		int textY = panelHeight / 4;
-		int shadowOffset = UiScaleConfig.scale(3);
+		int shadowOffset = 3;
 
 		// 影の描画
 		g2d.setColor(new Color(0, 0, 0, 120));
@@ -110,7 +109,7 @@ public class HomePanel extends BaseBackgroundPanel {
 		g2d.drawString(TITLE_TEXT, textX, textY);
 
 		textWidth = fm.stringWidth(VERSION_TEXT);
-		int margin = UiScaleConfig.scale(20);
+		int margin = (20);
 		textX = panelWidth - textWidth - margin;
 		textY = panelHeight - margin;
 		g2d.setColor(new Color(0, 0, 0, 120));
@@ -129,11 +128,11 @@ public class HomePanel extends BaseBackgroundPanel {
 		button.setPreferredSize(size);
 		button.setMinimumSize(size);
 		button.setMaximumSize(size);
-		button.setFont(UiScaleConfig.scaleFont("Meiryo", Font.BOLD, 20));
+		button.setFont(new Font("Meiryo", Font.BOLD, 20));
 		button.setForeground(new Color(245, 245, 245));
 		button.setBackground(color);
 		button.setFocusPainted(false);
-		Insets padding = UiScaleConfig.scaleInsets(0, 14, 0, 14);
+		Insets padding = new Insets(0, 14, 0, 14);
 		button.setBorder(new CompoundBorder(
 				new LineBorder(color.darker(), 1, true),
 				new EmptyBorder(padding.top, padding.left, padding.bottom, padding.right)));
