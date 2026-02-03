@@ -62,6 +62,7 @@ public final class GuiController {
 		homePanel = new HomePanel(this::showMatchConfig, e -> {
 			int result = JOptionPane.showConfirmDialog(cardPanel, "終了します。よろしいですか？", "終了確認", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
+				network.setDisconnectListener(null);
 				network.disconnect();
 				System.exit(0);
 			}
@@ -78,6 +79,7 @@ public final class GuiController {
 					"確認",
 					JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
+				network.setDisconnectListener(null);
 				network.disconnect();
 				gameRoomPanel.removePlayer(playerId);
 				showHome();
@@ -286,7 +288,6 @@ public final class GuiController {
 				break;
 		}
 	}
-
 
 	private void handleServerDisconnect() {
 		SwingUtilities.invokeLater(() -> {
