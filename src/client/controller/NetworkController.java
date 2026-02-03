@@ -1,6 +1,7 @@
 package client.controller;
 
 import model.CharacterType;
+import network.MessageListener;
 import network.Protocol;
 
 import java.io.BufferedReader;

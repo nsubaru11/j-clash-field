@@ -1,4 +1,4 @@
-package client.controller;
+package network;
 
 public interface MessageListener {
 

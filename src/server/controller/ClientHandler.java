@@ -1,5 +1,7 @@
 package server.controller;
 
+import network.MessageListener;
+
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
@@ -27,7 +29,7 @@ class ClientHandler implements Closeable {
 	private Thread senderThread;
 	private Thread receiverThread;
 
-	private volatile Consumer<String> messageListener;
+	private volatile MessageListener messageListener;
 	private volatile Runnable disconnectListener;
 	private volatile boolean isConnected;
 
@@ -74,7 +76,7 @@ class ClientHandler implements Closeable {
 		return connectionId;
 	}
 
-	public void setMessageListener(final Consumer<String> messageListener) {
+	public void setMessageListener(final MessageListener messageListener) {
 		this.messageListener = messageListener;
 	}
 
@@ -124,7 +126,7 @@ class ClientHandler implements Closeable {
 
 					if (messageListener != null) {
 						logger.fine(() -> "プレイヤー(ID: " + connectionId + ")から受信: " + line);
-						messageListener.accept(line);
+						messageListener.onMessageReceived(line);
 					}
 				}
 			} catch (SocketException e) {
