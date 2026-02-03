@@ -22,7 +22,7 @@ rem ディレクトリ設定と移動
 for %%i in ("%~dp0..") do set "REPO_DIR=%%~fi"
 cd /d "%REPO_DIR%"
 set "SRC_DIR=%REPO_DIR%\src"
-set "OUT_DIR=%REPO_DIR%\out\production\online-action-game-netprog"
+set "OUT_DIR=%REPO_DIR%\out\production\j-clash-field"
 
 rem コンパイル
 echo Compiling...

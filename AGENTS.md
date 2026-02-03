@@ -21,7 +21,7 @@
 - サーバー起動: `scripts\start_server.bat`
 - クライアント起動: `scripts\start_client.bat`
 
-上記バッチは `src` をコンパイルし、`out\production\online-action-game-netprog` に出力します。
+上記バッチは `src` をコンパイルし、`out\production\j-clash-field` に出力します。
 
 ## エントリポイント
 

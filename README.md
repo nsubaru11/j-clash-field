@@ -26,7 +26,7 @@
 
 - サーバー起動: `scripts\start_server.bat`
 - クライアント起動: `scripts\start_client.bat`
-- 出力先: `out\production\online-action-game-netprog`
+- 出力先: `out\production\j-clash-field`
 
 ## JAR実行
 
