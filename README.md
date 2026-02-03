@@ -3,7 +3,35 @@
 
 ゲーム名: J-Clash Field
 
-承知いたしました。これまでの議論で固まった「通信とゲームロジックの完全分離」および「リアルタイムアクションゲーム対応」のアーキテクチャに基づいた基本設計書を作成します。
+## 概要
+サーバー権威型のオンラインアクションゲーム。通信層とゲームロジックを分離し、サーバー側で状態を決定します。
+
+## ディレクトリ構成
+
+- src/client: クライアント実装
+- src/server: サーバー実装
+- src/network: 通信層
+- src/model: ゲームのドメインモデル
+- resources: 画像などのリソース
+- scripts: 起動用バッチ
+- jars: クライアント/サーバーJAR出力先
+- out: 生成物(自動生成; 手動編集しない)
+
+## エントリポイント
+
+- クライアント: `client.ClientMain` (`src/client/ClientMain.java`)
+- サーバー: `server.ServerMain` (`src/server/ServerMain.java`)
+
+## ビルド/実行 (Windows)
+
+- サーバー起動: `scripts\start_server.bat`
+- クライアント起動: `scripts\start_client.bat`
+- 出力先: `out\production\online-action-game-netprog`
+
+## JAR実行
+
+- サーバー: `java -jar jars\J-Clash-Field-server.jar`
+- クライアント: `java -jar jars\J-Clash-Field-client.jar [host] [port]`
 
 -----
 
@@ -128,4 +156,4 @@
 
 * **責務の分離**: 通信エラーがゲームロジックを壊すことがなく、逆にゲームのバグが通信を切断させることもない。
 * **同期ずれの防止**: すべての計算が「GameRoomスレッド」という単一のタイムラインで行われるため、クライアントごとの処理速度差による矛盾が生じにくい。
-* **拡張性**: 新しいアクションやアイテムを追加する場合、変更はほぼ `Player` クラス（と `Command` 定義）のみで完結し、通信部分は変更不要。F
+* **拡張性**: 新しいアクションやアイテムを追加する場合、変更はほぼ `Player` クラス（と `Command` 定義）のみで完結し、通信部分は変更不要。

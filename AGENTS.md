@@ -14,6 +14,7 @@
 - resources: 画像などのリソース
 - scripts: 起動用バッチ
 - out: 生成物(自動生成; 手動編集しない)
+- jars: クライアント/サーバーJAR出力先
 
 ## ビルド/実行 (Windows)
 
@@ -21,6 +22,11 @@
 - クライアント起動: `scripts\start_client.bat`
 
 上記バッチは `src` をコンパイルし、`out\production\online-action-game-netprog` に出力します。
+
+## エントリポイント
+
+- クライアント: `client.ClientMain` (`src/client/ClientMain.java`)
+- サーバー: `server.ServerMain` (`src/server/ServerMain.java`)
 
 ## コーディング方針
 
