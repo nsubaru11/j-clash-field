@@ -49,6 +49,16 @@ public class GamePanel extends BaseBackgroundPanel {
 	private static final Map<ProjectileType, BufferedImage> PROJECTILE_IMAGES = new EnumMap<>(ProjectileType.class);
 	private static final BufferedImage backgroundImage;
 
+	// --------------- 描画関連 ---------------
+	private static final int TILE_SIZE = 32;
+	private static final int MARKER_SIZE = 18;
+	private static final int BORDER_ARC = 24;
+	private static final Color BORDER_COLOR = new Color(240, 240, 240, 180);
+	private static final Color MARKER_COLOR = Color.BLACK;
+	private static final Stroke BORDER_STROKE = new BasicStroke(3);
+	private static final Shape MARKER_SHAPE = createMarkerShape();
+
+
 	static {
 		try {
 			PROJECTILE_IMAGES.put(ProjectileType.ARROW,
@@ -94,20 +104,20 @@ public class GamePanel extends BaseBackgroundPanel {
 		GridBagConstraints screenConstraints = new GridBagConstraints();
 		screenConstraints.gridx = 0;
 		screenConstraints.gridy = 0;
-		Insets screenInsets = new Insets(SCREEN_PADDING, SCREEN_PADDING, 12, SCREEN_PADDING);
-		screenConstraints.insets = screenInsets;
+		screenConstraints.insets = new Insets(SCREEN_PADDING, SCREEN_PADDING, 12, SCREEN_PADDING);
 		screenConstraints.anchor = GridBagConstraints.CENTER;
 		add(screenPanel, screenConstraints);
 
 		GridBagConstraints infoConstraints = new GridBagConstraints();
 		infoConstraints.gridx = 0;
 		infoConstraints.gridy = 1;
-		Insets infoInsets = new Insets(0, INFO_PADDING, INFO_PADDING, INFO_PADDING);
-		infoConstraints.insets = infoInsets;
+		infoConstraints.insets = new Insets(0, INFO_PADDING, INFO_PADDING, INFO_PADDING);
 		infoConstraints.anchor = GridBagConstraints.CENTER;
 		add(infoPanel, infoConstraints);
 
 		repaintTimer = new Timer(1000 / 60, e -> {
+			long now = System.currentTimeMillis();
+			projectiles.values().removeIf(p -> now - p.lastSeenMs > PROJECTILE_TTL_MS);
 			screenPanel.repaint();
 			infoPanel.repaint();
 		});
@@ -118,6 +128,16 @@ public class GamePanel extends BaseBackgroundPanel {
 			if (defendAction != null) defendAction.run();
 		});
 		defendTimer.setRepeats(true);
+	}
+
+	private static Shape createMarkerShape() {
+		int half = MARKER_SIZE / 2;
+		Path2D path = new Path2D.Double();
+		path.moveTo(-half, 0);
+		path.lineTo(half, 0);
+		path.lineTo(0, MARKER_SIZE);
+		path.closePath();
+		return path;
 	}
 
 	@Override
@@ -243,11 +263,6 @@ public class GamePanel extends BaseBackgroundPanel {
 		projectiles.remove(projectileId);
 	}
 
-	private List<PlayerInfo> getOrderedPlayers() {
-		List<PlayerInfo> list = new ArrayList<>(players.values());
-		return list;
-	}
-
 	private Color resolveCharacterColor(GameCharacter character) {
 		CharacterType type = character != null ? character.getType() : null;
 		return type != null ? type.getAccentColor() : Color.BLACK;
@@ -311,12 +326,8 @@ public class GamePanel extends BaseBackgroundPanel {
 		}
 	}
 
-	private void recordLocalAction(GameCharacterClient.Action action) {
-		recordPlayerAction(localPlayerId, action);
-	}
-
 	private void triggerJump() {
-		recordLocalAction(GameCharacterClient.Action.JUMP);
+		recordPlayerAction(localPlayerId, GameCharacterClient.Action.JUMP);
 		if (moveUpAction != null) moveUpAction.run();
 		if (leftKeyDown && moveLeftAction != null) {
 			recordLocalMove(-1);
@@ -328,7 +339,6 @@ public class GamePanel extends BaseBackgroundPanel {
 	}
 
 	private static final class ProjectileState {
-		private final long projectileId;
 		private ProjectileType type;
 		private double x;
 		private double y;
@@ -338,13 +348,10 @@ public class GamePanel extends BaseBackgroundPanel {
 		private long lastSeenMs;
 
 		private ProjectileState(long projectileId) {
-			this.projectileId = projectileId;
 		}
 	}
 
 	private final class ScreenPanel extends JComponent {
-		private static final int TILE_SIZE = 32;
-		private static final int MARKER_SIZE = 18;
 		private boolean rightMouseDown;
 
 		private ScreenPanel() {
@@ -358,11 +365,11 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mousePressed(MouseEvent e) {
 					requestFocusInWindow();
 					if (SwingUtilities.isLeftMouseButton(e)) {
-						recordLocalAction(GameCharacterClient.Action.NORMAL_ATTACK);
+						recordPlayerAction(localPlayerId, GameCharacterClient.Action.NORMAL_ATTACK);
 						if (normalAttackAction != null) normalAttackAction.run();
 					} else if (SwingUtilities.isRightMouseButton(e)) {
 						rightMouseDown = true;
-						recordLocalAction(GameCharacterClient.Action.CHARGE_HOLD);
+						recordPlayerAction(localPlayerId, GameCharacterClient.Action.CHARGE_HOLD);
 						if (chargeStartAction != null) chargeStartAction.run();
 					}
 				}
@@ -371,7 +378,7 @@ public class GamePanel extends BaseBackgroundPanel {
 				public void mouseReleased(MouseEvent e) {
 					if (SwingUtilities.isRightMouseButton(e) && rightMouseDown) {
 						rightMouseDown = false;
-						recordLocalAction(GameCharacterClient.Action.CHARGE_ATTACK);
+						recordPlayerAction(localPlayerId, GameCharacterClient.Action.CHARGE_ATTACK);
 						if (chargeAttackAction != null) chargeAttackAction.run();
 					}
 				}
@@ -393,11 +400,9 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.fillRect(0, 0, width, height);
 			}
 
-			int stroke = 3;
-			g2d.setColor(new Color(240, 240, 240, 180));
-			g2d.setStroke(new BasicStroke(stroke));
-			int arc = 24;
-			g2d.drawRoundRect(1, 1, width - 3, height - 3, arc, arc);
+			g2d.setColor(BORDER_COLOR);
+			g2d.setStroke(BORDER_STROKE);
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, BORDER_ARC, BORDER_ARC);
 
 			long now = System.currentTimeMillis();
 			drawCharacters(g2d, width, height, now);
@@ -405,7 +410,7 @@ public class GamePanel extends BaseBackgroundPanel {
 		}
 
 		private void drawCharacters(Graphics2D g2d, int width, int height, long now) {
-			List<PlayerInfo> entries = getOrderedPlayers();
+			List<PlayerInfo> entries = new ArrayList<>(players.values());
 			if (entries.isEmpty()) return;
 
 			double scaleX = width / (double) SCREEN_WIDTH;
@@ -455,15 +460,13 @@ public class GamePanel extends BaseBackgroundPanel {
 			double scaleX = width / (double) SCREEN_WIDTH;
 			double scaleY = height / (double) SCREEN_HEIGHT;
 			int baseSize = (int) Math.round(TILE_SIZE * 1.5 * Math.min(scaleX, scaleY));
-			List<Long> stale = new ArrayList<>();
+
 			for (ProjectileState projectile : projectiles.values()) {
 				if (!projectile.hasPosition) continue;
-				if (now - projectile.lastSeenMs > PROJECTILE_TTL_MS) {
-					stale.add(projectile.projectileId);
-					continue;
-				}
+
 				BufferedImage image = PROJECTILE_IMAGES.get(projectile.type);
 				if (image == null) continue;
+
 				int x = (int) Math.round(projectile.x * scaleX);
 				int y = (int) Math.round(height - (projectile.y * scaleY));
 				double scale = Math.min(1.4, 0.8 + 0.2 * projectile.power);
@@ -474,22 +477,15 @@ public class GamePanel extends BaseBackgroundPanel {
 				g2d.drawImage(image, -projectileSize / 2, -projectileSize / 2, projectileSize, projectileSize, null);
 				g2d.setTransform(original);
 			}
-			for (Long projectileId : stale) {
-				projectiles.remove(projectileId);
-			}
 		}
 
 		private void drawMarker(Graphics2D g2d, int centerX, int topY) {
-			int half = MARKER_SIZE / 2;
-			Path2D path = new Path2D.Double();
-			path.moveTo(centerX - half, topY);
-			path.lineTo(centerX + half, topY);
-			path.lineTo(centerX, topY + MARKER_SIZE);
-			path.closePath();
-			g2d.setColor(new Color(0, 0, 0));
-			g2d.fill(path);
+			g2d.setColor(MARKER_COLOR);
+			AffineTransform original = g2d.getTransform();
+			g2d.translate(centerX, topY);
+			g2d.fill(MARKER_SHAPE);
+			g2d.setTransform(original);
 		}
-
 	}
 
 	private final class InfoPanel extends JComponent {
@@ -508,11 +504,10 @@ public class GamePanel extends BaseBackgroundPanel {
 			int width = getWidth();
 			int height = getHeight();
 
-			int arc = 24;
 			g2d.setColor(PANEL_BG);
-			g2d.fillRoundRect(0, 0, width, height, arc, arc);
+			g2d.fillRoundRect(0, 0, width, height, BORDER_ARC, BORDER_ARC);
 
-			List<PlayerInfo> entries = getOrderedPlayers();
+			List<PlayerInfo> entries = new ArrayList<>(players.values());
 			int entryWidth = width / MAX_PLAYERS;
 			int iconSize = Math.min(80, height - 40);
 			int iconY = (height - iconSize) / 2 - 8;
@@ -542,11 +537,9 @@ public class GamePanel extends BaseBackgroundPanel {
 				}
 			}
 
-			int stroke = 3;
-			g2d.setColor(new Color(240, 240, 240, 180));
-			g2d.setStroke(new BasicStroke(stroke));
-			int arc2 = 24;
-			g2d.drawRoundRect(1, 1, width - 3, height - 3, arc2, arc2);
+			g2d.setColor(BORDER_COLOR);
+			g2d.setStroke(BORDER_STROKE);
+			g2d.drawRoundRect(1, 1, width - 3, height - 3, BORDER_ARC, BORDER_ARC);
 		}
 	}
 }
