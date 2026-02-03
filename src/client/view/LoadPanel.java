@@ -46,7 +46,7 @@ public class LoadPanel extends BaseDecoratedPanel {
 		super();
 		setLayout(null);
 
-		// 下のレイヤー（HomePanel）へのクリック透過を防ぐ
+		// 下のレイヤーへのクリック透過を防ぐ
 		MouseAdapter blocker = new MouseAdapter() {};
 		addMouseListener(blocker);
 		addMouseMotionListener(blocker);
@@ -56,6 +56,7 @@ public class LoadPanel extends BaseDecoratedPanel {
 			updateAnimation();
 			repaint();
 		});
+		setVisible(false);
 	}
 
 	/**
