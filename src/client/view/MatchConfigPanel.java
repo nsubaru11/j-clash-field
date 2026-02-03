@@ -32,6 +32,11 @@ public class MatchConfigPanel extends BaseDecoratedPanel {
 		// 半透明オーバーレイ背景
 		setLayout(new GridBagLayout());
 
+		// 下のレイヤー（HomePanel）へのクリック透過を防ぐ
+		MouseAdapter blocker = new MouseAdapter() {};
+		addMouseListener(blocker);
+		addMouseMotionListener(blocker);
+
 		// ダイアログパネルの作成
 		JPanel dialogPanel = createDialogPanel();
 

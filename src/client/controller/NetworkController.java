@@ -36,7 +36,7 @@ public class NetworkController implements Closeable {
 		logger.fine(() -> "ソケットをクローズしました");
 	}
 
-	public void connect(MessageListener messageListener, Runnable onSuccess, Runnable onFailure) {
+	public void connect(MessageListener messageListener, DisconnectListener disconnectListener, Runnable onSuccess, Runnable onFailure) {
 		new Thread(() -> {
 			int attempt = 0;
 			int maxAttempt = 5;
@@ -46,6 +46,7 @@ public class NetworkController implements Closeable {
 				try {
 					connection = new TcpConnection(new Socket(host, port));
 					connection.setMessageListener(messageListener);
+					connection.setDisconnectListener(disconnectListener);
 					connection.start();
 					logger.info("接続に成功しました。");
 					if (onSuccess != null) onSuccess.run();

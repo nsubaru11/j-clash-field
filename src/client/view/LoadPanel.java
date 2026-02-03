@@ -3,6 +3,7 @@ package client.view;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Objects;
@@ -44,6 +45,12 @@ public class LoadPanel extends BaseDecoratedPanel {
 	public LoadPanel() {
 		super();
 		setLayout(null);
+
+		// 下のレイヤー（HomePanel）へのクリック透過を防ぐ
+		MouseAdapter blocker = new MouseAdapter() {};
+		addMouseListener(blocker);
+		addMouseMotionListener(blocker);
+
 		setBackground(BACKGROUND_COLOR);
 		animationTimer = new Timer(ANIMATION_DELAY, e -> {
 			updateAnimation();
