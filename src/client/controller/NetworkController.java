@@ -1,17 +1,14 @@
 package client.controller;
 
 import model.CharacterType;
+import network.DisconnectListener;
 import network.MessageListener;
 import network.Protocol;
+import network.TcpConnection;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,14 +19,7 @@ public class NetworkController implements Closeable {
 	private static final Logger logger = Logger.getLogger(NetworkController.class.getName());
 	private final String host;
 	private final int port;
-	private Socket socket;
-	private PrintWriter out;
-	private BufferedReader in;
-	private LinkedBlockingQueue<String> sendQueue;
-	private Thread senderThread;
-	private Thread receiverThread;
-	private volatile MessageListener messageListener;
-	private volatile boolean isConnected;
+	private TcpConnection connection;
 
 	public NetworkController(String host, int port) {
 		this.host = host;
@@ -37,42 +27,35 @@ public class NetworkController implements Closeable {
 	}
 
 	public boolean isConnected() {
-		return isConnected;
+		return connection != null && connection.isConnected();
 	}
 
 	public void close() {
-		isConnected = false;
-		if (senderThread != null) senderThread.interrupt();
-		if (receiverThread != null) receiverThread.interrupt();
-		try {
-			socket.close();
-			logger.fine(() -> "ソケットをクローズしました");
-		} catch (IOException e) {
-			logger.log(Level.WARNING, "プレイヤーソケットクローズに失敗", e);
-		}
+		if (connection == null) return;
+		connection.close();
+		logger.fine(() -> "ソケットをクローズしました");
 	}
 
-	public void connect(Runnable onSuccess, Runnable onFailure) {
+	public void connect(MessageListener messageListener, Runnable onSuccess, Runnable onFailure) {
 		new Thread(() -> {
 			int attempt = 0;
-			while (attempt < 3) {
+			int maxAttempt = 5;
+			while (attempt < maxAttempt) {
 				attempt++;
+				logger.fine("接続試行 " + attempt + "/" + maxAttempt);
 				try {
-					socket = new Socket(host, port);
-					out = new PrintWriter(socket.getOutputStream(), true);
-					in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-					isConnected = true;
-					sendQueue = new LinkedBlockingQueue<>();
-					startThreads();
+					connection = new TcpConnection(new Socket(host, port));
+					connection.setMessageListener(messageListener);
+					connection.start();
 					logger.info("接続に成功しました。");
 					if (onSuccess != null) onSuccess.run();
 					break;
 				} catch (IOException e) {
-					if (attempt < 3) {
+					if (attempt < maxAttempt) {
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e2) {
-							logger.warning("");
+							logger.warning("接続リトライが中断されました。");
 							break;
 						}
 						continue;
@@ -85,114 +68,72 @@ public class NetworkController implements Closeable {
 	}
 
 	public void joinRoom(String userName, int roomId) {
-		sendQueue.offer(Protocol.join(userName, roomId));
+		connection.sendMessage(Protocol.join(userName, roomId));
 	}
 
 	public void createRoom(String userName) {
-		sendQueue.offer(Protocol.createRoom(userName));
+		connection.sendMessage(Protocol.createRoom(userName));
 	}
 
 	public void ready(CharacterType characterType) {
-		sendQueue.offer(Protocol.ready(characterType));
+		connection.sendMessage(Protocol.ready(characterType));
 	}
 
 	public void unready() {
-		sendQueue.offer(Protocol.unready());
+		connection.sendMessage(Protocol.unready());
 	}
 
 	public void moveLeft() {
-		sendQueue.offer(Protocol.moveLeft());
+		connection.sendMessage(Protocol.moveLeft());
 	}
 
 	public void moveRight() {
-		sendQueue.offer(Protocol.moveRight());
+		connection.sendMessage(Protocol.moveRight());
 	}
 
 	public void moveUp() {
-		sendQueue.offer(Protocol.moveUp());
+		connection.sendMessage(Protocol.moveUp());
 	}
 
 	public void moveDown() {
-		sendQueue.offer(Protocol.moveDown());
+		connection.sendMessage(Protocol.moveDown());
 	}
 
 	public void normalAttack() {
-		sendQueue.offer(Protocol.normalAttack());
+		connection.sendMessage(Protocol.normalAttack());
 	}
 
 	public void chargeAttack() {
-		sendQueue.offer(Protocol.chargeAttack());
+		connection.sendMessage(Protocol.chargeAttack());
 	}
 
 	public void chargeStart() {
-		sendQueue.offer(Protocol.chargeStart());
+		connection.sendMessage(Protocol.chargeStart());
 	}
 
 	public void defend() {
-		sendQueue.offer(Protocol.defend());
+		connection.sendMessage(Protocol.defend());
 	}
 
 	public void resign() {
-		sendQueue.offer(Protocol.resign());
+		connection.sendMessage(Protocol.resign());
 	}
 
 	public void disconnect() {
-		if (!isConnected) return;
-		sendQueue.offer(Protocol.disconnect());
+		if (connection == null || !connection.isConnected()) return;
+		connection.sendMessage(Protocol.disconnect());
 		close();
 	}
 
 	public void setMessageListener(MessageListener messageListener) {
-		this.messageListener = messageListener;
+		connection.setMessageListener(messageListener);
 	}
 
-	private void startThreads() {
-		senderThread = new Thread(new MessageSender(), "Sender");
-		receiverThread = new Thread(new MessageReceiver(), "Receiver");
-
-		senderThread.start();
-		receiverThread.start();
-	}
-
-	private final class MessageSender implements Runnable {
-		public void run() {
-			try {
-				while (isConnected && !Thread.currentThread().isInterrupted()) {
-					String message = sendQueue.take();
-					out.println(message);
-					logger.fine(() -> "サーバーに送信: " + message);
-
-					if (out.checkError()) {
-						logger.warning("メッセージ送信エラー");
-						close();
-						break;
-					}
-				}
-			} catch (InterruptedException e) {
-				logger.fine("送信スレッド停止");
-			}
+	public void setDisconnectListener(DisconnectListener disconnectListener) {
+		if (connection == null) {
+			logger.fine("接続前のためDisconnectListenerを設定できません。");
+			return;
 		}
-	}
-
-	private final class MessageReceiver implements Runnable {
-		public void run() {
-			try {
-				while (isConnected) {
-					String line = in.readLine();
-					if (line == null) break; // 切断検知
-
-					if (messageListener != null) {
-						logger.fine(() -> "サーバーから受信: " + line);
-						messageListener.onMessageReceived(line);
-					}
-				}
-			} catch (SocketException e) {
-				if (isConnected) logger.log(Level.WARNING, "予期せぬ切断", e);
-			} catch (IOException e) {
-				if (isConnected) logger.log(Level.WARNING, "受信エラー", e);
-			} finally {
-				close();
-			}
-		}
+		connection.setDisconnectListener(disconnectListener);
 	}
 }

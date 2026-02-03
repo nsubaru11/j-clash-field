@@ -125,10 +125,9 @@ public final class GuiController {
 	}
 
 	private void startConnection() {
-		network.setMessageListener(msg -> this.commandQueue.add(new Command(msg)));
 		Runtime.getRuntime().addShutdownHook(new Thread(network::close));
 		showLoad();
-		network.connect(() -> {
+		network.connect(msg -> this.commandQueue.add(new Command(msg)), () -> {
 			new GameLoopThread().start();
 			loadPanel.setNextScreen(this::showHome);
 			completeLoad();
@@ -162,7 +161,7 @@ public final class GuiController {
 		if (network.isConnected()) {
 			sendJoin.run();
 		} else {
-			network.connect(sendJoin, () -> SwingUtilities.invokeLater(() -> {
+			network.connect(msg -> this.commandQueue.add(new Command(msg)), sendJoin, () -> SwingUtilities.invokeLater(() -> {
 				JOptionPane.showMessageDialog(cardPanel, "サーバーに接続できませんでした。", "接続エラー", JOptionPane.ERROR_MESSAGE);
 				loadPanel.setNextScreen(() -> showMatchConfig(lastMatchMode));
 				completeLoad();
